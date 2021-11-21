@@ -338,7 +338,45 @@ npm i axios -S
 
 
 
-## 使用导航（react-navigator）
+## 使用导航（react-navigation）
+
+目前 react-native 常用的导航库有`react-navigation`和`react-native-navigation`，使用导航就可以开始进行多页面的开发以及进行页面的跳转了。
+
+### react-navigator
+
+**安装：**最好是安装[官网教程](https://reactnavigation.org/docs/getting-started)来进行安装，因为每个版本要安装的东西都不太一样，显示的是6.x的
+
+```shell
+yarn add @react-navigation/native @react-navigation/native-stack react-native-screens react-native-safe-area-context 
+```
+
+如果用的是react-native0.59及以下的版本还需要运行
+
+```shell
+react-native link @react-navigation/native
+react-native link @react-navigation/native-stack
+react-native link react-native-screens
+react-native link react-native-safe-area-context
+```
+
+> 如果还需要进行IOS端的开发，还需要运行`cd ios && pod install`（记得确保网络稳定，不然会失败）
+
+进行安卓开发还需要在`android/app/src/main/java/<your package name>/MainActivity.java`文件下添加
+
+```java
+import android.os.Bundle;
+------------------------------------------
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+  super.onCreate(null);
+}
+```
+
+
+
+**基本使用**
+
+
 
 
 
