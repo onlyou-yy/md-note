@@ -240,7 +240,7 @@ const commonStyle = {fontSize:30,color:'skyblue'};
 
 ### View
 
-View 组件相当于是 div 标签，就是一个普通的容器，不过不可以插入文本节点`<View>hello</View>`，文本节点需要使用Text来包裹`<View><Text>hello</Text></View>`
+View 组件相当于是 div 标签，就是一个普通的容器，不过不可以插入文本节点`<View>hello</View>`，文本节点需要使用Text来包裹`<View><Text>hello</Text></View>`，也不能设置字体大小、颜色等。
 
 ### Text
 
@@ -265,6 +265,25 @@ Text 组件相当于是一个 span 标签，不过里面的布局不是按flexbo
 ```
 
 如果图片大小和容器大小不一致，可以使用`style={{resizeMode:'cover'}}`或者`<Image source={require('./assets/a.png') resizeMethod='scale'}>`来设置图片的缩放模式
+
+需要注意的是默认情况下 Android 是不支持 GIF 和 WebP 格式的，需要在`android/app/build.gradle`文件中根据需要手动添加以下模块：
+
+```
+dependencies {
+  // 如果你需要支持Android4.0(API level 14)之前的版本
+  implementation 'com.facebook.fresco:animated-base-support:1.3.0'
+
+  // 如果你需要支持GIF动图
+  implementation 'com.facebook.fresco:animated-gif:2.5.0'
+
+  // 如果你需要支持WebP格式，包括WebP动图
+  implementation 'com.facebook.fresco:animated-webp:2.5.0'
+  implementation 'com.facebook.fresco:webpsupport:2.5.0'
+
+  // 如果只需要支持WebP格式而不需要动图
+  implementation 'com.facebook.fresco:webpsupport:2.5.0'
+}
+```
 
 
 
@@ -300,7 +319,7 @@ Button组件是一个简单的跨平台的按钮组件，它是`TouchableOpacity
 
 
 
-## 网路请求
+## 网落请求
 
 在软件开发里面不存在跨域的问题（跨域主要是因为浏览ajax引擎的同源策略导致的，而在应用中不存在ajax引擎所以不会有跨越问题）。在react-native中网络请求不再是使用xhr了，而是使用[fetch](https://developer.mozilla.org/zh-CN/docs/Web/API/Fetch_API/Using_Fetch)来发送网络请求了。不过仍然可以使用第三方的网络请求框架如[frisbee](https://github.com/niftylettuce/frisbee)或是[axios](https://github.com/mzabriskie/axios)等。
 
@@ -338,13 +357,46 @@ npm i axios -S
 
 
 
+## 调试
+
+一般可以直接使用谷歌浏览器或者rn推荐的调试工具`react-native-debugger`来调试，两种方式的区别在于
+
+谷歌浏览器调仅可以看到输出，不能看到标签结构也不能看到网络请求（可以通过配置来解决）。`react-native-debugger`则可以看到输出，也可以看到标签结构，但是也不能看到网络请求（可以通过配置来解决）。
+
+想要查看网络请求可以在入口文件`index.js`添件
+
+```js
+GLOBAL.XMLHttpRequest = GLOBAL.originalXMLHttpRequest || GLOBAL.XMLHttpRequest
+```
+
+使用`react-native-debugger`
+
+**安装**：可以直接去官网下载安装程序直接安装，也可以使用npm或者yarn进行安装（推荐使用cnpm或者使用yarn安装，不然可能会报electron丢失）
+
+```shell
+cnpm i react-native-debugger -g
+yarn add react-native-debugger global
+```
+
+**运行：**在运行之前最好先将在管理面板停掉debug`stop debugger`，然后在将debbger浏览器关闭掉
+
+```shell
+react-native-debugger
+```
+
+运行成功后再在管理面板开起来就好了。
+
+
+
 ## 使用导航（react-navigation）
 
 目前 react-native 常用的导航库有`react-navigation`和`react-native-navigation`，使用导航就可以开始进行多页面的开发以及进行页面的跳转了。
 
 ### react-navigator
 
-**安装：**最好是安装[官网教程](https://reactnavigation.org/docs/getting-started)来进行安装，因为每个版本要安装的东西都不太一样，显示的是6.x的
+**安装：**
+
+最好是安装[官网教程](https://reactnavigation.org/docs/getting-started)来进行安装，因为每个版本要安装的东西都不太一样，现在的是6.x的
 
 ```shell
 yarn add @react-navigation/native @react-navigation/native-stack react-native-screens react-native-safe-area-context 
@@ -374,7 +426,270 @@ protected void onCreate(Bundle savedInstanceState) {
 
 
 
-**基本使用**
+### **注册路由**
+
+```react
+import * as React from 'react';
+import { View, Text } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+function HomeScreen() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>Home Screen</Text>
+    </View>
+  );
+}
+function DetailScreen() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>Detail Screen</Text>
+    </View>
+  );
+}
+function CarScreen() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>Car Screen</Text>
+    </View>
+  );
+}
+
+const Stack = createNativeStackNavigator();
+
+function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen name="Home" component={HomeScreen}  options={{ title: 'Overview' }}/>
+        <Stack.Screen name="Car" component={() => <CarScreen />} />
+        <Stack.Screen name="Detail">
+        	{props => <DetailScreen {...props} extraData={someData}/>}
+        </Stack.Screen>
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+export default App;
+```
+
+`NavigationContainer`是一个管理我们的导航树并包含[导航状态的组件](https://reactnavigation.org/docs/navigation-state)。此组件必须包装所有导航器结构。通常，我们会在应用程序的根目录渲染这个组件，这通常是从`App.js`.
+
+`createNativeStackNavigator`是一个函数，它返回一个包含 2 个属性的对象：`Screen`和`Navigator`。它们都是用于配置导航器的 React 组件。本`Navigator`应包含`Screen`的元素作为其子定义路由配置。可以将`Screen`看成就是一个页面的容器，可以通过`options`来设置页面的属性（具体可以参看[官网配置](https://reactnavigation.org/docs/headers)）。
+
+`initialRouteName`初始路由名，可以定义初始的页面，不过即使不定义也会以第一个路由为初始路由
+
+> 其实可以通过修改`initialRouteName`来达到路由跳转的目的，但是这样做不会使用到路由栈，这样也就不能使用返回，而且可能导致快速刷新失效
+
+上面三种注册路由的方式有自己的特点
+
+```react
+<Stack.Screen name="Home" component={HomeScreen}  options={{ title: 'Overview' }}/>
+```
+
+这种方式注册的路由在切换页面的时候组件不会被卸载，重新切换回来的时候也不会重新安装，相当于使用vue中的keep-alive
+
+```react
+<Stack.Screen name="Car" component={() => <CarScreen />} />
+```
+
+这种方式注册的路由在切换页面的时候组件会被卸载，重新切换回来的时候会重新安装
+
+```react
+<Stack.Screen name="Detail">
+  {props => <DetailScreen {...props} extraData={someData}/>}
+</Stack.Screen>
+```
+
+这种方式注册的路由在切换页面的时候组件会被卸载，重新切换回来的时候会重新安装，不过可以传递更多额外的数据
+
+
+
+### **路由跳转**
+
+注册成为页面的组件将会在`props`接受到一个`navigation`对象，这个对象就是用来做路由跳转的。
+
++ `navigation.navigate('Home') | navigation.navigate({name:'Home'})`跳转到Home页面，如果现在已经在Home页面了，将什么都不做，页不会把页面加到路由栈中
++ `navigation.push('Home') | navigation.push({name:'Home'})`跳转到Home页面，即使已经在Home页面了，也会进行跳转，并且将路由加入到路由栈中
++ `navigation.goBack()`返回上一路由
++ `navigation.popToTop()`回到栈顶路由
++ 还有其他的一些[API](https://reactnavigation.org/docs/navigation-prop)
+
+```react
+function HomeScreen({navigation}) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>Home Screen</Text>
+      <Button title="to Details" onPress={()=>navigation.navigate('Details')} />
+    </View>
+  );
+}
+```
+
+
+
+### **路由传参**
+
+在`react-navigation`中可以在`navigation.navigate`以及`navigation.push`的第二个参数上传递路由参数，这些参数将会被集合到要跳转的路由的`props`的`route.params`中，route中还还有路由的其他一些信息.
+
+```react
+function HomeScreen({navigation}) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>Home Screen</Text>
+      <Button title="to Details" onPress={()=>navigation.navigate('Details',{data:'2222'})} />
+      <Button title="to Details" onPress={()=>navigation.navigate({
+          name:'Details',
+          params:{data:'2222'}
+        })} />
+    </View>
+  );
+}
+```
+
+
+
+### **修改路由参数**
+
+我们知道直接修改`props`中的值是不推荐的，而且即使修改数据成功也不会触发页面更新，甚至有可能会导致错误，所以不推荐直接修改props.route.params中的数据，可以使用`navigation.setParams()`方法进行修改，使用方式与`setState`差不多。
+
+```react
+function DetailScreen({route,navigation}) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>Detail Screen {route.params.data}</Text>
+      <Button title="setParams" onPress={()=>navigation.setParams({data:'3333'})} />
+    </View>
+  );
+}
+```
+
+
+
+### **初始化参数**
+
+在导航到此屏幕时未指定任何参数，则将使用初始参数。它们也与您传递的任何参数浅合并
+
+```react
+<Stack.Screen
+  name="Details"
+  component={DetailsScreen}
+  initialParams={{ itemId: 42 }}
+/>
+```
+
+
+
+### **传递参数给嵌套路由**
+
+如果您有嵌套的导航器，则需要以稍微不同的方式传递参数。例如，假设您在`Account`屏幕内有一个导航器，并且想要将参数传递到该导航器内的屏幕`Settings`。然后你可以传递参数如下：
+
+```js
+navigation.navigate('Account', {
+  screen: 'Settings',
+  params: { user: 'jane' },
+});
+```
+
+
+
+### 路由生命周期函数
+
+在路由跳转的时候，页面不会被卸载，也就是说A页面跳转到B页面的时候，A的卸载钩子并不会被触发，而B在第一次进入的时候会触发挂载钩子；当从B页面返回A页面的时候页不会再出发挂载钩子了。因此我们需要使用别的方式来执行在页面显示以及页面隐藏时候要做的操作，`react-navigation` 在`navigation`对象中提供了`addlistener`方法（返回一个移除函数，可以在页面隐藏的时候执行，以此来移除监听）监听路由的相关事件
+
+- `focus` - 当屏幕进入焦点时发出此事件
+- `blur` - 当屏幕失焦时发出此事件
+- `beforeRemove`- 当用户离开屏幕时触发此事件
+- `state` (高级) - 当导航器的状态改变时发出这个事件
+
+每个注册为事件侦听器的回调都接收一个事件对象作为其参数。事件对象包含几个属性：
+
+- `data`- 有关导航器传递的事件的附加数据。`undefined`如果没有传递数据，则可能会出现这种情况。
+- `target`- 应接收事件的屏幕的路由键。对于某些事件，这可能是`undefined`因为该事件与特定屏幕无关。
+- `preventDefault`- 对于某些事件，`preventDefault`事件对象上可能有一个方法。调用此方法将阻止事件执行的默认操作（例如在 上切换选项卡`tabPress`）。对阻止操作的支持仅适用于某些事件，例如`tabPress`并不适用于所有事件。
+
+要记住的一件事是，您只能监听来自直接父导航器的事件。如果孙级页面需要监听到爷级页面的事件可以在孙级组件用`navigation.getParent()`获取对父导航器的导航道具的引用并添加一个监听器。
+
+```react
+function Profile({ navigation }) {
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // 页面激活（显示）的时候执行
+    });
+		//在离开页面的时候移除监听
+    return unsubscribe;
+  }, [navigation]);
+  return <ProfileContent />;
+}
+```
+
+除了使用`navigation.addListener`来监听页面事件之外，还可以在`<Stack.Screen listeners={(props)=>({focus:e=>{}}) >`的`listeners`中设置监听器这种方式和`navigation.addListener`基本一致；还可以在`<Stack.Navigator screenListeners={(props)=>({focus:e=>{}} \>`的`screenListeners`中设置，不同与前两种这种监听的是所有页面。
+
+当然还可以使用相关的Hooks来实现，比如`useFocusEffect`等。
+
+并且 react-navigation 除了 stack（可以看作是顶部navbar式路由导航），还支持[tab](https://reactnavigation.org/docs/tab-based-navigation)（底部tabbar式路由导航），以及[drawer](https://reactnavigation.org/docs/drawer-based-navigation)（侧边弹出式路由导航）等[多种导航器](https://reactnavigation.org/docs/material-top-tab-navigator)，还有多种[API](https://reactnavigation.org/docs/navigation-container)以及[Hooks](https://reactnavigation.org/docs/use-navigation)。具体使用可以查看[官网](https://reactnavigation.org/docs/getting-started)
+
+
+
+### 导航状态及修改
+
+没有被实例化的导航器（Stack.Navigator、Tab.Navigator、Drawer.Navigator）都会有用自己的状态，可以通过`navigation.getState()`方法或者使用`useNavigationState(state=>state.index)`（这个方法获取到的状态是*实时更新*的）获取到，这个状态包含以下的一些属性
+
+```js
+const state = {
+  type: 'stack',
+  key: 'stack-1',
+  routeNames: ['Home', 'Profile', 'Settings'],
+  routes: [
+    { key: 'home-1', name: 'Home', params: { sortBy: 'latest' } },
+    { key: 'settings-1', name: 'Settings' },
+  ],
+  index: 1,
+  stale: false,
+};
+```
+
+- `type`- 状态所属的导航器的类型，例如`stack`、`tab`、`drawer`。
+- `key` - 识别导航器的唯一键。
+- `routeNames`- 在导航器中定义的屏幕名称。这是一个包含每个屏幕字符串的唯一数组。
+- `routes`- 在导航器中呈现的路线对象（屏幕）列表。它还表示堆栈导航器中的历史记录。此数组中应至少存在一项。
+- `index`-`routes`数组中聚焦路线对象的索引。
+- `history`- 访问项目列表。这是一个可选属性，并非在所有导航器中都存在。例如，它仅存在于核心的选项卡和抽屉导航器中。`history`数组中项目的形状可能因导航器而异。此数组中应至少存在一项。
+- `stale`- 导航状态被假定为陈旧，除非该`stale`属性显式设置为`false`。
+
+`routes`数组中的每个路由对象可能包含以下属性：
+
+- `key`- 屏幕的唯一键。导航到此屏幕时自动创建或添加。
+- `name`- 屏幕名称。在导航器组件层次结构中定义。
+- `params`- 包含在导航时定义的参数的可选对象，例如`navigate('Home', { sortBy: 'latest' })`。
+- `state` - 包含嵌套在此屏幕内的子导航器的导航状态的可选对象。
+
+有时候可能需要对导航状态进行修改，在`navigation`中提供了两种方式来给我们对导航状态进行修改，一种是`navigation.reset()`方法，这个方法用于重置导航状态的，并且只能对当前自己的路由器做修改
+
+```js
+navigation.reset({
+  index: 0,
+  routes: [{ name: 'Profile' }],
+});
+```
+
+还有一种方式是全局的方法，就是使用`navigation.dispatch(action)`方法来进行修改，action可以是`commonActions`、`StackActions`、`TabActions`、`DrawerActions`等导航器的action，`navigation.dispatch`不仅可以配合`commonAcions`来修改当前所在导航器的状态，也可以配置其他的actions来修改App中任意用到的导航器的状态。`navigation.dispatch`多用于修改嵌套或兄弟导航器的状态，或触发其他导航器的方法。比如说 drawer 导航器嵌套来一个 stack 导航器，想要在 stack 操作 drawer 导航器
+
+```js
+navigation.dispatch(DrawerActions.toggleDrawer());
+```
+
+如果有多个同种类的导航器还可以使用`source`和`target`来指定特定的导航器
+
+```js
+navigation.dispatch({
+  ...CommonActions.navigate('Profile'),
+  source: 'someRoutekey',//发起操作的路由的key，一般是当前的屏的key route.key
+  target: 'someStatekey',//要接受并执行操作的导航器的key，一般都是由外部传入 route.params.key
+});
+```
 
 
 

@@ -1848,7 +1848,7 @@ function HooksExample(props){
 export default HooksExample;
 ```
 
-**当直接使用` useEffect(()=>{})`**，的时候相当于是类式组件的的 `componentDidMount `和 `componentDidUpdat `生命周期函数，首次渲染和之后的每次渲染都会调用一遍。
+**当直接使用` useEffect(()=>{})`**，的时候相当于是类式组件的的 `componentDidMount `和 `componentDidUpdate `生命周期函数，首次渲染和之后的每次渲染都会调用一遍。
 
 **实现 `componentWillUnmount`**
 
@@ -2714,5 +2714,4 @@ componentDidCatch(error, info) {
 		父子组件：props
 		兄弟组件：消息订阅-发布、集中式管理
 		祖孙组件(跨级组件)：消息订阅-发布、集中式管理、conText(开发用的少，封装插件用的多)
-
 
