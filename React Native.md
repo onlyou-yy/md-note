@@ -695,7 +695,109 @@ navigation.dispatch({
 
 
 
-## 使用状态管理（redux/mobx）
+## 使用状态管理（mobx）
+
+在react 和 vue 中多层嵌套组件之间或者兄弟组件的通信是非常麻烦的，一般都是会使用状态管理的库进行管理公共的数据，在vue中一般使用的是vuex，在react中常用的是redux和mobx、dva等，不过现在react中也更加鼓励使用函数式组件进行开发，同样可以使用`useReducer`和`useContext`来实现状态管理。
+
+由于我还没有用过mobx，所以打算先学习并使用mobx。
+
+
+
+### mobx安装
+
+```shell
+npm install mobx mobx-react -S
+```
+
+如果想要想要使用装饰器的话还需要安装配置点东西（装饰器都有对应的函数替代）
+
+安装`babel-preset-mobx`
+
+```shell
+npm install babel-preset-mobx -D
+```
+
+然后配置`.babelrc`文件
+
+```json
+{
+  "presets": ["mobx"]
+}
+```
+
+参考[官网配置](https://cn.mobx.js.org/best/decorators.html)即可
+
+
+
+### mobx的基本使用
+
+个人感觉mobx比redux要简单一些，因为只需要熟悉几个常用的api即可。
+
+对于mobx的api，只需要了解下面几个api就好:
+
+`observable`将数据转换成可监测的响应式数据，可以监测基本数据类型、引用类型、普通对象、类实例、数组和映射。
+
+```js
+@observable list = ['my'];
+const todo = observable({name:'jack'})
+```
+
+`computed`计算属性，当函数中使用到的被`observable`的数据有改变的时候下次访问计算属性时函数才会被执行，同vue的computed
+
+```js
+class Todos{
+  @observable list = ['my'];
+	@computed get listLength(){
+    console.log('list computed');
+    return list.length;
+  })
+}
+let todos = new Todos();
+todos.list.push('xx');
+console.log(todos.listLength);//list computed 2
+```
+
+使用函数式的computed是返回的是一个对象，需要通过`.get()`方法获取值，还可以在`.observe(callback)` 来观察值的改变
+
+```js
+var name = observable.box("John");
+var upperCaseName = computed(() =>name.get().toUpperCase());
+var disposer = upperCaseName.observe(change => console.log(change.newValue));
+name.set("Dave");
+// 输出: 'DAVE'
+```
+
+`autorun`其实这个就相当于是一个自动执行的computed，只要函数中的某个被`observable`的数据有变化，函数就会执行，并且`autorun`在定义的时候会立即执行一次，而且会返回一个**解除监听的函数**，在选择使用`autorun`还是使用`computed`的时候可以按这个规则：如果你有一个函数应该自动运行，但不会产生一个新的值，请使用`autorun`。 其余情况都应该使用 `computed`
+
+```js
+var numbers = observable([1,2,3]);
+var sum = computed(() => numbers.reduce((a, b) => a + b, 0));
+var disposer = autorun(() => console.log(sum.get()));
+// 输出 '6'
+numbers.push(4);
+// 输出 '10'
+disposer();//解除监听
+numbers.push(5);
+// 不会再输出任何值。`sum` 不会再重新计算。
+```
+
+`autorun`还可以接收第二个参数,`autorun(fn,{delay:300})`，这个参数用于配置，其中的delay选项可以用来实现防抖操作.
+
+`reaction`
+
+`action`
+
+`when`
+
+`flow`
+
+`decorator`
+
+对于mobx-react，需要了解一下这几个api：
+
++ `Provider`
++ `Inject`
++ `observer`
 
 
 
