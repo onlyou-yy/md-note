@@ -742,6 +742,8 @@ npm install babel-preset-mobx -D
 const todo = observable({name:'jack'})
 ```
 
+
+
 `computed`计算属性，当函数中使用到的被`observable`的数据有改变的时候下次访问计算属性时函数才会被执行，同vue的computed
 
 ```js
@@ -767,6 +769,8 @@ name.set("Dave");
 // 输出: 'DAVE'
 ```
 
+
+
 `autorun`其实这个就相当于是一个自动执行的computed，只要函数中的某个被`observable`的数据有变化，函数就会执行，并且`autorun`在定义的时候会立即执行一次，而且会返回一个**解除监听的函数**，在选择使用`autorun`还是使用`computed`的时候可以按这个规则：如果你有一个函数应该自动运行，但不会产生一个新的值，请使用`autorun`。 其余情况都应该使用 `computed`
 
 ```js
@@ -783,11 +787,32 @@ numbers.push(5);
 
 `autorun`还可以接收第二个参数,`autorun(fn,{delay:300})`，这个参数用于配置，其中的delay选项可以用来实现防抖操作.
 
-`reaction`
 
-`action`
+
+`reaction`其实是`autorun`的变种，或者说是`computed autorun`的语法糖，返回一个清理函数；`reaction(sendDataFn,effctFn,options)`，第一个参数的返回值将会传递给第二个函数的第一个形参data，并且**只要且只有**`sendDataFn`中有被监测`observable`的数据发生变化就会调用`effctFn`；`effctFn`接收两个参数，第一个是`sendDataFn`的返回值，第二个是当前`reaction`的实例对象。
+
+```js
+const counter = observable({ count: 0 });
+// 只调用一次并清理掉 reaction : 对 observable 值作出反应。
+const reaction3 = reaction(
+    () => counter.count,
+    (count, reaction) => {
+        console.log("reaction 3: invoked. counter.count = " + count);
+        reaction.dispose();
+    }
+);
+counter.count = 1;// 输出: reaction 3: invoked. counter.count = 1
+counter.count = 2;// 输出:(There are no logging, because of reaction disposed. But, counter continue reaction)
+console.log(counter.count);// 输出:2
+```
+
+
+
+
 
 `when`
+
+`action`
 
 `flow`
 
@@ -798,6 +823,10 @@ numbers.push(5);
 + `Provider`
 + `Inject`
 + `observer`
+
+
+
+mobx 不起作用的常见[原因](https://cn.mobx.js.org/best/react.html)
 
 
 
