@@ -735,6 +735,8 @@ npm install babel-preset-mobx -D
 
 对于mobx的api，只需要了解下面几个api就好:
 
+#### `observable`
+
 `observable`将数据转换成可监测的响应式数据，可以监测基本数据类型、引用类型、普通对象、类实例、数组和映射。
 
 ```js
@@ -742,7 +744,7 @@ npm install babel-preset-mobx -D
 const todo = observable({name:'jack'})
 ```
 
-
+#### `computed`
 
 `computed`计算属性，当函数中使用到的被`observable`的数据有改变的时候下次访问计算属性时函数才会被执行，同vue的computed
 
@@ -769,7 +771,7 @@ name.set("Dave");
 // 输出: 'DAVE'
 ```
 
-
+#### `autorun`
 
 `autorun`其实这个就相当于是一个自动执行的computed，只要函数中的某个被`observable`的数据有变化，函数就会执行，并且`autorun`在定义的时候会立即执行一次，而且会返回一个**解除监听的函数**，在选择使用`autorun`还是使用`computed`的时候可以按这个规则：如果你有一个函数应该自动运行，但不会产生一个新的值，请使用`autorun`。 其余情况都应该使用 `computed`
 
@@ -787,7 +789,7 @@ numbers.push(5);
 
 `autorun`还可以接收第二个参数,`autorun(fn,{delay:300})`，这个参数用于配置，其中的delay选项可以用来实现防抖操作.
 
-
+#### `reaction`
 
 `reaction`其实是`autorun`的变种，或者说是`computed autorun`的语法糖，返回一个清理函数；`reaction(sendDataFn,effctFn,options)`，第一个参数的返回值将会传递给第二个函数的第一个形参data，并且**只要且只有**`sendDataFn`中有被监测`observable`的数据发生变化就会调用`effctFn`；`effctFn`接收两个参数，第一个是`sendDataFn`的返回值，第二个是当前`reaction`的实例对象。
 
@@ -806,23 +808,283 @@ counter.count = 2;// 输出:(There are no logging, because of reaction disposed.
 console.log(counter.count);// 输出:2
 ```
 
+#### `when`
+
+`when`和`reaction`类似，使用方式相近`when(condFn,effectFn,options)`，当`condFn`中被`observable`的数据发生变化的时候`condFn`就会被执行，如果返回值是 true 那么就会触发`effectFn`，同样的`when`函数返回一个清理器以提前取消自动运行程序。并且当美誉提供`effectFn`的时候`when`返回的是一个promise，也就是说可以配合async/await使用
+
+```js
+const flag = obsevable({isShow:false});
+when(()=flag.isShow,()=>console.log('be actived when flag.isShow is true'));
+flag.isShow = true;
+```
+
+#### `action`
+
+`action`用来修改被`observable`的值，虽然被`observable`的值可以直接修改，但是官方也还是**推荐在`action`中对被监视的值做修改动作**，因为这种方式是可以被开发工具捕获的，也就是便于调试和观察，应该永远只对**修改**状态的函数使用动作。 只执行查找，过滤器等函数不应该被标记为动作，以允许 MobX 跟踪它们的调用。
+
+`aciotn`常用方式有`@action fnName(data){}`，相当于是`action('fnName',(data)=>{})`；还有一种是`@action.bound fnName(data){}`相当于`action.bound('fnName',(data)=>{})`。这种方式可以明确绑定的this（不过不能和箭头函数一起使用）。
+
+```js
+class Ticker {
+    @observable tick = 0
+
+    @action
+    increment() {
+        this.tick++ // 'this' 永远都是正确的
+    }
+}
+
+const ticker = new Ticker()
+setInterval(ticker.increment, 1000)
+```
+
+**需要注意的是**，`action`是不支持处理异步操作的，也就说在`antion`中有 `setTimeout`、promise 的 `then` 或 `async` 语句的回调函数中改变状体将不会起作用并且会报警告，因为他们的回调函数不是action动作的一部分（调用栈不同），比如
+
+```js
+mobx.configure({ enforceActions: true }) // 不允许在动作之外进行状态修改
+
+class Store {
+    @observable githubProjects = []
+    @observable state = "pending" // "pending" / "done" / "error"
+
+    @action
+    fetchProjects() {
+        this.githubProjects = []
+        this.state = "pending"
+        fetchGithubProjectsSomehow().then(
+            projects => {
+                const filteredProjects = somePreprocessing(projects)
+                this.githubProjects = filteredProjects
+                this.state = "done"
+            },
+            error => {
+                this.state = "error"
+            }
+        )
+    }
+}
+```
+
+解决异步的几种方式
+
+1.拆分动作
+
+```js
+mobx.configure({ enforceActions: true })
+
+class Store {
+    @observable githubProjects = []
+    @observable state = "pending" // "pending" / "done" / "error"
+
+    @action
+    fetchProjects() {
+        this.githubProjects = []
+        this.state = "pending"
+        fetchGithubProjectsSomehow().then(this.fetchProjectsSuccess, this.fetchProjectsError)
+
+    }
+
+    @action.bound
+    fetchProjectsSuccess(projects) {
+        const filteredProjects = somePreprocessing(projects)
+        this.githubProjects = filteredProjects
+        this.state = "done"
+    }
+    @action.bound 
+		fetchProjectsError(error) {
+            this.state = "error"
+    }
+}
+```
+
+2.使用`action`函数包裹
+
+```js
+mobx.configure({ enforceActions: true })
+
+class Store {
+    @observable githubProjects = []
+    @observable state = "pending" // "pending" / "done" / "error"
+
+    @action
+    fetchProjects() {
+        this.githubProjects = []
+        this.state = "pending"
+        fetchGithubProjectsSomehow().then(
+            // 内联创建的动作
+            action("fetchSuccess", projects => {
+                const filteredProjects = somePreprocessing(projects)
+                this.githubProjects = filteredProjects
+                this.state = "done"
+            }),
+            // 内联创建的动作
+            action("fetchError", error => {
+                this.state = "error"
+            })
+        )
+    }
+}
+```
+
+3.使用`runInAction(actionName?,fn)`函数，顾名思义就是当前动作还要运行在哪个`action`中，当不传递actionName的时候默认运行在所在的action中，**需要注意**，在使用async/await的时候，`await xxxx`之后的代码都相当于是在then中的所以也要使用`runInAction`解决异步问题。
+
+```js
+mobx.configure({ enforceActions: true })
+
+class Store {
+    @observable githubProjects = []
+    @observable state = "pending" // "pending" / "done" / "error"
+
+    @action
+    fetchProjects() {
+        this.githubProjects = []
+        this.state = "pending"
+        fetchGithubProjectsSomehow().then(
+            projects => {
+                const filteredProjects = somePreprocessing(projects)
+                // 将‘“最终的”修改放入一个异步动作中
+                runInAction(() => {
+                    this.githubProjects = filteredProjects
+                    this.state = "done"
+                })
+            },
+            error => {
+                // 过程的另一个结局:...
+                runInAction(() => {
+                    this.state = "error"
+                })
+            }
+        )
+    }
+}
+```
+
+4.使用`flow`解决。它们使用生成器。它的工作原理与 `async` / `await` 是一样的。只是使用 `function *` 来代替 `async`，使用 `yield` 代替 `await` 。 使用 `flow` 的优点是它在语法上基本与 `async` / `await` 是相同的 (只是关键字不同)，并且不需要手动用 `@action` 来包装异步代码
+
+```js
+mobx.configure({ enforceActions: true })
+
+class Store {
+    @observable githubProjects = []
+    @observable state = "pending"
+
+    fetchProjects = flow(function * () { // <- 注意*号，这是生成器函数！
+        this.githubProjects = []
+        this.state = "pending"
+        try {
+            const projects = yield fetchGithubProjectsSomehow() // 用 yield 代替 await
+            const filteredProjects = somePreprocessing(projects)
+            // 异步代码块会被自动包装成动作并修改状态
+            this.state = "done"
+            this.githubProjects = filteredProjects
+        } catch (error) {
+            this.state = "error"
+        }
+    })
+}
+
+```
+
+#### `decorator`
+
+`decorator`在不是装饰器的时候有用，就是用来批量给数据添加对应的装饰函数
+
+```js
+class Person {
+    name = "John"
+    age = 42
+    showAge = false
+
+    get labelText() {
+        return this.showAge ? `${this.name} (age: ${this.age})` : this.name;
+    }
+
+    setAge(age) {
+        this.age = age;
+    }
+}
+// 使用 decorate 时，所有字段都应该指定 (毕竟，类里的非 observable 字段可能会更多)
+decorate(Person, {
+    name: observable,
+    age: observable,
+    showAge: observable,
+    labelText: computed,
+    setAge: action
+})
+
+```
 
 
 
-
-`when`
-
-`action`
-
-`flow`
-
-`decorator`
+### mobx-react
 
 对于mobx-react，需要了解一下这几个api：
 
-+ `Provider`
-+ `Inject`
-+ `observer`
+#### `observer`
+
+`observer`函数/装饰器可以用来将 React 组件转变成响应式组件。它用 `mobx.autorun` 包装了组件的 render 函数以确保任何组件渲染中使用的数据变化时都可以强制刷新组件。
+
+也就是说在react中想要实现当状态该改变的时候页面也跟着刷新的话就需要使用`observe`包裹组件
+
+```react
+import {observer} from "mobx-react";
+
+var timerData = observable({
+    secondsPassed: 0
+});
+
+setInterval(() => {
+    timerData.secondsPassed++;
+}, 1000);
+
+@observer 
+class Timer extends React.Component {
+    render() {
+        return (<span>Seconds passed: { this.props.timerData.secondsPassed } </span> )
+    }
+};
+
+ReactDOM.render(<Timer timerData={timerData} />, document.body);
+```
+
+**注意：**当 `observer` 需要组合其它装饰器或高阶组件时，请确保 `observer` 是最深处(第一个应用)的装饰器，否则它可能什么都不做。还有就是Mobx***观察的是数据的属性***而***不是值***，所以当
+
+```js
+React.render(<Timer timerData={timerData.secondsPassed} />, document.body)
+```
+
+这样将***观察数据的值***传递给`Timer`，当`timerData.secondsPassed`变化的时候`Timer`组件不会变化。
+
+ 
+
+#### `Provider`和`Inject`
+
+`mobx-react` 包还提供了 `Provider` 组件，它使用了 React 的上下文(context)机制，可以用来向下传递 `stores`。 要连接到这些 stores，需要传递一个 stores 名称的列表给 `inject`，这使得 stores 可以作为组件的 `props` 使用。
+
+```js
+const colors = observable({
+   foreground: '#000',
+   background: '#fff'
+});
+
+const App = () =>
+  <Provider colors={colors}>
+     <app stuff... />
+  </Provider>;
+
+const Button = inject("colors")(observer(({ colors, label, onClick }) =>
+  <button style={{
+      color: colors.foreground,
+      backgroundColor: colors.background
+    }}
+    onClick={onClick}
+  >{label}</button>
+));
+
+// 稍后..
+colors.foreground = 'blue';
+// 所有button都会更新
+```
 
 
 
@@ -831,6 +1093,8 @@ mobx 不起作用的常见[原因](https://cn.mobx.js.org/best/react.html)
 
 
 ## UI框架
+
+
 
 
 
