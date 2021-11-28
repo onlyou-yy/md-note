@@ -1016,6 +1016,49 @@ decorate(Person, {
 
 
 
+#### mobx6的新Api
+
+`makeObservable(target, annotations?, options?)`
+
+这个函数可以捕获*已经存在*的对象属性并且使得它们可观察。 `annotations` 参数将会为每一个成员映射 [注解](https://zh.mobx.js.org/observable-state.html#可用的注解)
+
+```js
+class Store{
+    constructor(){
+        makeObservable(this,{
+            name:observable,
+            changeName:action
+        })
+    }
+    name = 'jack';
+	changeName(val){
+        this.name = val;
+    }
+}
+```
+
+
+
+`makeAutoObservable(target, overrides?, options?)`
+
+就像是加强版的 `makeObservable`，在默认情况下它将推断所有的属性。你仍然可以使用 `overrides` 重写某些注解的默认行为
+
+```js
+class Store{
+    constructor(){
+        makeAutoObservable(this);//会自动推导
+    }
+    name = 'jack';
+	changeName(val){
+        this.name = val;
+    }
+}
+```
+
+`makeAutoObservable makeObservable`和`observable`的主要区别是前者数据是固定的，后者可以增删数据。
+
+
+
 ### mobx-react
 
 对于mobx-react，需要了解一下这几个api：
@@ -1049,7 +1092,7 @@ ReactDOM.render(<Timer timerData={timerData} />, document.body);
 
 **注意：**当 `observer` 需要组合其它装饰器或高阶组件时，请确保 `observer` 是最深处(第一个应用)的装饰器，否则它可能什么都不做。还有就是Mobx***观察的是数据的属性***而***不是值***，所以当
 
-```js
+```jsx
 React.render(<Timer timerData={timerData.secondsPassed} />, document.body)
 ```
 
@@ -1057,7 +1100,7 @@ React.render(<Timer timerData={timerData.secondsPassed} />, document.body)
 
  
 
-#### `Provider`和`Inject`
+#### `Provider`和`inject`
 
 `mobx-react` 包还提供了 `Provider` 组件，它使用了 React 的上下文(context)机制，可以用来向下传递 `stores`。 要连接到这些 stores，需要传递一个 stores 名称的列表给 `inject`，这使得 stores 可以作为组件的 `props` 使用。
 
@@ -1088,13 +1131,86 @@ colors.foreground = 'blue';
 
 
 
-mobx 不起作用的常见[原因](https://cn.mobx.js.org/best/react.html)
+### mobx注意事项
+
+mobx的[中文网](https://cn.mobx.js.org/)的东西是比较旧的，最好还是看[官网](https://zh.mobx.js.org/)的，官网上还有新的一些配置、`makeAutoObservable`、拦截器、代理等新的功能。
+
+mobx中文网的[mobx 不起作用的常见原因](https://cn.mobx.js.org/best/react.html)也值得一看。
+
+**关于mobx数据改变了但是页面没有更新的问题**
+
+如有下面的状态管理器，并且在组件中使用时，有可能会出现数据更新了但是页面却没有更新的情况。
+
+store.js
+
+```js
+class Store{
+    @observable name = 'jack';
+	@action changeName(val){
+        this.name = val;
+    }
+}
+export default new Store();
+```
+
+app.js
+
+```jsx
+import Store from '....'
+export default App = ()=>{
+    return 
+    <Provider store={store}>
+        <MyComp></MyComp>
+    </Provider>
+}
+```
+
+MyComp.js
+
+```jsx
+export default MyComp = inject('Store')(observer(({Store})=>{
+    const changeValue = () =>{
+        Store.cahngeName('rocy')
+    }
+    return 
+    <View>
+        <Text>Store Value:{Store.name}</Text>
+        <Button title="change Value" onPress={changeVaule}></Button>
+    </View>
+}))
+```
+
+如果你用的是mobx4/5的或那么应该是正常的，但是如果用的是mobx6及以上的话就很有可能会出现数据发生了改变但是页面却没有更新的情况，这应该是版本更新导致监测的策略发生了变化
+
+解决方式一：安装mobx5（不推荐）
+
+```SHELL
+npm uninstall mobx mobx-react -S
+mpn i mobx@5 mobx-react@5 -S
+```
+
+解决方式二：使用`makeAutoObservable`或者`makeObervable`
+
+```js
+class Store{
+    constructor(){
+        makeAutoObservable(this);
+    }
+    name = 'jack';
+	changeName(val){
+        this.name = val;
+    }
+}
+export default new Store();
+```
+
+
 
 
 
 ## UI框架
 
-
+因为react-native提供的原生UI组件在安卓和IOS上显示是不一样的，比如说`Button`组件，这样如果我们要同一的去进行多端开发的话就不得不自己去封装一个样式统一的组件，这样工作量会非常的大，所以一般都会使用同一的UI库，常用的UI库有[Ant Design Mobile RN](https://rn.mobile.ant.design/index-cn)，[React-Native-Elements](https://reactnativeelements.com/docs/)。
 
 
 
