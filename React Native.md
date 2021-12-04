@@ -1180,16 +1180,34 @@ export default MyComp = inject('Store')(observer(({Store})=>{
 }))
 ```
 
-如果你用的是mobx4/5的或那么应该是正常的，但是如果用的是mobx6及以上的话就很有可能会出现数据发生了改变但是页面却没有更新的情况，这应该是版本更新导致监测的策略发生了变化
+如果你用的是mobx4/5的或那么应该是正常的，但是如果用的是mobx6及以上的话就很有可能会出现数据发生了改变但是页面却没有更新的情况，这应该是版本更新导致监测的策略发生了变化，mobx6默认不支持@observable这种修饰器语法。
 
-解决方式一：安装mobx5（不推荐）
+
+
+解决方式一：降低版本至 @babel/plugin-proposal-decorators: ^7.10.1, mobx: ^5.15.4, mobx-react: ^6.2.2
 
 ```SHELL
-npm uninstall mobx mobx-react -S
-mpn i mobx@5 mobx-react@5 -S
+npm i @babel/plugin-proposal-decorators@7.10.1 -D
+npm i mobx@5.15.4 mobx-react@6.2.2 -S
 ```
 
-解决方式二：使用`makeAutoObservable`或者`makeObervable`
+解决方式二：修改配置使其支持https://mobx.js.org/enabling-decorators.html#how-to-enable-decorator-support
+
+```shell
+npm i --save-dev @babel/plugin-proposal-class-properties @babel/plugin-proposal-decorators
+```
+
+```json
+{
+    "plugins": [
+        ["@babel/plugin-proposal-decorators", { "legacy": true }],
+        ["@babel/plugin-proposal-class-properties", { "loose": false }]
+        // In contrast to MobX 4/5, "loose" must be false!    ^
+    ]
+}
+```
+
+解决方式三：使用`makeAutoObservable`或者`makeObervable`
 
 ```js
 class Store{
