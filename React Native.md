@@ -1230,6 +1230,24 @@ export default new Store();
 
 因为react-native提供的原生UI组件在安卓和IOS上显示是不一样的，比如说`Button`组件，这样如果我们要同一的去进行多端开发的话就不得不自己去封装一个样式统一的组件，这样工作量会非常的大，所以一般都会使用同一的UI库，常用的UI库有[Ant Design Mobile RN](https://rn.mobile.ant.design/index-cn)，[React-Native-Elements](https://reactnativeelements.com/docs/)。
 
+### 关于React Native版本≥0.60使用 react-native link无效的解决方案(react-native link @ant-design/icons-react-native)
+
+1. 在ReactNative项目根目录创建`react-native.config.js`文件
+
+```js
+module.exports = {
+  project:{
+    ios:{},
+    android:{}
+  },
+  assets:['./src/assets/fonts']
+}
+```
+
+2.然后将`node_modules/@ant-design/icons-react-native`下面的`fonts`文件夹复制到`./src/assets/fonts`
+
+3.之后运行`npx run react-native link`
+
 
 
 ## 常用文档
