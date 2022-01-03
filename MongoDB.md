@@ -56,7 +56,7 @@ MongoDB是为快速开发互联网web应用而设计的数据库系统。MongoDB
 下载安装之后，配置环境变量，在Path后加上自己的MongoDB的安装路径，如我的是`D:\mongoDB\bin`，然后需要在 C 盘的根目录下创建`data\db`文件夹，这个就是数据库的默认存储路径。如果想想要修改存储路径可以在启动服务的识货指定路径
 
 ```shell
-mongod --dppath d:\data
+mongod --dbpath d:\data
 ```
 
 这样在每次启动服务的时候都要指定。
