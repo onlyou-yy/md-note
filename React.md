@@ -1445,6 +1445,8 @@ export function counter(state=0,action){
 }
 ```
 
+注意，如果state是一个对象的话，返回数据的时候最好是使用`Object.assign({},state,{count:newCount})`来生成一个新的对象。
+
 
 
 ### 多个reducer时的使用
@@ -1525,10 +1527,10 @@ function render() {
 
 render();
 
-store.subscribe(render);
+const unSubscribe = store.subscribe(render);
 ```
 
-`subscribe`会在改变state之后就执行回调函数更新页面显示
+`subscribe`会在改变state之后就执行回调函数更新页面显示，并且返回一个函数，这个函数是解绑函数，在个别情况下可以用来解绑事件订阅，以此来避免内存溢出
 
 
 
@@ -1698,6 +1700,8 @@ export defalut connect(
 
 ### react-redux处理异步操作
 
+#### redux-thunk
+
 react-redux 默认是不支持处理异步操作的，也就是在 reducer 中无法使用异步的方法，这时候可以使用`redux-thunk`的异步中间件。
 
 在前面的**counter实例**中的 asyncAdd 方法是一个异步的操作，但是异步的那一部分并不在redux中，所以是可以有异步操作的，但是如果要在redux中实现异步的操作（一般请求数据会在redux中进行）就需要使用`redux-thunk`异步中间件
@@ -1733,6 +1737,47 @@ export incrementAsync=(number)=>{
   }
 }
 ```
+
+redux-thunk 是在actions 中进行异步处理的。
+
+#### redux-saga
+
+redux-sage同样是redux中处理异步的库，它基于 generator ，使得异步代码看起来更加像是同步的。更加易于理解。
+
+主要的 middleware 方法有:
+
++ `createSagaMiddleware(options)`创建一个Redux middleware，并将 Sagas 连接到 Redux Store 通过 createStore 第三个参数传入
++ `middleware.run(saga,...arg)`动态地运行saga，只能用于在appleMiddleware 阶段之后执行 Saga
+
+```js
+import {createStore,applyMiddleware} from 'redux';
+import createSagaMiddleware from 'redux-sage';
+
+function defReducer(state,action){
+  if(action.type == 'CHANGE'){
+    return state + 1;
+  }else{
+    return state;
+  }
+}
+
+function* defSage(){
+  
+}
+
+//创建saga中间件
+const sagaMiddleware = createSagaMiddleware();
+
+//导出并创建store
+export default createStore(defReducer,{},appleMiddleware(sagaMiddleware));
+
+//运行saga任务进行监听
+sagaMiddleware.run(defSaga)
+```
+
+
+
+
 
 
 
