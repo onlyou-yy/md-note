@@ -27,7 +27,6 @@ Object.defineProperty(obj, a, {
     val = newVal
   }
 })
-复制代码
 ```
 
 这样，当我们访问`obj.a`时，打印`get property a`并返回1，`obj.a = 2`设置新的值时，打印`set property a -> 2`。这相当于我们自定义了`obj.a`取值和赋值的行为，使用自定义的`getter`和`setter`来重写了原有的行为，这也就是`数据劫持`的含义。
@@ -49,7 +48,6 @@ function defineReactive(data, key, value = data[key]) {
 }
 
 defineReactive(obj, a, 1)
-复制代码
 ```
 
 如果`obj`有多个属性呢？我们可以新建一个类`Observer`来遍历该对象
@@ -67,7 +65,6 @@ class Observer {
 
 const obj = { a: 1, b: 2 }
 new Observer(obj)
-复制代码
 ```
 
 如果`obj`内有嵌套的属性呢？我们可以使用递归来完成嵌套属性的数据劫持
@@ -115,7 +112,6 @@ const obj = {
 }
 
 observe(obj)
-复制代码
 ```
 
 对于这一部分，大家可能有点晕，接下来梳理一下：
@@ -138,7 +134,7 @@ observe(obj)
 
 可以看出，上面三个函数的调用关系如下：
 
-![img](vue2和vue3响应式数据原理/44ac0f532d584fcca79f5781d3ce6fcf_tplv-k3u1fbpfcp-watermark.awebp)
+![image-20220115151833954](vue2响应式数据原理/image-20220115151833954-2231128.png)
 
 三个函数相互调用从而形成了递归，与普通的递归有所不同。 有些同学可能会想，只要在`setter`中调用一下渲染函数来重新渲染页面，不就能完成在数据变化时更新页面了吗？确实可以，但是这样做的代价就是：任何一个数据的变化，都会导致这个页面的重新渲染，代价未免太大了吧。我们想做的效果是：数据变化时，只更新与这个数据有关的`DOM`结构，那就涉及到下文的内容了：`依赖`
 
@@ -152,7 +148,7 @@ observe(obj)
 
 在`Vue`响应式系统中，显卡对应数据，那么例子中的买家对应什么呢？就是一个抽象的类: `Watcher`。大家不必纠结这个名字的含义，只需要知道它做什么事情：每个`Watcher`实例订阅一个或者多个数据，这些数据也被称为`wacther`的依赖(商品就是买家的依赖)；当依赖发生变化，`Watcher`实例会接收到数据发生变化这条消息，之后会执行一个回调函数来实现某些功能，比如更新页面(买家进行一些动作)。
 
-![img](vue2和vue3响应式数据原理/ca1bba8bb8054c8dab993d84bfef898f_tplv-k3u1fbpfcp-watermark.awebp)
+![image-20220115151928350](vue2响应式数据原理/image-20220115151928350-2231172.png)
 
 因此`Watcher`类可以如下实现
 
@@ -189,7 +185,6 @@ function parsePath(obj, expression) {
   }
   return obj
 }
-复制代码
 ```
 
 > 如果你对`Watcher`这个类什么时候实例化有疑问的话，没关系，下面马上就会讲到
@@ -220,7 +215,6 @@ function defineReactive(data, key, value = data[key]) {
     }
   })
 }
-复制代码
 ```
 
 到这里，我们实现了第一个功能，接下来实现收集依赖的过程。
@@ -242,7 +236,6 @@ get: function reactiveGetter() {
   dep.push(watcher) // 新增
   return value
 }
-复制代码
 ```
 
 问题又来了，`watcher`这个变量从哪里来呢？我们是在模板编译函数中的实例化`watcher`的，`getter`中取不到这个实例啊。解决方法也很简单，将`watcher`实例放到全局不就行了吗，比如放到`window.target`上。因此，`Watcher`的`get`方法做如下修改
@@ -253,7 +246,6 @@ get() {
   const value = parsePath(this.data, this.expression)
   return value
 }
-复制代码
 ```
 
 这样，将`get`方法中的`dep.push(watcher)`修改为`dep.push(window.target)`即可。
@@ -275,7 +267,6 @@ set: function reactiveSetter(newValue) {
   observe(newValue)
   dep.forEach(d => d.update()) // 新增 update方法见Watcher类
 }
-复制代码
 ```
 
 ## 3. 优化代码
@@ -303,7 +294,6 @@ class Dep {
     this.subs.push(sub)
   }
 }
-复制代码
 ```
 
 `defineReactive`函数只需做相应的修改
@@ -325,7 +315,6 @@ function defineReactive(data, key, value = data[key]) {
     }
   })
 }
-复制代码
 ```
 
 ### 2. window.target
@@ -338,7 +327,6 @@ get() {
   const value = parsePath(this.data, this.expression)
   return value
 }
-复制代码
 ```
 
 大家可能注意到了，我们没有重置`window.target`。有些同学可能认为这没什么问题，但是考虑如下场景：有一个对象`obj: { a: 1, b: 2 }`我们先实例化了一个`watcher1`，`watcher1`依赖`obj.a`，那么`window.target`就是`watcher1`。之后我们访问了`obj.b`，会发生什么呢？访问`obj.b`会触发`obj.b`的`getter`，`getter`会调用`dep.depend()`，那么`obj.b`的`dep`就会收集`window.target`， 也就是`watcher1`，这就导致`watcher1`依赖了`obj.b`，但事实并非如此。为解决这个问题，我们做如下修改：
@@ -358,7 +346,6 @@ depend() {
     this.addSub(Dep.target)
   }
 }
-复制代码
 ```
 
 通过上面的分析能够看出，`window.target`的含义就是当前执行上下文中的`watcher`实例。由于`js`单线程的特性，同一时刻只有一个`watcher`的代码在执行，因此`window.target`就是当前正在处于实例化过程中的`watcher`
@@ -372,7 +359,6 @@ update() {
   this.value = parsePath(this.data, this.expression)
   this.cb()
 }
-复制代码
 ```
 
 大家回顾一下`vm.$watch`方法，我们可以在定义的回调中访问`this`，并且该回调可以接收到监听数据的新值和旧值，因此做如下修改
@@ -383,7 +369,6 @@ update() {
   this.value = parsePath(this.data, this.expression)
   this.cb.call(this.data, this.value, oldValue)
 }
-复制代码
 ```
 
 ### 4. 学习一下Vue源码
@@ -401,7 +386,6 @@ function pushTarget(_target) {
 function popTarget() {
   window.target = targetStack.pop()
 }
-复制代码
 ```
 
 `Watcher`的`get`方法做如下修改
@@ -413,7 +397,6 @@ get() {
   popTarget() // 修改
   return value
 }
-复制代码
 ```
 
 此外，`Vue`中使用`Dep.target`而不是`window.target`来保存当前的`watcher`，这一点影响不大，只要能保证有一个全局唯一的变量来保存当前的`watcher`即可
@@ -540,8 +523,6 @@ observe(obj)
 let w1 = new Watcher(obj, 'a', (val, oldVal) => {
   console.log(`obj.a 从 ${oldVal}(oldVal) 变成了 ${val}(newVal)`)
 })
-
-复制代码
 ```
 
 ## 4. 注意事项
@@ -562,7 +543,6 @@ let w1 = new Watcher(obj, 'a', (val, oldVal) => {
 let w2 = new Watcher(obj, 'b.m.n', (val, oldVal) => {
   console.log(`obj.b.m.n 从 ${oldVal}(oldVal) 变成了 ${val}(newVal)`)
 })
-复制代码
 ```
 
 我们知道，`w2`会依赖`obj.b.m.n`， 但是`w2`会依赖`obj.b, obj.b.m`吗？或者说，`obj.b,和obj.b.m`，它们闭包中保存的`dep`中会有`w2`吗？答案是会。我们先不从代码角度分析，设想一下，如果我们让`obj.b = null`，那么很显然`w2`的回调函数应该被触发，这就说明`w2`会依赖中间层级的对象属性。
@@ -579,7 +559,6 @@ function parsePath(obj, expression) {
   }
   return obj
 }
-复制代码
 ```
 
 以上代码流程如下：
@@ -602,7 +581,7 @@ function parsePath(obj, expression) {
 
 转载自[争霸爱好者链接的0年前端的Vue响应式原理学习总结1：基本原理](https://juejin.cn/post/6932659815424458760)
 
-# 2：数组的处
+# 2：数组的处理
 
 ## 1. 为什么要对数组特殊处理
 
@@ -626,7 +605,6 @@ const arr = [1, 2, 3]
 arr.forEach((val, index, arr) => {
   defineReactive(arr, index, val)
 })
-复制代码
 ```
 
 如果我们访问和获取`arr`的值，`getter`和`setter`也会被触发，这不是可以吗？但是如果`arr.unshift(0)`呢？数组的每个元素要依次向后移动一位，这就会触发`getter`和`setter`，导致依赖发生变化。由于数组是顺序结构，所以索引(key)和值不是绑定的，因此这种护理方法是有问题的。
@@ -653,7 +631,6 @@ class Observer {
     arr.forEach((i) => observe(i))
   }
 }
-复制代码
 ```
 
 关键的处理就是代理原型
@@ -662,7 +639,7 @@ class Observer {
 
 相信大家对原型链都比较熟悉了，当我们调用`arr.push()`时，实际上是调用了`Array.prototype.push`，我们想对`push`方法进行特殊处理，除了重写该方法，还有一种手段，就是设置一个代理原型
 
-![img](vue2和vue3响应式数据原理/97b621913e6e4310829ae11d5c757871_tplv-k3u1fbpfcp-watermark.awebp)
+![image-20220115152153195](vue2响应式数据原理/image-20220115152153195-2231314.png)
 
 我们在数组实例和`Array.prototype`之间增加了一层代理来实现派发更新(依赖收集部分后面单独讲)，数组调用代理原型的方法来派发更新，代理原型再调用真实原型的方法实现原有的功能：
 
@@ -705,7 +682,6 @@ reactiveMethods.forEach((method) => {
     configurable: true
   })
 })
-复制代码
 ```
 
 问题来了，我们如何派发更新呢？对于对象，我们使用`dep.nofity`来派发更新，之所以能够拿到`dep`数组，是因为我们利用`getter`和`setter`形成了闭包，保存了`dep`数组，并且这样能够保证每个属性都有属于自己的`dep`。那数组呢？如果再`array.js`中定义一个`dep`，那所有的数组都会共享这一个`dep`，显然是不行的，因此，`vue`在每个对象身上添加了一个自定义属性：`__ob__`，这个属性保存自己的`Observer`实例，然后再`Observer`上添加一个属性`dep`不就可以了吗！
@@ -727,7 +703,6 @@ function observe(value) {
   }
   return ob
 }
-复制代码
 ```
 
 `Observer`也要做修改：
@@ -755,8 +730,6 @@ function def(obj, key, value, enumerable = false) {
     configurable: true
   })
 }
-
-复制代码
 ```
 
 这样，对象`obj: { arr: [...] }`就会变为`obj: { arr: [..., __ob__: {} ], __ob__: {} }`
@@ -777,7 +750,6 @@ reactiveMethods.forEach((method) => {
     configurable: true
   })
 })
-复制代码
 ```
 
 还有一个小细节，`push, unshift, splice`可能会向数组中增加元素，这些增加的元素也应该被监听：
@@ -807,7 +779,6 @@ Object.defineProperty(proxyPrototype, method, {
   writable: true,
   configurable: true
 })
-复制代码
 ```
 
 到这里，我们通过在对象身上新增一个`__ob__`属性，完成了数组的派发更新，接下来是依赖收集
@@ -824,7 +795,6 @@ const obj = {
     }
   ]
 }
-复制代码
 ```
 
 执行`observe(obj)`后，`obj`变成了下面的样子
@@ -840,7 +810,6 @@ obj: {
   ],
   __ob__: {...}     // 增加
 }
-复制代码
 ```
 
 我们的`defineReactive`函数中，为了递归地为数据设置响应式，调用了`observe(val)`，而现在的`observe()`会返回`ob`，也就是`value.__ob__`，那我们不妨接收一下这个返回值
@@ -857,7 +826,6 @@ set: function reactiveSetter(newVal) {
   childOb = observe(newVal) // 修改
   dep.notify()
 }
-复制代码
 ```
 
 那这个`childOb`是什么呢？比如看`obj.arr`吧：
@@ -876,7 +844,6 @@ get: function reactiveGetter() {
   }
   return val
 }
-复制代码
 ```
 
 就会有下面的情况：**每个属性的getter和setter通过闭包保存了dep，这个dep收集了依赖自己的watcher， 闭包中还保存了chilOb，childOb.dep也保存了依赖自己的watcher，这两个属性保存的watcher相同，那前文讲到的派发更新就能够实现了**。
@@ -895,7 +862,6 @@ get: function reactiveGetter() {
   }
   return val
 }
-复制代码
 ```
 
 ## 5. 依赖数组就等于依赖了数组中所有的元素
@@ -922,14 +888,12 @@ obj: {
   ],
   __ob__: {...}
 }
-复制代码
 ```
 
 新建一个依赖`arr`的`watcher`，如果为`obj.arr[0]`增加一个属性：
 
 ```js
 Vue.set(obj.arr[0], 'b', 2) // 注意是Vue.set
-复制代码
 ```
 
 这样是不会触发`watcher`回调函数的。因为我们的`watcher`依赖`arr`，求值时触发了`obj.arr`的`getter`，所以`childOb.dep(arr.__ob__.dep)`中收集到了`watcher`。但是`obj.arr[0].__ob__`中并没有收集到`watcher`，所以为其设置新值不会触发更新。但是`Vue`认为，**只要依赖了数组，就等价于依赖了数组中的所有元素**，因此，我们需要进一步处理
@@ -958,7 +922,6 @@ function dependArray(array) {
     }
   }
 }
-复制代码
 ```
 
 以上新增代码的作用，就是当依赖是数组时，遍历这个数组，为每个元素的`__ob__.dep`中添加`watcher`。
@@ -981,7 +944,6 @@ function dependArray(array) {
 
 ```js
 new Watcher(app, renderFn)
-复制代码
 ```
 
 那么如何做到依赖变化时重新执行渲染函数呢，我们要先对`Watcher`的构造函数做一些改造
@@ -1010,7 +972,6 @@ function parsePath(path) {
     return obj
   }
 }
-复制代码
 ```
 
 这样，`this.getter`就是一个取值函数了，`get`修改
@@ -1023,7 +984,6 @@ get() {
   popTarget()
   return value
 }
-复制代码
 ```
 
 要想依赖变化时重新执行渲染函数，就要在派发更新阶段做一个更新，因此，`update`方法也要进行修改：
@@ -1045,7 +1005,6 @@ update() {
 function isObject(target) {
   return typeof target === 'object' && target !== null
 }
-复制代码
 ```
 
 大家可能会有疑问了，为什么不能直接用`this.getter.call(this.data)`来重新执行渲染函数呢，这就涉及到下文要提到的重新收集依赖了。但是在此之前，要先解决一个问题：依赖的重复收集
@@ -1058,7 +1017,6 @@ function isObject(target) {
 <div>
   {{ name }} -- {{ name }}
 </div>
-复制代码
 ```
 
 如果我们渲染这个模板，那么渲染`watcher`就会依赖两次`name`。因为解析该模板时，会读取两次`name`的值，就会触发两次`getter`，此时`Dep.target`都是当前`watcher`，在`depend`方法中，
@@ -1069,7 +1027,6 @@ depend() {
     dep.addSub(Dep.target)
   }
 }
-复制代码
 ```
 
 依赖会被收集两次，`name`变化时就会触发两次重新渲染。因此`vue`采用了以下方式
@@ -1089,7 +1046,6 @@ this.deps = []             // 存放上次求值时存储自己的dep
 this.depIds = new Set()    // 存放上次求值时存储自己的dep的id
 this.newDeps = []          // 存放本次求值时存储自己的dep
 this.newDepIds = new Set() // 存放本次求值时存储自己的dep的id
-复制代码
 ```
 
 > ​	每次取值完毕后，会交换`dep`与`newDep`，并将`newDep`清空，下文会讲到
@@ -1117,7 +1073,6 @@ addDep(dep) {
     }
   }
 }
-复制代码
 ```
 
 现在解释一下最后一个`if`，考虑重新渲染的情况：`watcher`依赖`name`，`name`发生了变化，导致`watcher`的`get`方法执行，会重新对`name`取值，进入`addDep`方法时，`newDepIds`是空的，因此会进入`if`，来到最后一个`if`，因为第一次取值时，`dep`已经收集过`watcher`了，所以不应该再添加一遍，这个`if`就是这个作用。
@@ -1144,7 +1099,6 @@ cleanUpDeps() {
     // 清空newDeps
     this.newDeps.length = 0
   }
-复制代码
 ```
 
 ## 依赖的重新收集
@@ -1166,7 +1120,6 @@ cleanUpDeps() {
   let tmp = this.depIds
   // ...
 }
-复制代码
 ```
 
 在求值结束(也就是依赖收集结束)后，如果本次求值过程中，发现有些`dep`在上次求值时收集了自己，但是这次求值时没有收集自己，说明该数据已经不需要自己了，将自己从`dep`中删除即可
@@ -1184,7 +1137,6 @@ function remove(arr, item) {
     return arr.splice(index, 1)
   }
 }
-复制代码
 ```
 
 这样，我们的响应式系统就比较完整了
@@ -1214,7 +1166,6 @@ class MVVM {
     if (this.$el) new Compiler(this.$el, this)
   }
 }
-复制代码
 ```
 
 在`Vue`中，我们可以直接用`vue`实例访问数据，所以，我们也可以实现这样的功能，定义一个方法：
@@ -1233,7 +1184,6 @@ proxyData(data) {
     })
   })
 }
-复制代码
 ```
 
 实例化时执行该方法即可
@@ -1247,7 +1197,6 @@ constructor(options) {
   observe(this.$data)
   if (this.$el) new Compiler(this.$el, this)
 }
-复制代码
 ```
 
 ## 模板编译器
@@ -1279,7 +1228,6 @@ function node2Fragment(node) {
   }
   return fragment
 }
-复制代码
 ```
 
 `compile`方法就是主编译方法
@@ -1295,7 +1243,6 @@ compile(node) {
     }
   })
 }
-复制代码
 ```
 
 元素节点编译方法如下
@@ -1322,7 +1269,6 @@ compileElementNode(node) {
 function isDirective(str) {
   return str.startsWith('v-')
 }
-复制代码
 ```
 
 指令解析器如下：
@@ -1350,7 +1296,6 @@ export default {
     }
   }
 }
-复制代码
 ```
 
 文本解析方法
@@ -1362,7 +1307,6 @@ compileTextNode(node) {
     new Watcher(this.vm, textCompiler(node, this.vm))
   }
 }
-复制代码
 ```
 
 `textCompiler`方法如下
@@ -1385,7 +1329,6 @@ function textCompiler(node, vm) {
     node.textContent = content
   }
 }
-复制代码
 ```
 
 这样，我们就实现了一个简单模板编译器，实例化`MVVM`后，就有一个响应式的应用了！！
@@ -1410,7 +1353,6 @@ window.vm = new MVVM({
   }
 })
 
-复制代码
 <div class="app">
   {{ obj }}
   <br />
@@ -1418,7 +1360,6 @@ window.vm = new MVVM({
   <br />
   <input type="text" v-model="obj.a" />
 </div>
-复制代码
 ```
 
 ## 两个全局方法
@@ -1451,7 +1392,6 @@ $set(target, key, value) {
   ob.dep.notify()
   return value
 }
-复制代码
 ```
 
 此外，`Vue.$delete`方法也是如此
@@ -1472,7 +1412,6 @@ $delete(target, key) {
   // 对于响应式对象，删除属性后要派发更新
   ob.dep.notify()
 }
-复制代码
 ```
 
 因此，我们也可以总结出下面的结论

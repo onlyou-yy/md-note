@@ -1738,7 +1738,50 @@ export incrementAsync=(number)=>{
 }
 ```
 
-redux-thunk 是在actions 中进行异步处理的。
+redux-thunk 是在actions 中进行异步处理的。作用流程图如下：
+
+![image-20220209153433491](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/React/image-20220209153433491.png)
+
+其实不使用redux-thunk 同样可以解决异步问题，有两种办法，一种是先创建「请求数据」的 action，然后再创建一个「更新数据」的 action
+
+```js
+function fetchData(){
+  axios.get('/getData').then(res=>{
+    store.dispatch({type:'update_data',data:res});
+  })
+}
+
+function reducer(state = initState,action){
+  if(action.type === 'fetchData'){//「请求数据」的 action
+    fetchData();
+    return Object.assign({},state,action);
+  }else(action.type === 'update_data'){//「更新数据」的 action：
+    return Object.assign({},state,action);
+  }
+}
+
+const fetchAction = {type:'fetchData'}
+//外部调用
+store.dispatch(fetchAction);
+```
+
+还有一种办法是在外部直接发请求，得到数据之后创建「更新数据」的 action。这个方法也是 redux-thunk 的原理
+
+正常情况 aciton 必须是一对象，但是使用 redux-thunk 之后action就可以是函数，所以就可以在 `fetchAction` 中执行异步请求后返回一个函数来进行数据更新
+
+```js
+const fetchAction = (dispatch) => {
+  return fetchData().then(res=>{dispatch({type:'update_data',data:res})},err=>{dispatch({type:'update_err',data:err})})
+}
+```
+
+redux-thunk的源码就极为简单
+
+![image-20220209165956354](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/React/image-20220209165956354.png)
+
+简单来说就是如果action是一个函数就调用它，不是就传递给下一个中间件。
+
+
 
 #### redux-saga
 
@@ -1749,20 +1792,60 @@ redux-sage同样是redux中处理异步的库，它基于 generator ，使得异
 + `createSagaMiddleware(options)`创建一个Redux middleware，并将 Sagas 连接到 Redux Store 通过 createStore 第三个参数传入
 + `middleware.run(saga,...arg)`动态地运行saga，只能用于在appleMiddleware 阶段之后执行 Saga
 
+Saga 辅助函数
+
++ `takeEvery(pattern,saga,...args)`：匹配到action立即调用saga
++ `takeLatest(pattern,saga,...args)`：延迟调用（防抖调用）,接收的是最后一个action
++ `throttle(time,pattern,saga,...args)`：节流调用，
+
+这三个辅助函数都是用来监听 action 只用action 发送过来并且能够匹配上就会触发saga函数。
+
+Effect 函数
+
++ `select(selector)`：获取从reducer中传递过来的数据,相当于是 `store.getState()`
++ `call(fn,...args)`：调用函数
++ `put(action)`：发送action，相当于是`dispatch(action)`
++ `all([saga1(),saga2()])`：用来启动一个或多个Effects
++ `take(pattern)`：take创建一个Effect，命令中间件等待指定action，在与pattern匹配action到来之前，当前take所在的Generator函数将暂停。所以这是个阻塞调用的方法。
++ `fork(fn, ...args)` ： fork创建一个Effect，命令中间件以非阻塞的形式调用fn，且返回一个task对象，类似非阻塞形式的call。**fork表现形式为创建一个分叉的task去执行fn（怎么像多线程），且fork所在的saga不会在等待fn返回结果的时候被中间件暂停，相反，它在fn被调用时便会立即恢复执行。**
+
 ```js
 import {createStore,applyMiddleware} from 'redux';
 import createSagaMiddleware from 'redux-sage';
+import {takeEvery,takeLatest,throttle} from 'redux-sage/effects';
 
 function defReducer(state,action){
-  if(action.type == 'CHANGE'){
-    return state + 1;
+  if(action.type == 'CHANGE_DATA'){
+    //将数据传递给store更新状态
+    return state + action.data;
   }else{
-    return state;
+    //将数据传递给saga
+    return Object.assgin({useId:1},state,action);
   }
 }
 
 function* defSage(){
-  
+  yield takeEvery('fetchData',function* (){
+    //获取来自reduce的数据
+    const useId = yield select(state=>state.useId);
+    //发送请求，处理异步
+    const res = yield call(axios.get,'/getData',{useId});
+   	//发送action通知状态更新
+    yield put({type:'CHANGE_DATA',data:res});
+  })
+}
+
+function* getData(){
+  //异步获取数据，如果使用call，在结果回来之前会暂停
+  yield fork(getServerData)
+  //开启登出监听
+  yield take('loginOut')
+  //当出发 loginOut 时，出发loginOutEvent
+  yield call(loginOutEvent)
+}
+
+function* rootSaga(){
+  yield all([defSaga(),getData()])
 }
 
 //创建saga中间件
@@ -1772,12 +1855,12 @@ const sagaMiddleware = createSagaMiddleware();
 export default createStore(defReducer,{},appleMiddleware(sagaMiddleware));
 
 //运行saga任务进行监听
-sagaMiddleware.run(defSaga)
+sagaMiddleware.run(rootSaga)
 ```
 
+上面的代码是使用了redux-saga的代码，当我们dispatch的action类型不在reducer中时，redux-saga的监听函数`takeEvery`就会监听到，等异步任务有结果就执行`put`方法，相当于`dispatch`，再一次触发dispatch。**对于redux-saga的整个流程来说，它是等执行完action和reducer之后，判断reducer中有没有这个action**，如下图：
 
-
-
+![image-20220209152617206](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/React/image-20220209152617206.png)
 
 
 
