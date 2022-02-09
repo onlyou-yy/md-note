@@ -1803,8 +1803,8 @@ Saga 辅助函数
 Effect 函数
 
 + `select(selector)`：获取从reducer中传递过来的数据,相当于是 `store.getState()`
-+ `call(fn,...args)`：调用函数
-+ `put(action)`：发送action，相当于是`dispatch(action)`
++ `call(fn,...args)`：调用函数，是阻塞的
++ `put(action)`：发送action，相当于是`dispatch(action)`，是非阻塞的
 + `all([saga1(),saga2()])`：用来启动一个或多个Effects
 + `take(pattern)`：take创建一个Effect，命令中间件等待指定action，在与pattern匹配action到来之前，当前take所在的Generator函数将暂停。所以这是个阻塞调用的方法。
 + `fork(fn, ...args)` ： fork创建一个Effect，命令中间件以非阻塞的形式调用fn，且返回一个task对象，类似非阻塞形式的call。**fork表现形式为创建一个分叉的task去执行fn（怎么像多线程），且fork所在的saga不会在等待fn返回结果的时候被中间件暂停，相反，它在fn被调用时便会立即恢复执行。**
