@@ -1806,7 +1806,7 @@ Effect 函数
 + `call(fn,...args)`：调用函数，是阻塞的
 + `put(action)`：发送action，相当于是`dispatch(action)`，是非阻塞的
 + `all([saga1(),saga2()])`：用来启动一个或多个Effects
-+ `take(pattern)`：take创建一个Effect，命令中间件等待指定action，在与pattern匹配action到来之前，当前take所在的Generator函数将暂停。所以这是个阻塞调用的方法。
++ `take(pattern)`：take创建一个Effect，命令中间件等待指定action，在与pattern匹配action到来之前，当前take所在的Generator函数将暂停。所以这是个阻塞调用的方法。（不过这个监听只会执行一次，所以一般需要再循环中使用才能形成takeEvery的效果）
 + `fork(fn, ...args)` ： fork创建一个Effect，命令中间件以非阻塞的形式调用fn，且返回一个task对象，类似非阻塞形式的call。**fork表现形式为创建一个分叉的task去执行fn（怎么像多线程），且fork所在的saga不会在等待fn返回结果的时候被中间件暂停，相反，它在fn被调用时便会立即恢复执行。**
 
 ```js
@@ -1844,8 +1844,16 @@ function* getData(){
   yield call(loginOutEvent)
 }
 
+//通过 take 定义自己的 takeEvery
+function* myTakeEvery(){
+  while(true){
+    yield take('myTakeEvery');
+    console.log('triggle my takeEvery');
+  }
+}
+
 function* rootSaga(){
-  yield all([defSaga(),getData()])
+  yield all([defSaga(),getData(),myTakeEvery()])
 }
 
 //创建saga中间件
@@ -1858,7 +1866,7 @@ export default createStore(defReducer,{},appleMiddleware(sagaMiddleware));
 sagaMiddleware.run(rootSaga)
 ```
 
-上面的代码是使用了redux-saga的代码，当我们dispatch的action类型不在reducer中时，redux-saga的监听函数`takeEvery`就会监听到，等异步任务有结果就执行`put`方法，相当于`dispatch`，再一次触发dispatch。**对于redux-saga的整个流程来说，它是等执行完action和reducer之后，判断reducer中有没有这个action**，如下图：
+上面的代码是使用了redux-saga的代码，我们dispatch的 action 会先去 reducer 中匹配，然后再去 saga 中匹配，redux-saga的监听函数`takeEvery`就会监听到，等异步任务有结果就执行`put`方法，相当于`dispatch`，再一次触发dispatch。**对于redux-saga的整个流程来说，它是等执行完action和reducer之后，判断reducer中有没有这个action**，如下图：
 
 ![image-20220209152617206](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/React/image-20220209152617206.png)
 
