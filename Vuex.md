@@ -253,3 +253,30 @@ export default {
   }
 }
 ```
+
+
+
+## vuex实现原理
+
+vuex其实就是作为一个数据中心库存在的，用来提供一个集中式的数据容器，其实使用全局变量也是可以实现的，但是vuex中的state数据是响应式的而且。
+
+vuex作为vue的插件，与vue高度绑定，也就是vuex必须要依赖于vue，以为vuex的响应时数据其实就是一个vue实例，只不过这个是专门用俩提供数据的而已。
+
+简单实现思路：
+
+1. vuex作为一个vue插件必须要具有 install 方法用来安装插件，利用 Vue.mixin() 来给全局注入 store
+2. store 的 state 数据是响应式的数据，所以用vue实例来实现
+3. getters、mutations、actions 都是作为函数定义的，但是在访问getters时是作为属性访问的，而且这三个的 函数都会接受到参数，所以需要对他们使用数据劫持来重新设计调用方式，并把需要的数据传递出去
+
+```js
+let install = (Vue) => {
+	Vue.mixin({
+    beforeCreate(){
+      
+    }
+  })  
+}
+
+export default { Vuex,install }; 
+```
+
