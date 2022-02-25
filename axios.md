@@ -34,6 +34,7 @@
 201 Created                已创建。成功请求并创建了新的资源
 301 redirect							临时重定向		
 302 											永久重定向
+304												数据没有变化，使用协商缓存的资源
 401 Unauthorized           未授权/请求要求用户的身份认证
 404 Not Found              服务器无法根据客户端的请求找到资源
 500 Internal Server Error  服务器内部错误，无法完成请求
@@ -56,7 +57,7 @@
     请求方式不决定请求的CRUD操作
     一个请求路径只对应一个操作
     一般只有GET/POST
-测试: 可以使用json-server快速搭建模拟的rest api 接口
+    测试: 可以使用json-server快速搭建模拟的rest api 接口
 
 ### json-server 模拟 REST 方格的 API
 
@@ -306,7 +307,8 @@ axios.spread(): 用来指定接收所有成功数据的回调函数的方法
   // 如果请求话费了超过 `timeout` 的时间，请求将被中断
   timeout: 1000,
 
-   // `withCredentials` 表示跨域请求时是否需要使用凭证
+   // `withCredentials` 表示跨域请求时是否需要使用凭证，在同源请求时无效；
+   //在跨域请求的时候设置为true，并且服务也设置了Access-Control-Allow-Origin、Access-Control-Allow-Credentials后，请求将可以在请求头中携带cookie
   withCredentials: false, // default
 
   // `adapter` 允许自定义处理请求，以使测试更轻松

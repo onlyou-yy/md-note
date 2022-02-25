@@ -267,16 +267,73 @@ vuex作为vue的插件，与vue高度绑定，也就是vuex必须要依赖于vue
 1. vuex作为一个vue插件必须要具有 install 方法用来安装插件，利用 Vue.mixin() 来给全局注入 store
 2. store 的 state 数据是响应式的数据，所以用vue实例来实现
 3. getters、mutations、actions 都是作为函数定义的，但是在访问getters时是作为属性访问的，而且这三个的 函数都会接受到参数，所以需要对他们使用数据劫持来重新设计调用方式，并把需要的数据传递出去
+4. 通过 commit 方法触发 mutations，通过 dispathc 触发 actions
 
 ```js
 let install = (Vue) => {
 	Vue.mixin({
     beforeCreate(){
-      
+      if(this.$options && this.$options.store){
+        //是根组件
+        this.$store = this.$options.store;
+      }else{
+        //是子组件
+        this.$store = this.$parent && this.$parent.$store;
+      }
     }
   })  
 }
 
-export default { Vuex,install }; 
+class Store{
+ 	constructor(options){
+    //利用vue 创建响应式的数据
+   	this.vm = new Vue({
+      data:{state:options.state || {}},
+    })
+    
+    //然后是对getters进行数据劫持，因为 getters 是通过 this.$store.getters.xxx 进行访问的，同时将state传递出去
+    let getters = options.getters || {};
+    this.getters = {};//定义劫持调用一个新对象，避免循环调用。
+    Object.keys(getters).forEach(key => {
+      Object.defineProperty(this.getters,key,{
+        get: () => {
+          return getters[key](this.state)
+        }
+      })
+    })
+    
+    //设置新 mutations ，并将state传递出去
+    let mutations = options.getters || {};
+   	this.mutations = {};
+    Object.keys(mutations).forEach(key => {
+      this.mutations[key] = (arg) => {
+        mutations[key](state,arg);
+      }
+    })
+    
+    //设置新 actions ，并将 context 传递出去
+    let actions = options.actions || {};
+    this.actions = {};
+    Object.keys(actions).forEach(key => {
+      this.actions[key] = (arg) => {
+        actions[key](this,arg);
+      }
+    })
+  }
+  // 因为可以使用 this.$store.state.xx 来访问，所以可以添加一个 getter
+  get state(){
+    return this.vm.state
+  }
+  //通过 commit 调用 mutations，使用尖头函数，避免在aciton中调用commit时this丢失。
+  commit= (key,arg) => {
+    this.mutations[key](arg);
+  }
+  //通过 dispatch 调用 actions
+  dispatch(key,arg){
+    this.actions[key](arg);
+  }
+}
+
+export default { Store,install }; 
 ```
 
