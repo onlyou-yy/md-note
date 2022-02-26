@@ -348,6 +348,222 @@ onconnect = function(e) {
 
 # 关于worker线程池
 
-一般在开发的时候只需要使用的一个线程就足够解决我们的需求了，但是有时候又难免想要
+一般在开发的时候只需要使用的一个线程就足够解决我们的需求了，但是当我们需要使用多个线程的时候就需要使用线程池来帮助我们控制开启线程的数量了，如果只开一个线程，工作都在这一个子线程里做，不能保证它不阻塞。如果无止尽的开启而不进行控制，可能导致运行管理平台应用时，浏览器的内存消耗极高：一个web worker子线程的开销大概在5MB左右。
 
- 
+先规定线程通信的数据结构
+
+```json
+{
+  //表示这个消息是否正确，也就是子线程在post这次message的时候，是否是因为报错而发过来，因为我们在子线程中会有这个设计机制，用来区分任务完成后的正常的消息和执行过程中因报错而发送的消息。如果为正常消息，我们约定为0，错误消息为1，暂定只有1。
+  threadCode: 0,
+  //表示消息真正的数据载体对象，如果threadCode为1，只返回taskId，以帮助主线程销毁找到调用上层promise的reject回调函数。Fecth取到的数据放在data内部。
+  threadData: {taskId, data, code, msg}, 
+  //表示消息错误的报错信息
+  threadMsg:  'xxxxx',
+  //表示数据频道，因为我们可能通过子线程做其他工作，在我们这个设计里至少有2个工作，一个是发起fetch请求，另外一个是响应主线程的检查(inspection)请求。所以需要一个额外的频道字段来确认不同工作。
+  channel: 'fetch',
+}
+```
+
+设计线程池
+
+> 通过 Navagitor 对象的 HardWareConcurrecy 属性可以获取浏览器所属计算机的CPU核心数量，如果CPU有超线程技术，这个值就是实际核心数量的两倍。当然这个属性存在兼容性问题，如果取不到，则默认为4个。我们默认有多少个CPU线程数就开多少个子线程。线程池最大线程数量就这么确定了
+
+```js
+//基于webpack的项目最后使用这个work插件，方便通过import引用脚本
+import work from 'webworkify-webpack';
+class FetchThreadPool {
+  constructor (option = {}){
+    const {
+      inspectIntervalTime = 10 * 1000,
+      maximumWorkTime = 30 * 1000
+    } = option;
+    this.maximumThreadsNumber = window.navigator.hardwareConcurrency || 4;//最大可开线程数
+    this.threads = [];//线程池容器
+    this.inspectIntervalTime = inspectIntervalTime;//定时清理僵尸线程的时间
+    this.maximumWorkTime = maximumWorkTime;//线程超时时间
+    this.init();
+  }
+  //初始化开启所有线程待命
+  init (){
+    for (let i = 0; i < this.maximumThreadsNumber; i ++){
+      this.createThread(i);
+    }
+    //设置定时器检查僵尸线程
+    setInterval(() => this.inspectThreads(), this.inspectIntervalTime);
+  }
+  //创建线程
+  createThread (i){
+    // 开启子线程
+    const thread = work(require.resolve('./fetch.worker.js'));
+    // 绑定消息事件（相当于thread.onmessage=function(event){}）
+    thread.addEventListener('message', event => {
+      this.messageHandler(event, thread);
+    });
+    // 为线程添加一个自定义的id属性，用来标识线程
+    thread['id'] = i;
+    // 为线程添加一个自定义的busy属性，标识线程是否正在工作中
+    thread['busy'] = false;
+    // 为线程添加一个自定义的taskMap属性，用来记录当前线程执行的请求任务的promise的{resolve,reject}方法
+    thread['taskMap'] = {};
+    // 将线程保存到线程容器中
+    this.threads[i] = thread;
+  }
+  //消息处理事件
+  messageHandler (event, thread){
+    //接收子线程返回的数据
+    let {channel, threadCode, threadData, threadMsg} = event.data;
+    // 线程运行成功
+    if (threadCode === 0){
+      switch (channel){
+        case 'fetch':
+          let {taskId, code, data, msg} = threadData;
+          let reqPromise = thread.taskMap[taskId];
+          if (reqPromise){
+            // 使用promise 的 resolve/reject 方法处理并返回数据
+            if (code === 0){
+              reqPromise.resolve(data);
+            } else {
+              reqPromise.reject({code, msg});
+            }
+            // 处理完成后移除 promise
+            thread.taskMap[taskId] = null;
+          }
+          // 设置线程的繁忙情况为 false
+          thread.busy = false;
+          break;
+        case 'inspection':
+          // 关闭掉超时的线程.
+          let {isWorking, workTimeElapse} = threadData;
+          if (isWorking && (workTimeElapse > this.maximumWorkTime)){
+            console.warn(`Fetch worker thread ID: ${thread.id} is hanging up, details: ${JSON.stringify(threadData)}, it will be terminated.`);
+            this.terminateZombieThread(thread);
+          }
+          break;
+        default:
+          break;
+      }
+    } else {
+      // 线程出错
+      if (threadData){
+        let {taskId} = threadData;
+        //设置线程繁忙状态为false
+        thread.busy = false;
+        let reqPromise = thread.taskMap[taskId];
+        if (reqPromise){
+          //返回错误信息
+          reqPromise.reject({code: threadCode, msg: threadMsg});
+        }
+      }
+    }
+  }
+  //关闭所有线程
+  inspectThreads (){
+    if (this.threads.length > 0){
+      this.threads.forEach(thread => {
+        //通知子线程关闭任务
+        thread.postMessage({
+          channel: 'inspection',
+          data: {id: thread.id}
+        });
+      });
+    }
+  }
+  // 杀掉线程，然后重新创建
+  terminateZombieThread (thread){
+    let id = thread.id;
+    this.threads.splice(id, 1, null);
+    thread.terminate();
+    thread = null;
+    this.createThread(id);
+  }
+  // 给线程分配任务
+  dispatchThread ({url, options}, reqPromise){
+    // 找到空闲的线程
+    let thread = this.threads.find(thread => !thread.busy);
+    if (!thread){
+      //如果没有空闲的线程就在当前主线程行执行任务
+      //fetchInMainThread({url, options});
+    }else{
+      // 生成一个新的任务id 用来映射 promise 处理方法
+      let taskId = Date.now();
+      thread.taskMap[taskId] = reqPromise;
+      // 发送任务给子线程
+      thread.postMessage({
+        channel: 'fetch',
+        data: {url, options, taskId}
+      });
+      thread.busy = true;
+    }
+  }
+}
+```
+
+```js
+export default self => {
+  let isWorking = false;//是否工作中
+  let startWorkingTime = 0;//上一次工作开始的时间
+  let tasks = [];//任务队列
+  self.addEventListener('message', async event => {
+    const {channel, data} = event.data;
+    switch (channel){
+      case 'fetch':
+        isWorking = true;
+        startWorkingTime = Date.now();
+        let {url, options, taskId} = data;
+        tasks.push({url, options, taskId});
+        try {
+          //发送请求任务
+          let response = await fetch(self.origin + url, options);
+          if (response.ok){
+            let {code, data, msg} = await response.json();
+            self.postMessage({
+              threadCode: 0,
+              channel: 'fetch',
+              threadData: {taskId, code, data, msg},
+            });
+          } else {
+            const {status, statusText} = response;
+            self.postMessage({
+              threadCode: 0,
+              channel: 'fetch',
+              threadData: {taskId, code: status, msg: statusText || `http error, code: ${status}`},
+            });
+            console.info(`%c HTTP error, code: ${status}`, 'color: #CC0033');
+          }
+        } catch (e){
+          self.postMessage({
+            threadCode: 1,
+            threadData: {taskId},
+            threadMsg: `Fetch Web Worker Error: ${e}`
+          });
+        }
+        isWorking = false;//任务执行完成工作状态改为否
+        startWorkingTime = 0;//重置开始时间
+        tasks = tasks.filter(task => task.taskId !== taskId);//从任务队列中将当前完成的任务移除
+        break;
+      case 'inspection':
+        self.postMessage({
+          threadCode: 0,
+          channel: 'inspection',
+          threadData: {
+            isWorking,
+            startWorkingTime,
+            workTimeElapse: isWorking ? (Date.now() - startWorkingTime) : 0,
+            tasks
+          },
+        });
+        break;
+      default:
+        self.postMessage({
+          threadCode: 1,
+          threadMsg: `Fetch Web Worker Error: unknown message channel: ${channel}}.`
+        });
+        break;
+    }
+  });
+};
+```
+
+参考于：[一个简单的HTML5 Web Worker 多线程与线程池应用](https://www.cnblogs.com/rock-roll/p/10176738.html)
+
