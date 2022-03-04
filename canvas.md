@@ -16,7 +16,6 @@ canvas 是一种轻量级的画布，使用 canvas 进行 JavaScript 的编程�
 <script>
 	let can = document.querySelector("#can");
 	let ctx = can.getContext("2d",{alpha:true});//alpha 画布背景是否透明，默认是透明的
-    ctx.rect
 </script>
 ```
 
@@ -111,16 +110,16 @@ let timeId = setInterval(()=>{
 >
 > ```js
 > function draw() {
->   var ctx = document.getElementById('canvas').getContext('2d');
->   // 创建新 image 对象，用作图案
->   var img = new Image();
->   img.src = 'https://mdn.mozillademos.org/files/222/Canvas_createpattern.png';
->   img.onload = function() {
->     // 创建图案
->     var ptrn = ctx.createPattern(img, 'repeat');
->     ctx.fillStyle = ptrn;
->     ctx.fillRect(0, 0, 150, 150);
->   }
+>     var ctx = document.getElementById('canvas').getContext('2d');
+>     // 创建新 image 对象，用作图案
+>     var img = new Image();
+>     img.src = 'https://mdn.mozillademos.org/files/222/Canvas_createpattern.png';
+>     img.onload = function() {
+>        // 创建图案
+>        var ptrn = ctx.createPattern(img, 'repeat');
+>        ctx.fillStyle = ptrn;
+>        ctx.fillRect(0, 0, 150, 150);
+>     }
 > }
 > ```
 
@@ -205,7 +204,9 @@ let timeId = setInterval(()=>{
 + `ctx.getImageData(x,y,w,h)`获取画布上某一区域上的 ImageData 对象
 + `ctx.putImageData(imagedata, dx, dy[, dirtyX, dirtyY, dirtyWidth, dirtyHeight])`将 ImageData 源图像中点（dirtyX, dirtyY）宽高为（dirtyWidth, dirtyHeight）的区域在画布的（dx, dy）绘制出来。
 
-> ImageData ：这个对象中有三个属性 {width，height，data}，其中data就是该图像的像素描述（数字数组，每四个为一组分别表示为 r，g，b，a），是可以被遍历修改的，通过修改这个数组中的数据可达到控制像素的效果。最后可以通过 putImageData 方法将图像输出到屏幕上。
+> ImageData ：这个对象中有三个属性 {width，height，data}，其中data就是该图像的像素描述（数字数组，每四个为一组分别表示为 r，g，b，a），**是可以被遍历修改的**，通过修改这个数组中的数据可达到控制像素的效果。最后可以通过 putImageData 方法将图像输出到屏幕上。
+>
+> imageData.data 是**Unit8ClampedArray**类型的数据，是一个包含图片上所有像素点数据的**一维数组**，除了直接修改外，还可以使用`imageData.data.set(arr)`方法来设置。
 
 
 

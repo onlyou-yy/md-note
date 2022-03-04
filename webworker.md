@@ -92,7 +92,7 @@ url 除了可以是 同源在线 js 脚本外还可以是`DOMString`，可以通
 ```js
 let blob = new Blob(["(function(){console.log(222)})()"]);
 let url = window.URL.createObjectURL(blob);
-let worker = new Worker("worker.js",{name:"worker1"});
+let worker = new Worker(url,{name:"worker1"});
 ```
 
 > **`URL.createObjectURL(object)`创建的对象是不是自动销毁的，需要使用`URL.revokeObjectURL(url);`来销毁，否则可能导致内存溢出。**

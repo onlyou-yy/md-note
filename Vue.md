@@ -167,6 +167,22 @@ let app = new Vue({
 >
 > 还可以使用`v-on="$listeners"`向子组件传递自身上的方法
 
+### V-bind:title.sync 响应式绑定
+
+当我们需要绑定一个双向绑定的 prop 时，一般还需要向子组件提供一个方法来修改 prop，如
+
+```vue
+<comp v-bind:title="title" @changeTitle="title = $event" />
+```
+
+这样显得略微有点麻烦，好在vue提供了一个 `.sync`的修饰符
+
+```vue
+<comp v-bind:title.sync="title"/>
+等价于
+<comp v-bind:title="title" @update:title="title = $event" />
+```
+
 
 
 ### 计算属性 computed
