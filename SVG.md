@@ -208,7 +208,7 @@ xmlns="http://www.w3.org/2000/svg">
 >
 > H：horizontal lineto 水平划线到哪一点
 >
-> V ： vertical lineto 垂直划线到哪一点
+> V ：vertical lineto 垂直划线到哪一点
 >
 > Z：闭合路径
 
