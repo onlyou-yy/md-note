@@ -114,7 +114,17 @@ app.component('async-component', AsyncComp)
 
 **注意**：steup返回的对象中的数据并不是响应式的数据，如果需要响应式的数据可以使用 ref 进行转化
 
-> 
+> `<script setup>`是 setup 方式的语法糖，在这个标签下写 代码就相当于是在 options 的 setup中一样，而且数据不需要返回就可以直接在模版中使用，并且 还可以直接使用 await
+>
+> ```vue
+> <template>
+> 	<h2>{{txt}}</h2>
+> </template>
+> <script setup>
+>   let txt = ref('test');
+>   let result = await getData();
+> </script>
+> ```
 
 
 
