@@ -140,7 +140,7 @@ app.component('async-component', AsyncComp)
 setup(props,context)，接收两个参数
 
 - props：是一个对象，里面有父级组件向自己组件传递的数据，而且是在自己组件中使用 props 接收到的所有属性，包含 props 配置声明且传入了的所有属性的对象
-- context：是一个对象，里面有 attrs 对象（获取当前标签上的属性，但是该属性是在 props 中没有声明接收的所有的属性，相当于this.\$attrs），emit 方法（分发事件的相当于 this.$emit）,slots 对象（包含所有传入的插槽内容的对象，相当于 this.\$slots）
+- context：是一个对象，里面有 attrs 对象（获取当前标签上的属性，但是该属性是在 props 中没有声明接收的所有的属性，相当于this.\$attrs）；emit 方法（分发事件的相当于 this.$emit）；slots 对象（包含所有传入的插槽内容的对象，相当于 this.\$slots）；expose 方法可以将属性或方法导出，当父组件中访问组件实例时这些属性和实例会被挂载到实例上。
 
 
 
