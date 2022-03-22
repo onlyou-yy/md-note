@@ -38,6 +38,18 @@ npm i
 vite dev
 ```
 
+**vite基本指令**
+
+```json
+{
+  'scripts':[
+    'dev':'vite --open',
+    'build':'vite build',
+    'preview':'view preview --open',
+  ]
+}
+```
+
 **vite 基本配置**
 
 vite 的配置文件是在根目录下的 `vite.config.js`，基础配置如下
@@ -48,14 +60,11 @@ import {path} from "path";
 import {defineConfig} from "vite";
 //defineConfig 可以提供配置选项的代码提示
 export default defineConfig({
+  base:'./',//基础路径，默认是 /。
   resolve:{
     alias:{//配置别名
       '@':path.resolve(__dirname,'src'),
-      'comps':path.resolve(__dirname,'src/components'),
-      'utils':path.resolve(__dirname,'src/utils'),
-      'store':path.resolve(__dirname,'src/store'),
-      'routers':path.resolve(__dirname,'src/routers'),
-      'styles':path.resolve(__dirname,'src/styles'),
+      'comps':path.resolve(__dirname,'src/components')
     }
   },
   plugins:[
@@ -94,6 +103,8 @@ Vite 在一个特殊的 `import.meta.env`对象上暴露环境变量
 .env.[mode].local   # 只在指定模式下加载，但会被 git 忽略
 ```
 
+> mode 一般为development、production 或者自定定义的其他名字，在运行`vite dev`时使用.env.development 中的变量，在运行`vite build`时使用的是 .env.production 中的变量，如果要使用自己定义的模式的变量需要使用`--mode 模式名`来指定，如`vite dev --mode test`
+
 比如我有如下环境变量
 
 ```js
@@ -113,4 +124,256 @@ VITE_ENV_TEST=test2
 
 
 ## vite 配置vue项目
+
+### 配置使用 mock
+
+需要使用到 `vite-plugin-mock`插件，还有`mockjs`
+
+```shell
+npm i vite-plugin-mock -D
+npm i mockjs -S
+```
+
+在配置文件中注册插件
+
+```js
+import { viteMockServe } from 'vite-plugin-mock'
+export default {
+  plugins: [viteMockServe({mockPath:'./mock'})],
+}
+```
+
+创建mock数据文件`mock/user.js`
+
+```js
+export default [
+  {
+    url:'/api/getUsers',
+    method:'post',
+    response:({body}) => {
+      console.log('body>>>>>>',body);
+      return {
+        code:0,
+        message:'ok',
+        data:['user1','user2'],
+      }
+    }
+  }
+]
+```
+
+使用，在组件中请求时，mock就会拦截到请求并返回数据
+
+```js
+fetch('/api/getUsers').then(res=>res.json()).then(res=>{
+  console.log(res);
+})
+```
+
+
+
+### 配置使用vuex，vue-router
+
+安装
+
+```shell
+npm i vuex@next vue-router@4 -S
+```
+
+创建 `router/index.js`路由文件
+
+```js
+import {createRouter,createWebHashHistory} from 'vue-router'
+const router = createRouter({
+  history:createWebHistory(),
+ 	routes:[
+    {path:'/',component:()=>import('view/home.vue')}
+  ]
+})
+export default router
+```
+
+创建 `store/index.js`store文件
+
+```js
+import { createStore } from 'vuex'
+// 创建一个新的 store 实例
+const store = createStore({
+  state () {
+    return {
+      count: 0
+    }
+  },
+  mutations: {
+    increment (state) {
+      state.count++
+    }
+  }
+})
+export default store;
+```
+
+注册需要在入口的`main.js`中注册到vue 中
+
+```js
+import {createApp} from 'vue'
+import App from './App.js'
+import router from './router';
+import store from './store';
+createApp(App).use(router).use(store).mount('#app');
+```
+
+
+
+### 配置使用 scss
+
+只需要安装`sass`就可以使用 scss 了，但是要记得在`main.js`中将样式引用一下
+
+```shell
+npm i sass -D
+```
+
+
+
+### 配置 CDN 引入
+
+需要使用到`vite-plugin-cdn-import`
+
+安装
+
+```shell
+npm i vite-plugin-cdn-import -D
+```
+
+配置
+
+```js
+import importToCDN,{autoComplete} from 'vite-plugin-cdn-import';
+
+//------------
+plugins:[
+  importToCDN({
+    module:[
+      autoComplete('react'),
+      autoComplete('react-dom')
+    ]
+  })
+]
+```
+
+
+
+其他插件可以在 [vite插件社区](https://github.com/vitejs/awesome-vite#plugins) 中查找
+
+
+
+## Vite 常用配置
+
+```js
+import vue from "@vitejs/plugin-vue";
+import importToCDN,{autoComplete} from 'vite-plugin-cdn-import';
+import viteImagemin from 'vite-plugin-imagemin'
+import compress from 'vite-plugin-compress'
+import {path} from "path";
+import {defineConfig} from "vite";
+//defineConfig 可以提供配置选项的代码提示
+export default defineConfig({
+  base:'./',//基础路径，默认是 /。
+  resolve:{
+    alias:{//配置别名
+      '@':path.resolve(__dirname,'src'),
+      'comps':path.resolve(__dirname,'src/components'),
+      'utils':path.resolve(__dirname,'src/utils'),
+      'store':path.resolve(__dirname,'src/store'),
+      'routers':path.resolve(__dirname,'src/routers'),
+      'styles':path.resolve(__dirname,'src/styles'),
+    }
+  },
+  plugins:[
+    //注册 vue 配置插件,
+    vue(),
+    //使用 gzip 压缩
+    compress(),
+    //配置通过 CDN 引入包
+    importToCDN({
+      modules:[
+        //这里的是通过 cdn 引入element-plus，因为它依赖 vue，所以需要先引入 vue。而且也是第一次编译的时候也是需要下载下来使用的。
+        //使用的话还是需要在main.js中进行引入并注册的,但是就回不被打包进去了
+        //import ElementPlus from 'element-plus';
+        //createApp(App).use(ElementPlug)
+        {
+          name:'vue',
+          var:'Vue',
+          path:'https://unpkg.com/vue@next',
+        },
+        {
+          name:'element-plus',
+          var:'ElementPlus',
+          path:'https://unpkg.com/element-plus',
+          css:'https://unpkg.com/element-plus/dist/index.css'
+        },
+      ]
+    }),
+    //图片压缩配置
+    viteImagemin({
+        gifsicle: {
+          optimizationLevel: 7,
+          interlaced: false,
+        },
+        optipng: {
+          optimizationLevel: 7,
+        },
+        mozjpeg: {
+          quality: 20,
+        },
+        pngquant: {
+          quality: [0.8, 0.9],
+          speed: 4,
+        },
+        svgo: {
+          plugins: [
+            {
+              name: 'removeViewBox',
+            },
+            {
+              name: 'removeEmptyAttrs',
+              active: false,
+            },
+          ],
+        },
+      }),
+  ],
+  server:{//开发服务器设置
+    proxy:{//服务代理
+      '^/api/.*': {//跨域代理
+        target: 'http://jsonplaceholder.typicode.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        // proxy 是 'http-proxy' 的实例
+        //configure: (proxy, options) => {}
+      }
+    }
+  },
+  build:{//打包配置，在生产环境才会使用
+    minify:'terser',//启用terser优化选项，默认是 esBuild
+    terserOptions:{
+      drop_console:true,//移除console输出
+      drop_debugger:true,//移除 debugger 关键字
+    },
+    rollupOptions:{
+      output:{//打包输出文件夹的具体位置，是在dist下的
+        chunkFileNames:'js/[name]-[hash].js',
+        entryFileNames:'js/[name]-[hash].js',
+        assetFileNames:'[ext]/[name]-[hash].[ext]'
+      }
+    }
+  }
+})
+```
+
+
+
+
+
+## vite基本原理
 
