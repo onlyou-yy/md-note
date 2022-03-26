@@ -35,7 +35,7 @@ npm i
 **然后运行项目，会发现项目服务会被迅速开启**
 
 ```shell
-vite dev
+npm run dev
 ```
 
 **vite基本指令**
@@ -103,7 +103,7 @@ Vite 在一个特殊的 `import.meta.env`对象上暴露环境变量
 .env.[mode].local   # 只在指定模式下加载，但会被 git 忽略
 ```
 
-> mode 一般为development、production 或者自定定义的其他名字，在运行`vite dev`时使用.env.development 中的变量，在运行`vite build`时使用的是 .env.production 中的变量，如果要使用自己定义的模式的变量需要使用`--mode 模式名`来指定，如`vite dev --mode test`
+> mode 一般为development、production 或者自定定义的其他名字，在运行`npm run dev`时使用.env.development 中的变量，在运行`npm run build`时使用的是 .env.production 中的变量，如果要使用自己定义的模式的变量需要使用`--mode 模式名`来指定，如`npm run dev --mode test`
 
 比如我有如下环境变量
 
@@ -119,7 +119,7 @@ VITE_ENV_TEST=test2
 
 > 只有以 `VITE_` 为前缀的变量才会暴露给经过 vite 处理的代码
 
-那么只有在`test`模式(`vite dev --mode test`)下访问`import.meta.env.MY_ENV` 就为`my2`
+那么只有在`test`模式(`npm run dev --mode test`)下访问`import.meta.env.MY_ENV` 就为`my2`
 
 
 
@@ -376,4 +376,152 @@ export default defineConfig({
 
 
 ## vite基本原理
+
+在开发的时候 vite 运行`npm run dev`比在 webpack 运行`npm run dev`进行开发环境开发的时候会发现 vite 几乎是秒开，因为 webpack 是直接将整个项目进行打包然后再放到开发者服务器中，所以当项目比较大的时候运行时就会很慢；而 vite 并不会将整个项目进行打包，而是仅仅是开启一个开发者服务器，当访问到哪页面的时候再将该页面使用到的包、资源等进行打包编译返回。
+
+### vite 的基本实现
+
+建立基本的目录结构，index.js 是vite服务器
+
+```
+|-src
+|---App.vue
+|---main.js
+|-index.html
+|-vite.js
+```
+
+**App.vue** (单文件组件：SFC，single file component)
+
+```vue
+<script setup>
+import HelloWorld from './components/HelloWorld.vue'
+</script>
+
+<template>
+	<h2>hello vite</h2>
+  <img alt="Vue logo" src="./assets/logo.png" />
+  <HelloWorld msg="Hello Vue 3 + Vite" />
+</template>
+
+<style>
+  h2{color:red}
+</style>
+```
+
+**main.js**
+
+```js
+import {createApp,h} from "vue";
+import App from './App.vue';
+createApp(App).mount('#app');
+```
+
+**index.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+```
+
+**vite.js**
+
+```js
+const Koa = require('koa');
+const app = new Koa();
+const fs = require("fs");
+const compilerSFC = require('@vue/compiler-sfc');//如果不存在可以用npm安装一下
+const compilerDOM = require('@vue/compiler-dom');
+app.use(async ctx => {
+  const {url,query} = ctx.request;
+  if(url === '/'){//请求首页,返回 index.html
+    ctx.type = 'text/html';
+    ctx.body = fs.readFileSync('./src/index.html','utf8');
+  }else if(url.endsWith('.js')){//请求main.js
+    //拼接文件服务器地址
+    const p = path.join(__direname,url);
+    ctx.type = 'application/javascript';
+    //读取文件内容，并将文件中的裸模块地址替换掉，因为浏览器加载js代码中的 import xx from 'xx'; 的时候并不认识这个模块，它只认识地址，所以我们要将模块替换为地址，让import时也发起请求获取内容，然后再在服务器进行处理
+    ctx.body = rewriteImport(fs.readFileSync(p,'utf8'));
+  }else if(url.startsWith('/@modules/')){//处理替换后的第三方模块
+    //获取裸模块名称
+    const moduleName = url.replace('/@modules/','');
+    //获取裸模块在 node_modules 中的路径
+    const prefix = path.join(__dirname,'../node_modules',moduleName);
+    //从 package.json 的 module 字段获取该模块打包编译后的 模块地址
+    const module = require(prefix + '/package.json').module;
+   	const filePath = path.join(prefix,module);
+    const ret = fs.readFileSync(filePath,'utf8');
+    ctx.body = rewriteImport(ret);
+  }else if(url.indexOf('.vue') > -1){//处理vue 文件，将vue文件处理成js
+    // 读取 vue 文件，解析为 js，css，html,使用 @vue/compiler-sfc 来完成
+    let filePath = path.join(__dirname,url.split('?')[0]);
+    let ret = compilerSFC.parse(fs.readFileSync(filePath,'utf8'));
+    if(!query.type){
+      //脚本部分内容
+    	let scriptContent = ret.discriptor.script.content;
+      //替换掉默认导出为一个常量，方便后续修改
+      const script = scriptContent.replace("export default","const __script = ");
+      ctx.type = "application/javascript";
+      ctx.body = `
+				//将 <script> 中的 import 也替换一下 
+				${rewriteImport(script)}
+				//解析 tpl,这里用到的经过编译转换后得到的 render 函数
+				import { render as __render } from '${url}?type=template'
+				// render 方法最终将会被 vue 调用
+				__script.render = __render
+				// 导入解析后的 style
+				import '${url}?type=style'
+				export default __script
+			`
+    }else if(query.type === 'template'){
+      //template部分内容
+      let tpl = ret.discriptor.template.content;
+      //通过 @vue/compiler-dom 来将 template 进行编译成 render 函数
+      const render = compilerDOM.compiler(tpl,{mode:'module'}).code;
+      ctx.type = 'application/javascript';
+      ctx.body = rewriteImport(render);
+    }else if(query.type === 'style'){
+      //style部分内容,sfc 解析出来的对象里面有 styles 是一个数组里面有每一个样式
+      let styles = ret.discriptor.styles;
+      let css = styles.reduce((pre,next)=>pre+next,'');
+      ctx.type = 'text/css';
+      ctx.body = `
+        const style = document.createElement('style');
+        style.setAttribute('type','text/css');
+        style.innerHTML = \`${css}\`;
+        document.head.appendChild(style);
+			`;
+    }
+  }
+})
+
+/**
+* 裸模块（第三方模块）地址重写，import xx from 'xx' => import xx from '/@modules/xx'
+*/
+function rewriteImport(content){
+  return content.replace(/ from ['"](.*)['"]/g,function(s,s1){
+    if(s1.startsWith('/') || s1.startsWith('./') || s1.startsWith('../')){
+      return s;
+    }else{
+      return `from '/@modules/${s2}'`
+    }
+  })
+}
+
+app.listen('3000',()=>{
+  console.log("vite server runing in \n http://localhost:3000");
+})
+```
 
