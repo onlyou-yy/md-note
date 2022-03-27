@@ -177,6 +177,10 @@ function(exports,require,module,__filename,__dirname){}
 
 在node中可以通过`npm init`初始化一个package.json文件，CommonJS 的包规范允许我们将一组相关的模块组合在一起，形成一组完整的工机具，CommonJS 的包规范由包结构（用于组织包中的各种文件）和包描述文件（描述包的相关信息以供外部读取分析，[package.json](http://nodejs.cn/learn/the-package-json-guide)）两部分组成。
 
+在node环境中如果想访问某个package.json中的字段数据的话可以在`process.env.npm_package_字段名`中访问到(如果值是对象就要在最后加`_`)，比如访问的是`main`字段就可以是`process.env.npm_package_main`，如果是scripts就是`process.env.npm_package_scripts_`，如果是scripts下的dev就可以是`process.env.npm_package_scripts_dev`
+
+如果要在package.json中访问其中的字段的话可以使用`%npm_package_main%`来访问（如果是mac的话使用`$npm_package_main`）
+
 
 
 ## NPM 基础
@@ -209,9 +213,18 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
 nrm use taobao
 ```
 
-
-
 需要注意的是，node 搜索包的顺序，在引入模块的时候，如果使用的是 模块名 引入模块时会 首先在当前目录的 node_modules 中寻找是否含有该模块（根据模块中的package.json的main导入，如果没有就没有导入的是index.js），如果有则直接使用，如果没有则会去上一级的 node_modules 中寻找，如果有则直接使用，如果没有则会再去上一级目录中的  node_modules 中寻找，直到找到为止，如果找到磁盘的根目录里还是没有就会报错。
+
+
+
+**npm 安装git 上的包**
+
+```shell
+## https 协议安装
+npm i git+https://git@github.com:test.git
+## ssh 协议安装
+npm i git+ssh://git@github.com:test.git
+```
 
 
 
@@ -424,6 +437,19 @@ let rs = fs.createReadStream("./a.txt");
 let ws = fs.createWriteStream("./b.txt");
 rs.pipe(ws);
 ```
+
+> zlib ：gzip 压缩文件
+>
+> ```js
+> const fs = require('fs');
+> const zlib = require('zlib');
+> const gzip = zlib.createGzip();
+> 
+> const readStream = fs.createReadStream('./note.txt');
+> const writeStream = fs.createWriteSteam('./node.gzip');
+> 
+> readStream.pipe(gzip).pipe(writeStream);
+> ```
 
 
 
@@ -639,6 +665,6 @@ req.write(content);
 req.end();
 ```
 
-除了使用`http.request()`进行发送请求之外，还可以使用`http.get(url,fn)`来发送请求。`querystring`可以用来解析请求中的查询参数，使用 http 模块来发送请求的方式是比较复杂的，这里建议使用`request`或者`axios`库进行请求的发送。既然可以个发送请求了，那么就可以配合 **无头浏览器** 来进行爬虫开发。
+除了使用`http.request()`进行发送请求之外，还可以使用`http.get(url,fn)`来发送请求。`querystring`可以用来解析请求中的查询参数，使用 http 模块来发送请求的方式是比较复杂的，这里建议使用`request`或者`axios`库进行请求的发送。既然可以个发送请求了，那么就可以配合 **无头浏览器（puppeteer）**或者`cheerio`库（可以像jq操作dom那样操作html文本） 来进行爬虫开发。
 
 [js - 爬虫的实现](https://blog.csdn.net/qq_43612151/article/details/107861017)
