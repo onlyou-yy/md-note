@@ -134,6 +134,15 @@ let v3 = new Uint16Array(ab,2);//可以
 let v4 = new Uint16Array(ab,5);//错误 偏移5个子节后，剩余 只有 1 byte = 8 bit < 16
 ```
 
+还有就是 byteOffset 是相对于原始数据量而言的，而且并不是指视图数据列表索引，比如：
+
+```js
+let ab = new ArrayBuffer(8);
+let vi = new Uint32Array(ab,4);
+```
+
+上面以 32 位视图观察 ab得到的数据的数组长度是2，然后 byteOffset 为 4，并没有超出数组长度，因为 4 是相对于 ab 而言的，ab有8个字节，上面的意思就是取出以32位视图从第4字节开始观察ab的数据。所以得到vi的长度会是1.
+
 TypedArray视图的属性
 
 ```js
@@ -251,7 +260,6 @@ const v2 = dv.getUint16(3, false);
 
 // 大端字节序
 const v3 = dv.getUint16(3);
-复制代码
 ```
 
 DataView 实例方法的第二个参数，可以用来设置字节序，默认是大端字节序
