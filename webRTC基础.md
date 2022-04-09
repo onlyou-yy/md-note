@@ -108,6 +108,7 @@ NAT的中继穿越方式[Traversal Using Relays around NAT (TURN)](http://en.wik
 + `rtc.getRemoteStreams()`，返回连接的远端媒体流数组。这个数组可能是空数组。
 + `rtc.addTrack(track,streams)`，将一个新的媒体音轨添加到一组音轨中，这些音轨将被传输给另一个对等点，同时返回一个标识 sender。可以通过`let t = await navigator.mediaDevices.getUserMedia({video: true, audio: true})`得到对象后通过`t.getTracks()`获取到轨道。
 + `rtc.removeTrack(sender)`，通过 addTrack 返回 sender 来移除 track。
++ `rtc.getSenders()`,返回一个对象数组RTCRtpSender，每个对象代表负责传输一个轨道数据的 RTP 发送方。可以用来获取RTP设置以及对RTP进行设置，比如设置传输速率（可以在`chrome://webrtc-internals`查看）
 + `rtc.close()`关闭一个RTCPeerConnection实例所调用的方法。
 + `var dc = rtc.createDataChannel(label,options)`，创建一个可以发送任意数据的数据通道(data channel)，label 是通道的名字，且需要进行协商。常用于后台传输内容, 例如: 图像, 文件传输, 聊天文字, 游戏数据更新包, 等等。返回一个 dataChannel 对象，这个对象可以通过`dc.send(data)`来发送数据。
   + `dc.onopen`处理建立连接
@@ -195,24 +196,79 @@ rtc2.dc.send('你好')
 
 
 
+## 实现音视屏通话
 
+使用webRTC实现视屏通话的话第一步就是要有一个公网的主机，因为我们需要一个公网的服务器来交换端点间的 SDP，让端点之间能够互相发现对方，同时因为信息安全问题，我们最好是能够搭建https服务器。同时为了方便访问，我们可以使用`serve-index`创建一个文件中心页面。
 
-## nodejs配置https
+### 创建https服务器
 
 ```js
 let express = require("express");
 let http = require("http");
 let https = require("https");
 let fs = require("fs");
-// Configuare https
+let serveIndex = require('serve-index');
+
+// 设置目录页面
+app.use(serveIndex('./public'));
+app.use(express.static('./public'));
+
+//配置https
 const httpsOption = {
     key : fs.readFileSync("./https/xxxxxxxxxxxx.key"),
     cert: fs.readFileSync("./https/xxxxxxxxxxxx.pem")
 }
-// Create service
+// 创建服务
 let app = express();
-http.createServer(app).listen(80);
-https.createServer(httpsOption, app).listen(443);
+let http_server = http.createServer(app).listen(80);
+let https_server = https.createServer(httpsOption, app).listen(443);
+```
+
+> 需要注意的是在云主机上记得开放端口
+
+### 创建信令服务
+
+在创建好https服务之后，为了方便交换SDP，我们还需要创建一个websocket服务，这里我们使用`socket.io`实现
+
+```js
+const socketIo = require('socket.io');
+let io = socketIo.listen(https_server);
+io.on('connection',(socket)=>{
+	//转发信息
+	socket.on('message', (room, data)=>{
+    //向房间内所有人,除自己外
+		socket.to(room).emit('message', room, socket.id, data)
+	});
+	
+	//有用户加入到房间内
+	socket.on('join',(room)=>{
+		let myRoom = io.sockets.adapter.rooms[room];
+		let users =(myRoom)?Object.keys(myRoom.sockets).length:0;
+		
+		//如果房间人还没满就加入进去
+		if (users < 3) {
+			//给本人回信息，加入成功
+      socket.join(room);
+			socket.emit('joined',room,socket.id);
+			if(users>1){
+        //如果房间内已经有人了就告诉其他人
+				socket.to(room).emit('otherjoin',room,socket.id);
+			}
+		}else{
+      // 满了就告诉他房间已满
+			socket.emit('full',room,socket.id);
+		}
+	});
+
+	//用户离开
+	socket.on('leave',(room)=>{
+		var myRoom = io.sockets.adapter.rooms[room];
+		var users =(myRoom)?Object.keys(myRoom.sockets).length:0;
+		
+		socket.to(room).emit('bye',room,socket.id);
+		socket.emit('leaved',room,socket.id);
+	});
+});
 ```
 
 
@@ -222,6 +278,8 @@ https.createServer(httpsOption, app).listen(443);
 [webRTC专题-晓果博客](https://blog.csdn.net/huangxiaoguo1/category_9705009.html)
 
 [webRTC专题-极客雨露](https://blog.csdn.net/kyl282889543/category_9327113_2.html)
+
+[webRTC专题](https://blog.csdn.net/qq_34732729/category_9931095.html)
 
 [WebRTC SDP协议](https://www.cnblogs.com/chyingp/p/sdp-in-webrtc.html)
 
@@ -234,3 +292,4 @@ https.createServer(httpsOption, app).listen(443);
 [你肯定不理解的技术，网络穿透，P2P，打洞的核心原理](https://www.bilibili.com/video/BV1Ey4y1z7JK)
 
 [NAT的四种分类：全锥形NAT,地址受限锥形NAT,端口受限锥形NAT,对称NAT](https://blog.csdn.net/s2603898260/article/details/118755474)
+
