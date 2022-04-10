@@ -262,13 +262,156 @@ io.on('connection',(socket)=>{
 
 	//用户离开
 	socket.on('leave',(room)=>{
-		var myRoom = io.sockets.adapter.rooms[room];
-		var users =(myRoom)?Object.keys(myRoom.sockets).length:0;
+		let myRoom = io.sockets.adapter.rooms[room];
+		let users =(myRoom)?Object.keys(myRoom.sockets).length:0;
 		
 		socket.to(room).emit('bye',room,socket.id);
 		socket.emit('leaved',room,socket.id);
 	});
 });
+```
+
+### 搭建 TURN 服务
+
+在创建好信令服务器之后，为了避免NAT 无法穿透的情况，我们还需要创建一个TURN服务（中继服务），这里我们可以直接使用`coturn`来实现
+
+因为`conturn`目前只有linux版本的所以，我们需要在云主机上直接安装使用，使用的系统是 `centos`.
+
+**安装**
+
+```SHELL
+sudo yum install coturn
+```
+
+可以使用`which turnserver`测试看看有没有安装成功，如果安装成功了就会输入所在位置
+
+**配置**
+
+通过`find / -name turnserver.conf`找到配置文件所在位置，然后将配置文件复制一份出来备用，将原来的那份改名成`turnserver.conf.default`。在修改`turnserver.conf`如下
+
+```conf
+# 网卡名
+relay-device=eth0
+#内网IP
+listening-ip=172.24.52.189 
+listening-port=3478
+#内网IP
+relay-ip=172.24.52.189
+tls-listening-port=5349
+# 外网IP
+external-ip=xx.xx.xx.xx
+relay-threads=500
+#打开密码验证
+lt-cred-mech
+#这两个密钥可用通过openssl生成
+cert=/etc/turn_server_cert.pem
+pkey=/etc/turn_server_pkey.pem
+min-port=40000
+max-port=65535
+#设置用户名和密码，创建IceServer时使用
+user=admin:123456
+# 外网IP绑定的域名
+realm=www.codeting.top
+# 服务器名称，用于OAuth认证，默认和realm相同，部分浏览器本段不设可能会引发cors错误。
+server-name=www.codeting.top
+# 认证密码，和前面设置的密码保持一致
+cli-password=123456
+```
+
+通过 openssl 生成密钥
+
+```shell
+openssl req -x509 -newkey rsa:2048 -keyout /etc/turn_server_pkey.pem -out /etc/turn_server_cert.pem -days 99999 -nodes 
+```
+
+之后在去**云主机控制**台端开启`3478/udp  3478/tcp  40000~65535/udp`端口
+
+如果云主机上开启了防火墙也需要设置一下开放端口
+
+```shell
+#systemctl status firewalld 查看防火墙开启状态
+#systemctl start firewalld 开启防火墙
+#systemctl stop firewalld 开启防火墙
+#开放端口
+firewall-cmd --zone=public --add-port=3478/udp --permanent
+firewall-cmd --zone=public --add-port=3478/tcp --permanent
+#重启防火墙
+firewall-cmd --reload
+```
+
+最后就可以启动服务了
+
+```shell
+turnserver -o -a -f
+```
+
+可以在[这里](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/)进行联通性测试（*AddServer* 后点击 *Gather candidates*）
+
+
+
+### 实现端点视频通信
+
+由于目前webRTC有些接口还处于试验阶段，并不是每个浏览器都有，所以需要使用`adapter`做一下兼容处理。并且使用socketio实现通信。
+
+页面结构
+
+```HTML
+<div class="box">
+  <div class="title">
+    <h3>localVideo</h3>
+    <h3>remoteVideo</h3>
+  </div>
+  <div class="vedio-container">
+    <video id="localVideo" autoplay playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+  <div class="handle-box">
+    <button type="button" onclick="shareVideo()">share video</button>
+    <button type="button" onclick="shareDisplay()">share display</button>
+    <button type="button" onclick="close()">close</button>
+    <div>
+      <input type="file" id="file" />
+      <button type="button" onclick="sendData()">send data</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="./js/client.js"></script>
+```
+
+样式
+
+```css
+.box{
+  width:70vw;position:relative;
+  left:0;right:0;top:0;bottom:0;
+  margin:auto;
+}
+.box .vedio-container,
+.box .title{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background-color: red;
+}
+.box .title h3{
+  width: 50%;text-align: center;
+}
+.vedio-container video{
+  width:50%;height:60vh;
+  background-color: blue;
+}
+#localVideo{
+  background-color: yellow;
+}
+```
+
+脚本 client.js
+
+```JS
+
 ```
 
 

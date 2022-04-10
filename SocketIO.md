@@ -34,7 +34,7 @@ httpServer.listen(3000);
 
 `io`代表的是服务器实例
 
-![image-20220408174437417](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/SocketIO/image-20220408174437417.png)
+![image-20220408174437417](SocketIO/image-20220408174437417.png)
 
 ### 服务端常用属性和方法
 
