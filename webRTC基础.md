@@ -110,7 +110,7 @@ NAT的中继穿越方式[Traversal Using Relays around NAT (TURN)](http://en.wik
 + `rtc.removeTrack(sender)`，通过 addTrack 返回 sender 来移除 track。
 + `rtc.getSenders()`,返回一个对象数组RTCRtpSender，每个对象代表负责传输一个轨道数据的 RTP 发送方。可以用来获取RTP设置以及对RTP进行设置，比如设置传输速率（可以在`chrome://webrtc-internals`查看）
 + `rtc.close()`关闭一个RTCPeerConnection实例所调用的方法。
-+ `var dc = rtc.createDataChannel(label,options)`，创建一个可以发送任意数据的数据通道(data channel)，label 是通道的名字，且需要进行协商。常用于后台传输内容, 例如: 图像, 文件传输, 聊天文字, 游戏数据更新包, 等等。返回一个 dataChannel 对象，这个对象可以通过`dc.send(data)`来发送数据。
++ `var dc = rtc.createDataChannel(label,options)`，创建一个可以发送任意数据的数据通道(data channel)，label 是通道的名字，且需要进行协商，options里面比较重要的属性是 `ordered`数据是否与发送时相同的顺序到达目的地 。常用于后台传输内容, 例如: 图像, 文件传输, 聊天文字, 游戏数据更新包, 等等。返回一个 dataChannel 对象，这个对象可以通过`dc.send(data)`来发送数据。
   + `dc.onopen`处理建立连接
   + `dc.onmessage`接收消息事件。
   + `dc.onclose`关闭通道事件。
@@ -118,7 +118,7 @@ NAT的中继穿越方式[Traversal Using Relays around NAT (TURN)](http://en.wik
   + `dc.readyState`通道状态，`"connecting"` 该状态表示底层链路还未建立和激活；`"open"` 该状态表示底层链路已经连接成功并且运行；`"closing"` 该状态表示底层链路已经在关闭的过程中；`"closed"` 该状态表示底层链路已经完全被关闭
   + `dc.bufferedAmount`表示缓冲队列中等待发送的字节数。
   + `dc.binaryType`表示由链路发送的二进制数据的类型。该项的值应该为`"blob"`或者`"arraybuffer"`，默认值为`"blob"`。
-  + `dc.send()`发送数据
+  + `dc.send()`发送数据，可以是`USVString,Blob,ArrayBuffer,TypedArray`，需要注意的是send发送的数据是有大小限制的，一般大小为64KB，但是绝大多数浏览器只支持 16KB，如果过大会导致通道关闭（可以通过重新`createDataChannel`重写建立）。
   + `dc.close()`关闭通道
 
 
@@ -236,7 +236,7 @@ let io = socketIo.listen(https_server);
 io.on('connection',(socket)=>{
 	//转发信息
 	socket.on('message', (room, data)=>{
-    //向房间内所有人,除自己外
+    //向房间内所有人,除自己外转发消息
 		socket.to(room).emit('message', room, socket.id, data)
 	});
 	
@@ -275,7 +275,7 @@ io.on('connection',(socket)=>{
 
 在创建好信令服务器之后，为了避免NAT 无法穿透的情况，我们还需要创建一个TURN服务（中继服务），这里我们可以直接使用`coturn`来实现
 
-因为`conturn`目前只有linux版本的所以，我们需要在云主机上直接安装使用，使用的系统是 `centos`.
+因为`coturn`目前只有linux版本的所以，我们需要在云主机上直接安装使用，使用的系统是 `centos`.
 
 **安装**
 
@@ -366,12 +366,15 @@ turnserver -o -a -f
     <video id="remoteVideo" autoplay playsinline></video>
   </div>
   <div class="handle-box">
-    <button type="button" onclick="shareVideo()">share video</button>
-    <button type="button" onclick="shareDisplay()">share display</button>
-    <button type="button" onclick="close()">close</button>
+    <button type="button" onclick="conn()">视屏通话</button>
+    <button type="button" onclick="shareDisplay()">屏幕共享</button>
+    <button type="button" onclick="close()">关闭</button>
     <div>
-      <input type="file" id="file" />
-      <button type="button" onclick="sendData()">send data</button>
+      <input type="file" id="file" /><br />
+      <button type="button" onclick="sendData()">发送文件</button>
+      <button type="button" onclick="abortSend()">取消发送</button><br />
+      进度：<progress id="progress" max="0" value="0"></progress>
+      下载：<a id="downloadLink"></a>
     </div>
   </div>
 </div>
@@ -410,8 +413,207 @@ turnserver -o -a -f
 
 脚本 client.js
 
-```JS
+```js
+let localVideo = document.querySelector('#localVideo')
+let removeVideo = document.querySelector('#remoteVideo')
+let roomid = 'room1';//房间id，目前代替socketid使用，不精确连接某一用户
+let localStream = null;
+let socket = null;
+let pc = null;
+let pcConfig = {
+  iceServers:[{//ice turn 服务配置
+    urls:'turn:xx.xx.xx.xx:3478',
+    credential:'123456',
+    username:'admin',
+  }]
+}
+function conn(){
+  if(!socket){
+    socket = io.connect();
+  }
+  // 创建webRTC
+  createPeerConnection();
+  // 加入房间成功
+  socket.on('joined',(roomid,id)=>{
+    //获取本地媒体流
+    getLocalTrack().then(stream => {
+      localVideo.scrObject = stream
+      localStream = stream
+      return stream
+    }).then(stream => {
+      //添加轨道到远端
+      stream.getTracks().forEach(track => pc.addTrack(track,stream))
+    })
+  })
+  //有其他人加入，开始连接
+  socket.on('otherjoin',(roomid,id)=>{
+    let offerConfig = {
+      offerToReceiveAudio:true,//是否向远程对等方提供尝试发送音频的机会
+      offerToReceiveVideo:true,//是否向远程对等方提供尝试发送视频的机会
+    }
+    pc.createOffer().then(offer => {
+      pc.setLocalDesctiption(offer);
+      sendMessage(roomid,offer);
+    })
+  })
+  //接收其他人的消息
+  socket.on('message',(roomid,id,data)=>{
+    if(data.type == 'offer'){
+      //创建应答,并设置本地sdp
+      pc.setRemoteDescription(new RTCSessionDescription(data));
+      pc.createAnswer().then(answer => {
+        pc.setLocalDescription(answer);
+        sendMessage(roomid,answer);
+      })
+    }else if(data.type == 'answer'){
+      //收到应答，设置远端sdp建立连接
+      pc.setRemoteDescription(new RTCSessionDescription(data));
+    }else if(data.type == 'candidate'){
+      //更新ice
+      let candidate = new RTCIceCandidate({
+        sdpMLineIndex:data.label,
+        candidate:data.candidate
+      });
+      pc.addIceCandidate(candidate);
+    }
+  })
+  socket.emit('join',roomid);
+}
+//创建 webRTC 连接
+function createPeerConnection(){
+  if(!pc){
+    pc = new RTCPeerConnection(pcConfig);
+    // ice 变化时通知其他用户
+    pc.onicecandidate = e => {
+      if(e.candidate){
+        sendMessage(roomid,{
+          type:'candidate',
+          lable:e.candidate.sdpMLineIndex,
+          id:e.candidate,sdpMid,
+          candidate:e.candidate.candidate,
+        })
+      }
+    }
+    // 添加远端的媒体轨道，本地的 pc.addTrack 并不会触发，远端的会
+    pc.ontrack = e => {
+      removeVideo.srcObject = e.streams[0]
+    }
+    // 作为接收方，接收文件
+    pc.ondatachannel = e => {
+      get_dc = e.channel;
+      get_dc.onopen = e => console.log('fileChannel 建立成功')
+      get_dc.onmessage = e => reciverData(e.data);
+    }
+  }
+}
+// 发送数据
+function sendMessage(roomid,data){
+  socket.send(roomid,data);
+}
+// 获取本地媒体流
+function getLocalTrack(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    console.log('浏览器不支持getUserMedia接口')
+    return false;
+  }else{
+    // 获取音视屏参数
+    let constraints = {video:true,audio:true}
+    // 获取媒体数据流
+    return navigator.mediaDevices.getUserMedia(constraints)
+  }
+}
+// 关闭连接
+function close(){
+  if (localStream&&localStream.getTracks()) {
+		localStream.getTracks().forEach((track)=>{
+			track.stop();	
+		});
+	}
+	localStream = null;
+  if(pc){
+		pc.close();
+		pc = null;
+	}
+}
+```
 
+共享屏幕只需要将`navigator.mediaDevices.getUserMedia`替换成`navigator.mediaDevices.getDisplayMedia`即可。 其实还可以使用`canvas.captureStream()`来获取canvas的实时数据流并通过webRTC进行共享
+
+传输文件需要使用到`rtc.createDataChannel`实现。
+
+```js
+let prog = document.querySelector('#progress');
+let downloadLink = document.querySelector('#downloadLink');
+let fileInput = document.querySelector("#file");
+let dc,get_dc,fileReader;
+// 发送数据
+function sendData(){
+  //创建 dc
+  createDataChannel();
+  let file = fileInput.files[0];
+  let chunkSize = 16384;
+  let offset = 0;
+  //修改文件进度条最大值
+  prog.max = file.size;
+  
+  fileReader = new FileReader();
+  fileReader.onerrer = e => console.log('传输文件错误',e);
+  fileReader.onabort = e => console.log('取消传输文件');
+  fileReader.onload(e => {
+    let chunk = file.slice(offset,chunkSize);
+    dc.send({
+      chunk:e.target.result,//下面的数据可以先通过socket发送过去
+      name:file.name,
+      size:file.size,
+      filetype:file.type,
+      lastmodify: file.lastModified
+    });
+    offset += e.target.result.byteLength;
+    prog.value = offset;
+    if(offset < file.size){
+      readSlice(offset)
+    }
+  })
+  readSlice(offset)
+}
+// 分割文件
+function readSlice(offset){
+  let chunk = file.slice(offset,offset + chunkSize);
+  fileReader.readAsArrayBuffer(chunk);
+}
+// 接收文件数据
+let reciverInfo,reciverSize = 0,reciverBuffer = [];
+function reciverData(data){
+  if(!reciverInfo) reciverInfo = data;
+  reciverBuffer.push(data.chunk);
+  reciverSize += data.chunk.byteLength;
+  if(reciverSize >= reciverInfo.size){
+    let reciverFile = new Blob(reciverBuffer);
+    let url = new URL.createObjectURL(reciverFile);
+    downloadLink.download = reciver.filename;
+    downloadLink.href = url;
+    downloadLink.innerText = `${data.filename}-${data.size / 1024}k`
+    URL.revokeObjectURL(url);
+    reciverInfo = undefined;reciverSize = 0;reciverBuffer = [];
+  }
+}
+// 取消发送
+function abortSend(){
+  if(fileReader && fileReader.readyState === 1){
+    fileReader.abort();
+    //最后再使用socket 通知一下文件取消发送了
+  }
+}
+//创建 dc
+function createDataChannel(){
+  if(!dc){
+    if(!pc) createPeerConnection();
+    //作为发送方
+    dc = pc.createDataChannel('fileChannel',{ordered:true});
+    dc.onopen = e => console.log('fileChannel 建立成功')
+    dc.onmessage = e => reciverData(e.data);
+  }
+}
 ```
 
 
