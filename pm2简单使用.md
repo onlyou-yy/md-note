@@ -18,7 +18,7 @@ SSH部署：自动部署，避免逐个在所有服务器中进行ssh。
 
 PM2安装 先安装nodejs,下载路径：http://nodejs.cn/#download 然后全局安装pm2
 
-```
+```bash
 #npm方式
 npm install pm2 -g
  
