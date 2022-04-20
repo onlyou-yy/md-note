@@ -48,3 +48,146 @@ webGL 的工作流程其实也就是渲染的流程。在这里称之为渲染�
 
 ![image-20220419170531267](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/webGL基础/image-20220419170531267.png)
 
+
+
+## webGL 画个三角形
+
+首先我们需要创建一个canvas 容器
+
+```html
+<canvas id="canvas" width="300" height="200"></canvas>
+```
+
+然后创建获取并且创建webGL上下文
+
+```js
+let canvas = document.getElementById("canvas");
+let gl = canvas.getContext('webgl');
+if(!gl){
+  alert('您的浏览器不支持webgl');
+}
+//设置视口大小
+gl.viewport(0,0,canvas.width,canvas.height);
+```
+
+之后可以创建着色器程序了，可以通过字符串模版创建，也可以使用不被浏览器解析的标签创建，比如`<script type='notjs' id='vertex-shader-2d'>`之后获取这个标签的内容就好。
+
+```html
+这是一个顶点着色器
+<script type='notjs' id='vertex-shader-2d'>
+	//一个属性变量，将会从缓冲中获取数据，vec4 表示每4个值为一个数据
+	attribute vec4 a_position;
+	//所有着色器的入口都是 main
+	void main(){
+		//gl_Position 用来设置绘制的点位坐标
+		gl_Position = a_position;
+	}
+</script>
+
+这是一个片元着色器
+<script type='notjs' id='fragment-shader-2d'>
+	//片元着色器没有默认精度，这里设置为中等精度
+	precision mediump float;
+	void main(){
+		//gl_FragColor 设置片段填充的颜色
+		gl_FragColor = vec4(1,0,0.5,1);//vec4 和 rgba 颜色表示类似，不过值是0～1
+	}
+</script>
+```
+
+创建完成着色字符模版之后，还需要通过编译才能形成GPU认识的的代码
+
+```js
+/**
+@param gl 渲染上下文
+@param type 着色器类型
+@param source 传递给着色器的数据
+*/
+function createShader(gl,type,source){
+  let shader = gl.createShader(type);//创建着色器对象
+  gl.shaderSource(shader,source);//提供数据源
+  gl.compileShader(shader);//编译 生成着色器
+  //获取编译状态
+  let success = gl.getShaderParameter(shader,gl.COMPILE_STATUS);
+  if(success){
+    return shader;
+  }
+  //如果编译生成着色器失败，输出日志，并删除shader释放内存
+  console.log(gl.getShaderInfoLog(shader));
+  gl.deleteShader(shader);
+}
+```
+
+在生成着色器之后还不能直接使用，因为可能存在多个着色器，而且顶点着色器和片元着色器是成对出现的，所以需要将对应的顶点着色器和片元着色器配对，形成**着色程序**
+
+```js
+function createProgram(gl,vertexShader,fragmentShader){
+  let program = gl.createProgram();//创建一个程序
+  gl.attachShader(program,vertexShader);//绑定顶点着色器
+  gl.attachShader(program,fragmentShader);//绑定片元着色器
+  gl.linkProgram(program);//将程序添加到gl中
+  var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+  if (success) {
+    return program;
+  }
+  console.log(gl.getProgramInfoLog(program));
+  gl.deleteProgram(program);
+}
+```
+
+创建程序
+
+```js
+let vertexText = document.getElementById('vertex-shader-2d').text
+let fragmentText = document.getElementById('fragment-shader-2d').text
+let vertexShader = createShader(gl,gl.VERTEX_SHADER,vertexText);
+let fragmentShader = createShader(gl,gl.FRAGMENT_SHADER,fragmentText);
+let program = createProgram(gl,vertexShader,fragmentShader);
+```
+
+有了程序之后，还需要数据才能将我们想要的图案绘制出来，接下来就可以准备数据了，在webgl中数据是通过缓冲来进行传递的，所以还需要了解一下TypedArray
+
+```js
+let positionBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
+```
+
+> 可以把绑定操作想象成在WebGL内部添加一个全局变量。 首先绑定一个数据源到绑定点，然后可以引用绑定点指向该数据源
+
+```js
+let positions = [0,0, 0,0.5, 0.7,0];
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.STATIC_DRAW);
+```
+
+> 第一件事是我们有了一个JavaScript序列`positions` 。 然而WebGL需要强类型数据，所以`new Float32Array(positions)`创建了32位浮点型数据序列， 并从`positions`中复制数据到序列中，然后`gl.bufferData`复制这些数据到GPU的`positionBuffer`对象上。 它最终传递到`positionBuffer`上是因为在前一步中我们我们将它绑定到了`ARRAY_BUFFER`（也就是绑定点）上
+
+现在我们已经将顶位坐标设置好了并且将数据传入到webGL中了，之后我们还需要告诉webGL 这些数据用在哪里，是用在顶点着色器中的哪个属性。这里我们告诉webGL将数据用于`a_position`.
+
+```js
+//从着色器程序中获取到 a_position；
+let positionAttributeLocation = gl.getAttribLocation(program,'a_position');
+//启用对应属性,告诉WebGL怎么从我们之前准备的缓冲中获取数据给着色器中的属性
+gl.enableVertexAttribArray(positionAttributeLocation);
+// 告诉属性怎么从positionBuffer中读取数据 (ARRAY_BUFFER)
+let size = 2;          // 每次迭代运行提取两个单位数据
+let type = gl.FLOAT;   // 每个单位的数据类型是32位浮点型
+let normalize = false; // 不需要归一化数据
+let stride = 0;        // 0 = 移动单位数量 * 每个单位占用内存（sizeof(type)）
+                       // 每次迭代运行运动多少内存到下一个数据开始点
+let offset = 0;        // 从缓冲起始位置开始读取
+gl.vertexAttribPointer(
+    positionAttributeLocation, size, type, normalize, stride, offset)
+```
+
+一切准备就绪，可以开始绘制了
+
+```js
+// 清空画布
+gl.clearColor(0, 0, 0, 0);
+gl.clear(gl.COLOR_BUFFER_BIT);
+// 告诉它用我们之前写好的着色程序（一个着色器对）
+gl.useProgram(program);
+// 告诉它开始绘制
+gl.drawArrays(gl.TRIANGLES, 0, 3);
+```
+
