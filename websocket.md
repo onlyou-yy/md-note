@@ -424,7 +424,6 @@ websocket 是通过 `payload len` 来解决的，而 http 则是通过在同部�
 [原生模块打造一个简单的 WebSocket 服务器](https://zhuanlan.zhihu.com/p/26407649)
 
 <hr />
-
 [Http、Socket、WebSocket之间联系与区别](https://www.cnblogs.com/aspirant/p/11334957.html)
 
 [WebSocket协议及优点](https://www.pianshen.com/article/3238281810/)
