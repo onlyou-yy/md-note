@@ -587,6 +587,12 @@ querySelector('#confirm')
 
 **导入**
 
+导入普通文件
+
+```dart
+import 'res/data.dart';
+```
+
 导入核心库
 
 ```dart

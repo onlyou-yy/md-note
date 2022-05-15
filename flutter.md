@@ -2,6 +2,12 @@
 
 ### 安装
 
+https://segmentfault.com/a/1190000041554528#:~:text=%E5%A6%82%E6%9E%9C%E5%87%BA%E7%8E%B0%E6%8A%A5%E9%94%99%20Android%20sdkmanager%20not%20found.%20Update%20to%20the,-%3E%20%E5%8B%BE%E9%80%89Android%20SDK%20Command-line%20Tools%20%28latest%29%20-%3E%20OK
+
+https://blog.csdn.net/MarkeyMark/article/details/111031751
+
+https://blog.csdn.net/adorable_/article/details/116590749
+
 ### 配置
 
 ### 配置Android环境
@@ -12,7 +18,7 @@
 
 安装vscode 的插件，有助于提高开发效率，开发flutter 常用的插件有
 
-![image-20220508163113492](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/image-20220508163113492.png)
+![image-20220508163113492](flutter/image-20220508163113492.png)
 
 ### 创建项目
 
@@ -112,11 +118,26 @@ class MyApp extends StatelessWidget {
 
 + `Column`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是纵向排列，相当于一个设置了`display:flex;flex-direction:column`的 `div`
 
-+ `Stack`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点之间是重在一起的，相当于给每个子组件都设置了绝对定位。可以使用`Positioned`来控制位置
++ `ListView`多节点容器组件，一般用做列表显示，可以通过`scrollDirection`定义列表的方向。不过需要注意子节点的宽度（垂直列表）/高度（水平列表）会被强制铺满适应父容器的宽度/高度，如果要设置列表的宽度，就需要设置其父容器的宽度，或者通过设置padding属性将它进行挤压，还有就是默认情况下`ListView`下不能在使用`ListView`，如果要使用需要设置`shrinkWrap`属性为`true`;
+
+	+ `ListTitle`文章列表组件，可以定义标题和子标题，通常配`ListView`使用，也可以通过`leading`定义列表项前图标，`trailing`在列表项后定义图标
+	+ `ListView.builder`这个构造函数是用来创建动态列表的，会进行循环创建，通过`itemCount`定义循环的次数，通过`itemBuilder`来定义渲染函数。
+
++ `GridView`网格容器列表，相当定义了`display:grid`的`div`，可以设置`crossAxisSpacing`水平间距，`mainAxisSpacing`垂直间距等，和`ListView`一样拥有`GridView.builder`构造方法进行动态列表的生成，不过要定义水平间距等其他属性需要使用`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`定义
+
++ `Wrap`子节点在一行/列放不下时会自动换行，通过`direction`属性定义接单排序方向，可以用来做瀑布流布局
+
++ `Stack`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点之间是重在一起的，相当于给每个子组件都设置了绝对定位。可以使用`Positioned`或者`Align`来控制位置，也可以使用`alignment`属性定义内容的位置
 
 + `Positioned`绝对定义的容器，相当于设置了`position:absolute;`的`div`
 
++ `Align`设置位置的容器，可以通过设置`aligment`属性操作元素在容器中的位置
+
 + `Container`普通的单子节点容器组件，用来创建一个可见的矩形元素，可以通过设置`decoration`来设置背景色（color），背景图（image），边框（border），阴影（boxShader）等盒子类型效果。还可以设置`margin 外边距,padding 内边距`等。
+
++ `AspectRatio`可以设置相对宽高比的容器，通过`aspectRatio:宽/高`可以设置当前容器宽和高的比
+
++ `Icon`图标容器，方便快捷得生成图标。
 
 + `image`相当于`img`标签，可以用来加载网络图片（Image.network）、应用资源图片（Image.asset）、文件图片（Image.file）。并且可以通过`colorBlendMode`设置混合模式，一般都是作为其他容器的子容器使用，以便于设置其他样式，如圆角等.
 
@@ -129,11 +150,19 @@ class MyApp extends StatelessWidget {
      	- images/  #加载全部
     ```
 
++ `Card`卡片容器组件
+
 + `ClipOval`裁剪容器，可以将容器裁剪成其他的形状，默认是处理成圆形/椭圆型，一般会配合`Image`使用
 
 + `MaterialApp`应用程序容器，可以理解成一个应用程序的盒子，可以这个这个盒子上设置路由来管理多个页面，设置全局数据，应用主题等等。总之就相当于是一个应用实例，功能类似于Vue中的`new Vue({})`。
 
 + `Scaffold`应用页面级模版容器，可以设置页面的标题栏，选项卡等。
+
++ `SizeBox`空白的容器组件，通常用来做占位空间。
+
++ `Padding`内间距容器，相当于设置了`padding:xx`的`div`
+
++ `Expanded`弹性盒子容器，相当于是设置了`display:flex`的`div`，可以设置`flex`比例等
 
 **工具类**
 
@@ -153,4 +182,128 @@ https://flutter.cn/docs/development/ui/widgets
 https://flutter.cn/docs/reference/widgets
 
 https://api.flutter-io.cn/flutter/widgets/widgets-library.html#classes
+
+
+
+### 交互
+
+交互就意味着页面会做动态改变，所以要在flutter 中进行交互的话首先组件必须要是有状态的组件，所以在自定义页面组件的时候就需要基础`StatefulWidget`组件，并且实现其中的创建状态的方法，其次真正的子组件其实是继承于`State`类的，这个类中有`setState`方法能管理页面的状态，动态更新页面
+
+```dart
+class Test extends StatefulWidget{
+  Test({Key:key}):super(key:key);
+  _TestState createState() => _TestState();
+}
+class _TestState extends State<Test>{
+  int count = 0;
+  @override
+  Widget build(BuildContext context){
+    return Container(
+    	child:Column(
+      	children:[
+         	Text('数字是：${count}'),
+          ElevatedButton(
+          	child:Text('+++'),
+            onPressed(){
+              this.setState((){
+                this.count++;
+              });
+            }
+          )
+        ]
+      )
+    )
+  }
+}
+```
+
+在调用`setState`来改变数据的时候，其实是 `build`方法再执行一遍。
+
+
+
+### 动画
+
+### 路由
+
+在`Scaffold`组件中可以通过`bottomNavigationBar`属性可以定义底部的导航选项卡，这个属性的值容器是`BottomNavigationBar`，通过`items`选项定义选项卡列表项，`currentIndex`定义选中当前选中的项的索引，`onTab`定义点击选项卡的回调函数所以可以通过`BottomNavigationBar`来控制`Scaffold`组件的`body`显示的组件来实现路由的效果。需要注意的是，如果`items`超过3项就需要设置`type: BottomNavigationBarType.fixed`选项卡才会显示
+
+```dart
+class Tab extends StatefulWidget {
+  const Tab({Key? key}) : super(key: key);
+
+  @override
+  State<Tab> createState() => _TabState();
+}
+
+class _TabState extends State<Tab> {
+  int currentIndex = 0;
+  List<Widget> pageList = [Page1(), Page2(), Page3()];
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('hello world'),
+      ),
+      body: this.pageList[this.currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentIndex,
+        type: BottomNavigationBarType.fixed,//如果items超过3项就需要设置
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '首页'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.ac_unit_rounded), label: '血'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.access_alarm_sharp), label: '时间'),
+        ],
+        onTap: (index) {
+          this.setState(() {
+            this.currentIndex = index;
+          });
+        },
+      ),
+    );
+  }
+}
+class Page1 extends StatelessWidget {
+  const Page1({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Text("Page1"),
+      ),
+    );
+  }
+}
+class Page2 extends StatelessWidget {
+  const Page2({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Text("Page2"),
+      ),
+    );
+  }
+}
+class Page3 extends StatelessWidget {
+  const Page3({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Text("Page3"),
+      ),
+    );
+  }
+}
+```
+
+
+
+### 状态管理
+
+### flutter 生命周期
+
+### 移动端适配方案
 
