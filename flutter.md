@@ -275,8 +275,12 @@ class Page1 extends StatelessWidget {
     );
   }
 }
-class Page2 extends StatelessWidget {
+class Page2 extends StatefulWidget {
   const Page2({Key? key}) : super(key: key);
+  @override
+  State<Page2> createState() => _Page2State();
+}
+class _Page2State extends State<Page2> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -299,7 +303,85 @@ class Page3 extends StatelessWidget {
 }
 ```
 
+通过`BottomNavigationBar`可以实现简单的路由效果，但是这个并不是真正的路由，因为这种方式搞多依赖于UI，其实在flutter中，路由是通过`Navigator`类来实现的
 
+#### Navigator
+
+在 flutter 中几乎都是组件，所以flutter 的路由跳转实际上就是将当前的页面替换成其他的页面组件
+
+flutter 中有两种路由模式，一种是普通路由通过`Navigator`实现，一种是命名路由，通过`MaterialApp`的`router`属性实现。
+
+**普通路由**
+
+将上面的 `Page1`改成
+
+```dart
+class Page1 extends StatefulWidget {
+  const Page1({Key? key}) : super(key: key);
+  @override
+  State<Page1> createState() => _Page1State();
+}
+class _Page1State extends State<Page1>{
+ 	@override
+  Widget build(BuildContext context){
+    return Container(
+      child: ElevatedButton(
+        child:Text('点我跳转'),
+      	onPressed(){
+          // 路由跳转，of方法可以定义执行上下文，如果不使用of的话,可以在push的第二个参数传入 Navigator.push(context,...)
+         	Navigator.of(context).push(
+          	MaterialPageRoute(
+            	builder:(BuildContext context) => Page2(),
+            )
+          )
+        }
+      )
+    );
+  }
+}
+```
+
+上面就通过`Navigator.of().push`实现了一个简单的路由跳转，一般路由跳转都会携带参数的，在 flutter 中传递参数一般都是通过给构造函数传递参数实现的，路由和父子组件之间通信也是如此
+
+那么在`Page1` 向`page2`传递参数就是这样
+
+```dart
+Navigator.of(context).push(
+  MaterialPageRoute(
+    builder:(BuildContext context) => Page2('这是一个参数'),
+  )
+)
+```
+
+同时`Page2`也需要做一下修改
+
+```dart
+class Page2 extends StatefulWidget {
+  String? params;
+  Page2(this.params,{ Key? key }) : super(key: key);
+
+  @override
+  State<Page2> createState() => _Page2State();
+}
+
+class _Page2State extends State<Page2> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('page2'),
+      ),
+      body: Container(
+        child: Text('Page2 get params:${widget.params}'),
+      ),
+    );
+  }
+}
+```
+
+需要注意的是，如果是无状态组件的话可以直接使用传过来的构造参数，但是如果是有状态组件的话就需要通过`widget`来访问，因为 有状态组件的实体内容（状态类`_Page2State`）和构造类(`Page2`)是分开的，`widget`默认存在于状态类中，表示的就是`Page2`实例。
+
+### 父子组件通信
 
 ### 状态管理
 
