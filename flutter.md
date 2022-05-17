@@ -154,10 +154,6 @@ class MyApp extends StatelessWidget {
 
 + `ClipOval`裁剪容器，可以将容器裁剪成其他的形状，默认是处理成圆形/椭圆型，一般会配合`Image`使用
 
-+ `MaterialApp`应用程序容器，可以理解成一个应用程序的盒子，可以这个这个盒子上设置路由来管理多个页面，设置全局数据，应用主题等等。总之就相当于是一个应用实例，功能类似于Vue中的`new Vue({})`。
-
-+ `Scaffold`应用页面级模版容器，可以设置页面的标题栏，选项卡等。
-
 + `SizeBox`空白的容器组件，通常用来做占位空间。
 
 + `Padding`内间距容器，相当于设置了`padding:xx`的`div`
@@ -174,6 +170,12 @@ class MyApp extends StatelessWidget {
 + `TextStyle`为`Text`组件的文字设置样式、大小、加粗等
 + `EdgeInsets`可以为盒子容器的`margin padding`提供值
 + `Transform`设置平移，旋转，缩放等transform过度效果
+
+**MaterialApp UI库类**
+
++ `MaterialApp`应用程序容器，可以理解成一个应用程序的盒子，可以这个这个盒子上设置路由来管理多个页面，设置全局数据，应用主题等等。总之就相当于是一个应用实例，功能类似于Vue中的`new Vue({})`。
++ `Scaffold`应用页面级模版容器，可以设置页面的标题栏，选项卡等。
++ `AppBar`应用页面顶部选项卡容器。
 
 **组件目录**
 
@@ -309,7 +311,14 @@ class Page3 extends StatelessWidget {
 
 在 flutter 中几乎都是组件，所以flutter 的路由跳转实际上就是将当前的页面替换成其他的页面组件
 
-flutter 中有两种路由模式，一种是普通路由通过`Navigator`实现，一种是命名路由，通过`MaterialApp`的`router`属性实现。
+flutter 中有两种路由模式，一种是普通路由通过`Navigator`实现，一种是命名路由，通过`MaterialApp`的`routers`属性实现。
+
+**常用的方法**
+
++ `Navigator.of(context).push()`普通跳转
++ `Navigator.of(context).pop()`跳转到栈定的页面，相当于返回
++ `Navigator.of(context).pushReplacementNamed()`跳转到另外一个页面，并替换当前记录
++ `Navigator.of(context).pushAndRemoveUntil()`跳转到另外一个页面，对以往的历史记录做移除操作，比如跳转到`Page1`并移除跳转记录`Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(context)=>Page1())),(route)=>route == null`
 
 **普通路由**
 
@@ -380,6 +389,58 @@ class _Page2State extends State<Page2> {
 ```
 
 需要注意的是，如果是无状态组件的话可以直接使用传过来的构造参数，但是如果是有状态组件的话就需要通过`widget`来访问，因为 有状态组件的实体内容（状态类`_Page2State`）和构造类(`Page2`)是分开的，`widget`默认存在于状态类中，表示的就是`Page2`实例。
+
+**命名路由**
+
+flutter 中的命名路由需要在`MaterialApp`的`routes`属性中配置路由映射，之后就可以使用`Navigator.pushNamed(context,'路由名')`方法就能跳转到对应的页面
+
+```dart
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'hello',
+      home: MyTab(),
+      routes:{
+        '/page1':(context)=>Page1(),
+        '/page2':(context)=>Page2(),
+      }
+    );
+  }
+}
+```
+
+之后在需要跳转的时候调用`Navigator.pushNamed(context,'/page1')`就能跳转到`Page1`了
+
+命名路由的传参方式有两种，一种是直接通过`Navigator.pushNamed()`的第三个参数`argumentss`来传递，然后在页面中通过`final args = ModalRoute.of(context)!.settings.arguments;`就可以获取到了
+
+还有一种方式是通过`MaterialApp`的`onGenerateRoute`来进行统一的路由管理，也可以用来做路由拦截的功能。在调用`Navigator.pushNamed()`会先执行`onGenerateRoute`回调，这个回调接收一个`settings`的参数（包含要跳转的url和要传递的参数），在这里我们可以通过返回一个`MaterialPageRoute`对象来决定要跳转到的页面
+
+```dart
+const routes = {
+  '/':(context)=>Home(),
+  '/page1':(context)=>Page1(),
+  '/page2':(context,{arguments})=>Page2(arguments:arguments),
+}
+MaterialApp(
+  //初始路由，开始的时候会加载 Home();
+  initialRoute:'/',
+  onGenerateRoute: (settings) {
+    //settings.name 路由名，settings.arguments路由参数
+    final Function pageBuilder = this.routes[settings.name];
+    return MaterialPageRoute(
+      builder: (context) {
+        //Page2 需要在构造函数中接收参数
+        return pageBuilder(context,settings.arguments);
+      },
+    );
+  },
+)
+```
+
+
 
 ### 父子组件通信
 
