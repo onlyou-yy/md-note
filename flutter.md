@@ -179,7 +179,7 @@ class MyApp extends StatelessWidget {
 + `Scaffold`应用页面级模版容器，可以设置页面的标题栏，选项卡等。
 + `AppBar`应用页面顶部选项卡容器。
 + `DefaultTabController`在`AppBar`下方的导航标签的容器，可以定义多个标签，并且可以通过`TabBarView`容器定义标签对应的页面。
-+ `TabBar`标签容器，通过`tabs`定义多个标签
++ `TabBar`标签容器，通过`tabs`定义多个标签，一般定义在`AppBar`的`bottom`或者`title`上
 + `TabBarView`定义`TabBar`中标签对应的内容。
 + `TabController` 可以定义自定义或者监听标签的行为，不过需要注意的是使用这个组件必须要使用动态组件，并且混入`SingleTickerProviderStateMixin`，而且在`TabBar TabBarView`中的`controller`都定义赋值给同一个`TabController`,之后就可以通过`TabController.addLisener`进行变化的监听了
 + `Drawer`抽屉式侧边栏，可以通过`MaterialApp`的`drawer endDrawer`分别定义左右两边的侧边栏。
@@ -229,6 +229,16 @@ class _TestState extends State<Test>{
 ```
 
 在调用`setState`来改变数据的时候，其实是 `build`方法再执行一遍。
+
+flutter 中有多种已经定义好了样式的按钮，比如说上面用到的`ElevatedButton`表示的是一个 凸起的按钮，除此之外还有
+
++ `TextButton`凸起按钮
++ `OutlinedButton`线框按钮
++ `IconButton`图表按钮
++ `ButtonBar`按钮组
++ `FloatingActionButton`浮动按钮
+
+这些按钮都用自己的默认宽高，如果要设置大小的话需要设置父容器的大小来实现，并且可以通过`style`来设置按钮的相关样式
 
 ### 动画
 
