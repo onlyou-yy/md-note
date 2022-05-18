@@ -160,6 +160,8 @@ class MyApp extends StatelessWidget {
 
 + `Expanded`弹性盒子容器，相当于是设置了`display:flex`的`div`，可以设置`flex`比例等
 
++ `Divider`分割线
+
 **工具类**
 
 + `Color`用来定义颜色，主要使用的方法是`Color.fromARGB(a, r, g, b)`和`Color.fromRGBO( r, g, b,o)`,还可以`Color(0xFFFFFFFF)`来定义颜色
@@ -176,6 +178,13 @@ class MyApp extends StatelessWidget {
 + `MaterialApp`应用程序容器，可以理解成一个应用程序的盒子，可以这个这个盒子上设置路由来管理多个页面，设置全局数据，应用主题等等。总之就相当于是一个应用实例，功能类似于Vue中的`new Vue({})`。
 + `Scaffold`应用页面级模版容器，可以设置页面的标题栏，选项卡等。
 + `AppBar`应用页面顶部选项卡容器。
++ `DefaultTabController`在`AppBar`下方的导航标签的容器，可以定义多个标签，并且可以通过`TabBarView`容器定义标签对应的页面。
++ `TabBar`标签容器，通过`tabs`定义多个标签
++ `TabBarView`定义`TabBar`中标签对应的内容。
++ `TabController` 可以定义自定义或者监听标签的行为，不过需要注意的是使用这个组件必须要使用动态组件，并且混入`SingleTickerProviderStateMixin`，而且在`TabBar TabBarView`中的`controller`都定义赋值给同一个`TabController`,之后就可以通过`TabController.addLisener`进行变化的监听了
++ `Drawer`抽屉式侧边栏，可以通过`MaterialApp`的`drawer endDrawer`分别定义左右两边的侧边栏。
++ `DrawerHeader`抽屉式侧边栏顶部容器，可以通过调用 `Navigator.pop` 关闭打开的抽屉。
++ `UserAccountDrawerHeader`抽屉式侧边栏顶部容器，提供和很多可选项，可以快速实现用户侧边栏布局。
 
 **组件目录**
 
@@ -220,8 +229,6 @@ class _TestState extends State<Test>{
 ```
 
 在调用`setState`来改变数据的时候，其实是 `build`方法再执行一遍。
-
-
 
 ### 动画
 
