@@ -14,6 +14,21 @@ https://blog.csdn.net/adorable_/article/details/116590749
 
 ### 设置虚拟机
 
+### 常用key命令
+
+在运行项目`flutter run`之后。我们可以在控制台输入一些key来让项目做出对应的处理，比如输入`r`热更新，
+
++ `r`热更新
++ `R`重载项目
++ `o`切换平台（Android，Mac）
++ `p`切换构造线的显示
++ `i`切换小部件检查器
++ `v`打开devtool，如果需要输入连接url的话，可以输入运行项目后提示的第二个地址，如下。第一个是控制台的网页地址
++ `c`清除屏幕
++ `q`退出项目
+
+![image-20220520121443016](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/image-20220520121443016.png)
+
 ### 安装编辑器插件
 
 安装vscode 的插件，有助于提高开发效率，开发flutter 常用的插件有
@@ -186,6 +201,88 @@ class MyApp extends StatelessWidget {
 + `DrawerHeader`抽屉式侧边栏顶部容器，可以通过调用 `Navigator.pop` 关闭打开的抽屉。
 + `UserAccountDrawerHeader`抽屉式侧边栏顶部容器，提供和很多可选项，可以快速实现用户侧边栏布局。
 
+**表单类**
+
++ `TextFiled`文本输入框，类型`input`标签，可以通过`controller: TextEditingController实例`来设置初始输入以及之后获取输入框组件的数据，通过`onChanged`来监听输入改变的事件
++ `CheckBox`多选盒子，需要通过定义`onChanged`事件之后才能改变。
++ `CheckboxListTitle`可定义大小标题的可选中的列表项，类似于`ListTitle`但是在右侧多一个`CheckBox`
++ `Radio`单选按钮，可以通过`groupValue`来指定同一变量来为多个单选按钮规划到一个组上
++ `RadioListTitle`和`CheckboxListTitle`相似
++ `Switch`开关
+
+**模态弹窗**
+
++ `showDialog`不是一个组件，而是一个用来显示模态弹窗的方法，通过`builder`定义弹窗的内容，这个方法返回一个 `Future`对象，可以使用 then 来订阅模态弹窗的操作返回
++ `AlertDialog`普通提示模态弹窗，通过 `actions`定义操作按钮
++ `SimpleDialog`可以自定义多个子节点内容的模态弹窗
++ `showModalBottomSheet`不是一个组件，而是一个用来显示底部的模态弹窗的方法，和`showDialog`类似
++ `toast`是第三方的包
+
+可以通过`Navigation.pop()`来手动关闭，这也说明了显示显示一个 Dialog 其实是打开一个新的页面，只不过这个页面是一个半透明的状态。
+
+**自定义`Dialog`**
+
+自定义dialog其实是自定义一个新的页面，首先需要继承Dialog，然后实现里面的build方法，这个方法其实是一个半透明的`Material`页面，然后在调用`showDialog`方法将dialog内容显示出来。
+
+```dart
+class MyDialog extends Dialog {
+  String title = "";
+  String msg = "";
+  MyDialog({this.title = "", this.msg = "", Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,//设置页面背景为半透明色
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,//主轴居中
+        crossAxisAlignment: CrossAxisAlignment.center,//侧轴居中
+        children: [
+          Container(
+            width: 200,
+            height: 200,
+            color: Colors.white,
+            child: Column(
+              children: [
+                Padding(
+                    padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: Text(
+                            "$title",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.topRight,
+                          child:
+                              InkWell(child: Icon(Icons.close), onTap: () {
+                                Navigator.pop(context);//关闭页面，相当于放回上一个页面
+                              }),
+                        )
+                      ],
+                    )),
+                Divider(
+                  height: 10,
+                ),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(10),
+                  child: Text("$msg"),
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+```
+
+flutter中的组件很装饰类组件很多，不需要去记，只需要知道有哪些常用的组件就好，而且官网的组件例子写得不太好，还都是英文的不好看，所以推荐去看**(老孟的 300 多个组件例子)[http://laomengit.com/]**
+
 **组件目录**
 
 https://flutter.cn/docs/development/ui/widgets
@@ -232,11 +329,12 @@ class _TestState extends State<Test>{
 
 flutter 中有多种已经定义好了样式的按钮，比如说上面用到的`ElevatedButton`表示的是一个 凸起的按钮，除此之外还有
 
-+ `TextButton`凸起按钮
++ `TextButton`文本按钮
 + `OutlinedButton`线框按钮
 + `IconButton`图表按钮
 + `ButtonBar`按钮组
 + `FloatingActionButton`浮动按钮
++ `InkWell`无样式按钮，通过`onTab`来绑定事件
 
 这些按钮都用自己的默认宽高，如果要设置大小的话需要设置父容器的大小来实现，并且可以通过`style`来设置按钮的相关样式
 
