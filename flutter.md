@@ -140,6 +140,8 @@ class MyApp extends StatelessWidget {
 
 + `GridView`网格容器列表，相当定义了`display:grid`的`div`，可以设置`crossAxisSpacing`水平间距，`mainAxisSpacing`垂直间距等，和`ListView`一样拥有`GridView.builder`构造方法进行动态列表的生成，不过要定义水平间距等其他属性需要使用`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`定义
 
++ `PageView`页面滚动容器组件，效果类似于抖音等视频的单页面视频滚动效果，每个子元素都相当于是一个页面。
+
 + `Wrap`子节点在一行/列放不下时会自动换行，通过`direction`属性定义接单排序方向，可以用来做瀑布流布局
 
 + `Stack`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点之间是重在一起的，相当于给每个子组件都设置了绝对定位。可以使用`Positioned`或者`Align`来控制位置，也可以使用`alignment`属性定义内容的位置
@@ -431,11 +433,11 @@ flutter 中有两种路由模式，一种是普通路由通过`Navigator`实现�
 **常用的方法**
 
 + `Navigator.of(context).push()`普通跳转
-+ `Navigator.of(context).pop()`跳转到栈定的页面，相当于返回
++ `Navigator.of(context).pop()`跳转到栈定的页面，相当于返回，返回时还可以传递传递参数`pop('xxx')`，之后可以在进入当前页面的那个路由中通过then接收，比如要返回的A页面`Navigator.of(context).push(MaterialPageRoute(builder:(context)=>A())).then(res=>print(res))`
 + `Navigator.of(context).pushReplacementNamed()`跳转到另外一个页面，并替换当前记录
 + `Navigator.of(context).pushAndRemoveUntil()`跳转到另外一个页面，对以往的历史记录做移除操作，比如跳转到`Page1`并移除跳转记录`Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(context)=>Page1())),(route)=>route == null`
 
-**普通路由**
+#### **普通路由**
 
 将上面的 `Page1`改成
 
@@ -505,7 +507,7 @@ class _Page2State extends State<Page2> {
 
 需要注意的是，如果是无状态组件的话可以直接使用传过来的构造参数，但是如果是有状态组件的话就需要通过`widget`来访问，因为 有状态组件的实体内容（状态类`_Page2State`）和构造类(`Page2`)是分开的，`widget`默认存在于状态类中，表示的就是`Page2`实例。
 
-**命名路由**
+#### **命名路由**
 
 flutter 中的命名路由需要在`MaterialApp`的`routes`属性中配置路由映射，之后就可以使用`Navigator.pushNamed(context,'路由名')`方法就能跳转到对应的页面
 
@@ -531,6 +533,8 @@ class MyApp extends StatelessWidget {
 
 命名路由的传参方式有两种，一种是直接通过`Navigator.pushNamed()`的第三个参数`argumentss`来传递，然后在页面中通过`final args = ModalRoute.of(context)!.settings.arguments;`就可以获取到了
 
+#### `onGenerateRoute`
+
 还有一种方式是通过`MaterialApp`的`onGenerateRoute`来进行统一的路由管理，也可以用来做路由拦截的功能。在调用`Navigator.pushNamed()`会先执行`onGenerateRoute`回调，这个回调接收一个`settings`的参数（包含要跳转的url和要传递的参数），在这里我们可以通过返回一个`MaterialPageRoute`对象来决定要跳转到的页面
 
 ```dart
@@ -555,13 +559,165 @@ MaterialApp(
 )
 ```
 
+`onUnknowRoute`
+
+当匹配不到想的路由的时候就会触发这个方法，可以在这个方法中放返回一个 404 的页面
+
+```dart
+MaterialApp(
+	onUnknowRoute:(settinggs){
+    return MaterialPageRoute(
+    	builder:(context) => Page404()
+    )
+  }
+)
+```
 
 
-### 父子组件通信
 
 ### 状态管理
+
+#### 父子组件通信
+
+父子组件之间的传值主要是通过 组件的构造函数参数进行传递，如果是父组件传递给子组件，那么就可以直接将数据传递过去；如果是子组件传给父组件就可以通过父组件传递过来的方法来将数据传递出去
+
+父组件
+
+```dart
+class A extends StatefulWidget {
+  A({Key? key}) : super(key: key);
+  @override
+  State<A> createState() => _AState();
+}
+
+class _AState extends State<A> {
+  String parentData = "parent";
+  String childData = '';
+  //父组件接收子组件传递过来的数据
+  void getChildData(data) {
+    setState(() {
+      childData = data;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ListView(
+        children: [
+          Text('child data:$childData'),
+          Divider(),
+          B(
+            data: parentData,//父组件传递数据给子组件
+            cb: (val) => {getChildData(val)},
+          )
+        ],
+      ),
+    );
+  }
+}
+```
+
+子组件
+
+```dart
+class B extends StatefulWidget {
+  late String data;
+  late Function cb;
+  B({required String data, required Function cb, Key? key}) : super(key: key) {
+    this.data = data;
+    this.cb = cb;
+  }
+  String childData = "child";
+  @override
+  State<B> createState() => _BState();
+}
+
+class _BState extends State<B> {
+  int count = 0;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('parent data:${widget.data}'),
+        ElevatedButton(
+            onPressed: () {
+              //传递数据给父组件
+              count++;
+              this.widget.cb("${widget.childData}${count}");
+            },
+            child: Text('send data to parent'))
+      ],
+    );
+  }
+}
+```
+
+
+
+
+
+
+
+### 网络请求
+
+flutter 中的网络请求方法是由`dart:io`库提供的，前端发请求需要使用其中的`HttpClient`类。而且这个类支持多种请求方式，比如`get post head put patch delete`。
+
+#### 发送`get`请求
+
+```dart
+let client = HttpClient();
+//发起请求
+HttpClientRequest request = await client.get('localhost',80,'/file.txt');
+//请求完毕后关闭请求获得数据
+HttpClientResponse response = await request.close();
+//得到数据后还需要解析成真实数据
+final stringData = await response.transform(utf8.decoder).join();
+```
+
+#### json数据转换
+
+将`Map List`转换成JSON 字符串，使用`dart:convert`的`json.encode(d)`或者`jsonEncode(d)`进行转化，
+
+```dart
+Map m = {"key1": "val1"};
+List l = [1, 2, 3, 4];
+print(json.encode(m));
+print(jsonEncode(l));
+```
+
+如果要将JSON字符串转化成Map、List，就可以是使用`json.decode(s)`或者`jsonDecode(s)`
+
+```dart
+String s = '{"key1": "val1"}';
+String al = '[1,2,3,4]';
+print(json.decode(s));
+print(jsonDecode(al)[1]);
+```
+
+#### 处理Uri
+
+通过`Uri`类可以对url进行处理，比如将一个url 处理成一个对象，或者说将一个对象处理成Url
+
+```dart
+httpsUri = Uri(
+    scheme: 'https',
+    host: 'example.com',
+    path: '/page/',
+    queryParameters: {'search': 'blue', 'limit': '10'});
+print(httpsUri); // https://example.com/page/?search=blue&limit=10
+
+final uri = Uri.parse(
+    'https://dart.dev/guides/libraries/library-tour#utility-classes');
+print(uri); // https://dart.dev
+print(uri.isScheme('https')); // true
+```
 
 ### flutter 生命周期
 
 ### 移动端适配方案
+
+Flutter的三棵树渲染机制和原理(https://juejin.cn/post/6916113193207070734)
+
+https://juejin.cn/post/7056646298073563166
 
