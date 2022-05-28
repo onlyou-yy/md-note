@@ -581,6 +581,8 @@ MaterialApp(
 
 父子组件之间的传值主要是通过 组件的构造函数参数进行传递，如果是父组件传递给子组件，那么就可以直接将数据传递过去；如果是子组件传给父组件就可以通过父组件传递过来的方法来将数据传递出去
 
+**通过构造函数参数传递数据**
+
 父组件
 
 ```dart
@@ -653,9 +655,113 @@ class _BState extends State<B> {
 }
 ```
 
+显然这种方式是非常麻烦的，当层级高了之后如果比层级差距比较高的两个组件想要进行通信的话，就需要中间的每个组件都传递一些不需要的数据，而且当状态更新时不相关的组件也会更新。
 
+**通过`inheritedWidget`实现数据共享**
 
+在高层级的组件树中通过 构造函数进行数据传递的方法是非常麻烦且耗费性能的，这是可以通过`inheritedWidget`组件创建一个状态数据中心提供给其他的子组件，然后在需要使用的组件中通过`context.dependOnInheritedWidgetOfExactType<A>().xxxx`来获取数据中心的数据。
 
+例如，有`Home -> A -> B -> C`，其中A作为数据中心
+
+```dart
+class InherHome extends StatefulWidget {
+  int counter = 0;
+  InherHome({Key? key }) : super(key: key);
+  @override
+  State<InherHome> createState() => _InherHomeState();
+}
+
+class _InherHomeState extends State<InherHome> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("data share"),
+      ),
+      body:A(
+        counter: this.widget.counter,
+        child: B(
+          child: C(),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: ()=>{
+          this.setState(() {
+            this.widget.counter ++;
+          })
+        },
+      )
+    );
+  }
+}
+//################################################################
+class A extends InheritedWidget{
+  int counter = 0;//需要共享的数据
+  A({required Widget child,required this.counter}):super(child: child);
+  // 为了方便获取A的数据，在这里定一个静态方法来返回
+  static A? of(BuildContext context){
+    return context.dependOnInheritedWidgetOfExactType<A>();
+  }
+  //控制状态改变时是否更新页面
+  @override
+  bool updateShouldNotify(covariant A oldWidget) {
+    return oldWidget.counter != this.counter;
+  }
+}
+//################################################################
+class B extends StatefulWidget {
+  final Widget child;
+  const B({required this.child, Key? key }) : super(key: key);
+
+  @override
+  State<B> createState() => _BState();
+}
+class _BState extends State<B> {
+  @override
+  Widget build(BuildContext context) {
+    print("B Build");
+    return Container(
+      child: this.widget.child,
+    );
+  }
+}
+//################################################################
+class C extends StatefulWidget {
+  const C({ Key? key }) : super(key: key);
+
+  @override
+  State<C> createState() => _CState();
+}
+class _CState extends State<C> {
+  //当共享数据更新时执行
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print("C didChangeDependencies");
+  }
+  @override
+  Widget build(BuildContext context) {
+    print("C Build");
+    return Container(
+      child: Text('从 Home-> 获取到的值是：${A.of(context)?.counter}'),
+    );
+  }
+}
+```
+
+这样就把A作为了一个数据中心，当`counter`发送改变的时候，页面就会更新。
+
+> 其实这里的 A 组件并不是一个完整的数据中心，因为在 `InheritedWidget`中并没有更新状态的方法`setState`，而`setState`是在 `StatefulWidget` 中才有，所以一般需要一个`StatefulWidget`组件来提供初始数据和更新数据的方法
+
+但是当更新状态的时候会发现控制台中会输出
+
+```
+B Build
+C didChangeDependencies
+C Build
+```
+
+也就是说 不相关的B组件也执行了`build`重建了组件，这就导致了性能损耗，可以通过`ValueNotifier`来解决
 
 
 
