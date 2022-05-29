@@ -733,7 +733,7 @@ class C extends StatefulWidget {
   State<C> createState() => _CState();
 }
 class _CState extends State<C> {
-  //当共享数据更新时执行
+  //当共享数据更新（updateShouldNotify 返回true）时执行 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -749,9 +749,9 @@ class _CState extends State<C> {
 }
 ```
 
-这样就把A作为了一个数据中心，当`counter`发送改变的时候，页面就会更新。
+这样就把A作为了一个数据中心，当`counter`发送改变的时候，页面就会更新。也可以在A中定义修改状态的方法，方便修改状态时调用.
 
-> 其实这里的 A 组件并不是一个完整的数据中心，因为在 `InheritedWidget`中并没有更新状态的方法`setState`，而`setState`是在 `StatefulWidget` 中才有，所以一般需要一个`StatefulWidget`组件来提供初始数据和更新数据的方法
+> 这种方式其实并不是完整的数据中心，因为其中还确实了更新状态的方法，在`inheritedWidget`中是没有`setState`方法的，所以如果要实现一个真中的数据中心的话就需要在外层在包裹一层`StatefulWidget`组件，为数据中心提供一个初始状态数据和修改状态的方法，但是因为状态是顶层组件提供的，调用`setState`来更新状态时就意味着整个组件树都要调用build方法重构，是非常损耗性能的。
 
 但是当更新状态的时候会发现控制台中会输出
 
@@ -762,6 +762,67 @@ C Build
 ```
 
 也就是说 不相关的B组件也执行了`build`重建了组件，这就导致了性能损耗，可以通过`ValueNotifier`来解决
+
+```dart
+class A extends InheritedWidget {
+  // int counter = 0; //需要共享的数据
+  late ValueNotifier<int> _valueNotifier;
+  A({required Widget child, required int counter}) : super(child: child) {
+    this._valueNotifier = new ValueNotifier(counter);
+  }
+  ValueNotifier<int> get valueNotifier => this._valueNotifier;
+  // 为了方便获取A的数据，在这里定一个静态方法来返回
+  static A of(BuildContext context) {
+    // return context.dependOnInheritedWidgetOfExactType<A>();
+    return context.getElementForInheritedWidgetOfExactType<A>()?.widget as A;
+  }
+
+  add(int step) {
+    _valueNotifier.value += step;
+  }
+
+  //控制状态改变时是否更新页面
+  @override
+  bool updateShouldNotify(covariant A oldWidget) {
+    return false;
+  }
+}
+//#################################################
+class C extends StatefulWidget {
+  const C({Key? key}) : super(key: key);
+
+  @override
+  State<C> createState() => _CState();
+}
+
+class _CState extends State<C> {
+  //当共享数据更新时执行
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print("C didChangeDependencies");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print("C Build");
+    return ValueListenableBuilder(
+      valueListenable: A.of(context).valueNotifier,
+      builder: (BuildContext context, int value, Widget? child) {
+        return Container(
+          child: Column(
+            children: [
+              Text('从 Home-> 获取到的值是：${value}'),
+              ElevatedButton(
+                  onPressed: () => {A.of(context).add(2)}, child: Text('添加2'))
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+```
 
 
 
@@ -780,6 +841,8 @@ HttpClientResponse response = await request.close();
 //得到数据后还需要解析成真实数据
 final stringData = await response.transform(utf8.decoder).join();
 ```
+
+在拿到数据之后，这些数据一般是json格式的数据，如果直接存储的话，在之后的使用中可能不是很方便，因为不会有类型检查以及代码提示，此时我们可以将这些数据转换成一个数据类，通过[`JSON to Dart`](https://jsontodart.com/)可以快速生成这个类。
 
 #### json数据转换
 
@@ -818,6 +881,8 @@ final uri = Uri.parse(
 print(uri); // https://dart.dev
 print(uri.isScheme('https')); // true
 ```
+
+
 
 ### flutter 生命周期
 
