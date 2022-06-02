@@ -67,9 +67,56 @@ Map mapVal2 = <String,int>{'jack':12,'rocy':13};
 
 在dart中可以使用一些关键字来对变量做一些修饰，比如定义一个常量需要使用`const`来指定。
 
-+ `final`，表示变量是一个常量，且在一次赋值之后就不能再改变，在定义的时候可以先不赋值，且如果是`List Map Set`这些引用类型的数据的话之后还可以添加、删除、修改里面元素数据
++ `final`，表示变量是一个常量，且在一次赋值之后就不能再改变，在定义的时候可以先不赋值，可以在运行期间再赋值（比如说执行的函数，方法），且如果是`List Map Set`这些引用类型的数据的话之后还可以添加、删除、修改里面元素数据
 + `const`，也表示一个常量，但是定义的时候必须要进行赋值。且也不能对引用类型的数据里面的元素进行操作了。
 + `late`，表示当前变量不进行赋值那么快，之后再赋值，在时候的时候才进行赋值。
++ `var`，用来定义变量，会对变量进行类型推断
++ `typedef`，定义类型，可以定义一些自己想要的数据结构的数据类型
++ `dynamic`，表示任意类型，类似于 ts 中的 any ，也和 Object 相似，不同的是当用`Object str = "hi"`; str 可以调用 Object 中的方法，但是不用调用 String 中的方法，因为 String 是 Object 中的子类，父类实例是调用不了子类的方法的，但是如果`dynamic str = "hi"`就可以。
+
+**typedef定义类型**
+
+```dart
+typedef Calculate = int Function(int num1,int num2);
+void test(Calculate calc){
+  calc(20,30);
+}
+test((int num1,int num2){
+  return num1 + num2;
+});
+```
+
+**const的作用**
+
+```dart
+final String p1 = getData();//这样是可以的，因为在运行时回执行 getData 获取到值
+const String p2 = getData();//不行，因为这不是一个明确的值
+```
+
+const 有另外一个作用就是可以在创建对象的时候 始终返回同一个对象
+
+```dart
+Person p1 = Person("w");
+Person p2 = Person("w");
+class Person{
+  String? name;
+  Person(String name){this.name = name};
+}
+print(identical(p1,p2));//返回的是一个false，因为是两个不同的对象
+//--------------------------------------
+const p1 = Person("w");
+const p2 = Person("w");
+const p3 = Person("e");
+class Person{
+  //使用const 定义的构造函数，那么这个类中的所有变量都必须使用 final 修饰
+  final String? name;
+  const Person(this.name);//需要这样来定义参数，意识就是直接把第一个参数赋值给this.name 
+}
+print(identical(p1,p2));//返回的是一个true,实际上是Dart将这个实力保存到缓存中了，下次使用的时候就直接内存中取，这样就比较节省空间
+print(identical(p2,p3));//返回的是一个false
+```
+
+
 
 
 
@@ -87,7 +134,7 @@ String foo(){
 
 在Dart 中函数的参数除了固定的参数外，还有可选参数，可选两种形式，一种是可选位置参数，一种是可选命名参数，
 
-**可选位置参数**
+**位置可选参数**
 
 可选位置参数通过`[]`定义，在里面的参数在调用函数的时候可以不传。
 
@@ -98,7 +145,7 @@ String strAdd(String a,String b,[int? i1,int i2 = 12,int? i3]){
 print(strAdd('hh', 'gg', 11));
 ```
 
-**可选命名参数**
+**命名可选参数**
 
 可选命名参数通过`{}`定义，这些参数可可以不按位置顺序进行输入，通过参数名字可以指定参数的值
 
@@ -155,7 +202,7 @@ class Person{
 }
 ```
 
-而且定义多个具名的构造函数
+而且定义多个**具名的构造函数**
 
 ```dart
 class Person{
@@ -175,14 +222,14 @@ class Person{
 >
 > ```dart
 > class Person{
-> //...
-> Person ins = null;
-> factory Person.single(){
->  if(!this.ins){
->    this.ins = Person('jack',13);
->  }
->  return this.ins;
-> }
+>   //...
+>   Person ins = null;
+>   factory Person.single(){
+>      if(!this.ins){
+>          this.ins = Person('jack',13);
+>      }
+>      return this.ins;
+>   }
 > }
 > ```
 
@@ -196,14 +243,33 @@ class Point{
   final double y;
   Point(this.x,this.y);
   Point.fromJson(Map<String, double> json)
-    : x = json['x']!,
-  y = json['y']! {
+    : x = json['x']!,y = json['y']! {
     print('In Point.fromJson(): ($x, $y)');
   }
 }
 ```
 
- **重定向构造方法**
+```dart
+class Person{
+  final String name;
+  final int age;
+  //当执行构造函数的函数体时说明这个Person已经初始化完毕,这时已经没有机会给 age 赋值了，所以会报错
+  Person(this.name){};
+}
+//----------------------------------------------
+class Person{
+  final String name;
+  final int age;
+  //:this.age = age ?? 10 会在初始话完成之前执行，并且可以获取到传递进来的参数，此时进行赋值就可以了
+  Person(this.name,{int age}):this.age = age ?? 10{
+    print('init Person');
+  }
+}
+```
+
+ 
+
+**重定向构造方法**
 
 有时一个构造方法仅仅用来重定向到该类的另一个构造方法。重定向方法没有主体，它在冒号（`:`）之后调用另一个构造方法
 
@@ -248,7 +314,7 @@ class Cat extends Animal{
 
 ### 抽象类/多态
 
-多态就是父类定义一个方法不去实现，让继承他的子类去实现，每个子类有不同的表现。在dart 中也是同样是用 `abstract`来定义抽象类的，而且dart中抽象类既可以当作普通父类继承使用、抽象类中以及实现的方法将会成为公共方法，也可以当作接口使用，通过 `implements` 实现。但是需要注意，抽象类本身不能被实例化。
+多态就是父类定义一个方法不去实现，让继承他的子类去实现，每个子类有不同的表现。在dart 中也是同样是用 `abstract`来定义抽象类的，而且dart中抽象类既可以当作普通父类继承使用、抽象类中以及实现的方法将会成为公共方法，也可以当作**接口**使用（Dart中所有的类都是一个**隐式的接口**），通过 `implements` 实现。但是需要注意，抽象类本身不能被实例化。
 
 ```dart
 abstract class Animal{
@@ -548,6 +614,7 @@ var set2 = {...set};
 ```dart
 String? str;//使 str可以为空
 var hasStr = str??'default string';//如果str不存在就赋值为 default string
+str ??= 'default string';//相当于是 str = str??'default string'
 
 var obj = {k:'v'};
 print(obj?.k);//obj是否存在，存在的话就继续
@@ -555,6 +622,8 @@ print(obj?.k);//obj是否存在，存在的话就继续
 var val1 = 'ss';
 var val2 = val1!;//指定val2 必定不能为空，如果为空就报错
 ```
+
+
 
 ### 级联操作符`..`
 
@@ -564,7 +633,13 @@ var val2 = val1!;//指定val2 必定不能为空，如果为空就报错
 querySelector('#confirm')
   ..classes.add('important')
   ..onClick.listen((e) => window.alert('Confirmed!'));
+
+person('jack')
+  ..name = 'rocy'
+  ..say();
 ```
+
+
 
 ## 库和包管理工具
 
