@@ -77,7 +77,7 @@ https://blog.csdn.net/adorable_/article/details/116590749
 
 在运行项目`flutter run`之后。我们可以在控制台输入一些key来让项目做出对应的处理，比如输入`r`热更新，
 
-+ `r`热更新
++ `r`热更新，主要执行组件的`build`方法
 + `R`重载项目
 + `o`切换平台（Android，Mac）
 + `p`切换构造线的显示
@@ -117,7 +117,7 @@ void main(){
 }
 ```
 
-框架会强制让根 widget 铺满整个屏幕
+框架会强制让根 widget 铺满整个屏幕，并且 `runApp(根组件)`中根组件必须指明排版顺序。
 
 ### 组件
 
@@ -251,7 +251,7 @@ class MyApp extends StatelessWidget {
 
 **MaterialApp UI库类**
 
-+ `MaterialApp`应用程序容器，可以理解成一个应用程序的盒子，可以这个这个盒子上设置路由来管理多个页面，设置全局数据，应用主题等等。总之就相当于是一个应用实例，功能类似于Vue中的`new Vue({})`。
++ `MaterialApp`应用程序容器，可以理解成一个应用程序的盒子，可以这个这个盒子上设置路由来管理多个页面，设置全局数据，应用主题等等。总之就相当于是一个应用实例，功能类似于Vue中的`new Vue({})`，为App确定一个设计的风格，应用的排序方向。
 + `Scaffold`应用页面级模版容器，可以设置页面的标题栏，选项卡等。
 + `AppBar`应用页面顶部选项卡容器。
 + `DefaultTabController`在`AppBar`下方的导航标签的容器，可以定义多个标签，并且可以通过`TabBarView`容器定义标签对应的页面。

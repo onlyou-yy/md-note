@@ -97,7 +97,7 @@ body{
 	cursor:pointer;
 }
 #wrap::before{
-    content:attr(data-tips) ": " attr(my-data);
+  content:attr(data-tips) ": " attr(my-data);
 	position:absolute;
 	top:20px;
 	left:0px;
@@ -110,16 +110,16 @@ body{
 	visibility:hidden;
 }
 #wrap::after{
-	content:"";
-	position:absolute;
-	top:12px;
-	left:50%;
-	border: 8px solid transparent;
-    border-bottom: 8px solid #000;
-	transform:translateX(-50%);
-	opacity:0;
-	transition:all 0.5s;
-	visibility:hidden;
+  content:"";
+  position:absolute;
+  top:12px;
+  left:50%;
+  border: 8px solid transparent;
+  border-bottom: 8px solid #000;
+  transform:translateX(-50%);
+  opacity:0;
+  transition:all 0.5s;
+  visibility:hidden;
 }
 #wrap:hover::after,#wrap:hover::before{
 	opacity:1;
@@ -472,6 +472,39 @@ display:gird
 + `place-self`：是`align-self`属性和`justify-self`属性的合并简写形式。
 
 **来源于阮一峰老师的** [CSS Grid 网格布局教程](https://www.ruanyifeng.com/blog/2019/03/grid-layout-tutorial.html)
+
+
+
+## 多端兼容字体设置
+
+```css
+@font-face {
+  font-family: Emoji;
+  src: local("Apple Color Emojiji"), local("Segoe UI Emoji"), local("Segoe UI Symbol"), local("Noto Color Emoji");
+  unicode-range: U+1F000-1F644, U+203C-3299;
+}
+body {
+  font-family: system-ui, —apple-system, Segoe UI, Rototo, Emoji, Helvetica, Arial, sans-serif;
+}
+```
+
+衬线字体：
+
+```css
+.font-serif {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+}
+```
+
+等宽字体：
+
+```css
+.font-mono {
+  font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+```
+
+
 
 
 

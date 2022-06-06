@@ -176,6 +176,21 @@ bar();
 
 
 
+## 枚举 enum
+
+```dart
+enum Colors {
+  red,
+  blue,
+  yellow,
+}
+print(Colors.red);
+print(Colors.red.index);//red的索引
+print(Colors.values);//Colors所有值的列表
+```
+
+
+
 ## Dart 中的类
 
 在Dart 中定义类也是使用 `class`关键字的，同样具有 `封装、继承、多态`的特性。但是在Dart 的类中并没有`public private protect`等权限描述符，在Dart 中只用共用和私有两种概念，通过`_`来表示私有变量，并且这种私有变量只有通过包引入的情况下才是有效的，在同一文件下还是可以访问的。
@@ -218,22 +233,9 @@ class Person{
 }
 ```
 
-> 如果要使用单例模式来返回实例，就需要使用`factory`来定义返回，说明返回的结果并不一定会是一个新的实例
->
-> ```dart
-> class Person{
->   //...
->   Person ins = null;
->   factory Person.single(){
->      if(!this.ins){
->          this.ins = Person('jack',13);
->      }
->      return this.ins;
->   }
-> }
-> ```
 
-**初始化构造参数**
+
+### 初始化构造参数
 
 有时，当你在实现构造函数时，您需要在构造函数体执行之前进行一些初始化。例如，final 修饰的字段必须在构造函数体执行之前赋值。在初始化列表中执行此操作，该列表位于构造函数的签名与其函数体之间：
 
@@ -267,9 +269,13 @@ class Person{
 }
 ```
 
- 
+为啥要在初始化列表中做初始化，而不是在构造函数中直接给参数一个默认值？
 
-**重定向构造方法**
+因为给构造参数的默认值必须是一个确定的值，不能是语句，而在初始化列表中就可以使用语句来给某个数据进行初始化。 
+
+
+
+### 重定向构造方法
 
 有时一个构造方法仅仅用来重定向到该类的另一个构造方法。重定向方法没有主体，它在冒号（`:`）之后调用另一个构造方法
 
@@ -283,6 +289,48 @@ class Automobile {
   Automobile.fancyHybrid() : this.hybrid('Futurecar', 'Mark 2');
 }
 ```
+
+
+
+### 工厂构造函数
+
+普通的构造是会自动返回创建出来的对象，不能手动的返回，而工厂构造函数可以手动返回一个对象。
+
+一般是根据传入不同的参数调用不同构造函数，并创建返回不同的实例，这个返回的类型用`factory`，说明返回的结果并不一定会是一个新的实例。常用来做单例模式。
+
+```dart
+class Person{
+  //...
+  Person ins = null;
+  factory Person.single(){
+    if(!this.ins){
+      this.ins = Person('jack',13);
+    }
+    return this.ins;
+  }
+}
+```
+
+
+
+### setter 和 getter
+
+```dart
+class Person{
+  String? _name;
+  set name(String name){
+    this._name = name;
+  }
+  String get name {
+    return this._name;
+  }
+}
+const p1 = Person();
+p1.name = 'jack';
+print(p1.name);
+```
+
+
 
 ### 继承
 
@@ -314,7 +362,7 @@ class Cat extends Animal{
 
 ### 抽象类/多态
 
-多态就是父类定义一个方法不去实现，让继承他的子类去实现，每个子类有不同的表现。在dart 中也是同样是用 `abstract`来定义抽象类的，而且dart中抽象类既可以当作普通父类继承使用、抽象类中以及实现的方法将会成为公共方法，也可以当作**接口**使用（Dart中所有的类都是一个**隐式的接口**），通过 `implements` 实现。但是需要注意，抽象类本身不能被实例化。
+多态就是父类定义一个方法不去实现，让继承他的子类去实现，每个子类有不同的表现。在dart 中也是同样是用 `abstract`来定义抽象类的，而且dart中抽象类既可以当作普通父类继承使用、抽象类中以及实现的方法将会成为公共方法，也可以当作**接口**使用（Dart中所有的类都是一个**隐式的接口**），通过 `implements` 实现。
 
 ```dart
 abstract class Animal{
@@ -367,7 +415,20 @@ class Print implements PrintA,PrintB{
 }
 ```
 
+但是需要注意，**抽象类本身不能被实例化**，但是可以通过工厂构造函数进行实例化。
 
+```dart
+abstract class Shape{
+  factory Shape(){
+    return Rectangle();
+  }
+}
+class Rectangle extends Shape{}
+```
+
+> 在 Dart 的源码中可能会出现一种情况，明明是一个抽象类，但是却能被实例化，明明这个抽象类的构造函数只是定义并没有具体实现，但是是依然能正常使用。比如`Map`的构造函数 `external factory Map();`。
+>
+> 抽象类可以通过工厂构造函数进行实例化，`external`可以将定义和实现分离，之后的具体实现可以通过`@patch`注解来实现，这样做的好处是能够在运行时才决定运行哪种实现解决跨平台的问题。
 
 ### Mixin
 

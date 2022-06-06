@@ -6,7 +6,7 @@
 4. 文本属性：`text-align   vertical-align   text-wrap   text-transform   text-indent    text-decoration   letter-spacing    word-spacing    white-space   text-overflow`
 5. css3中新增属性：`content   box-shadow   border-radius  transform……`
 
-一般都是按照上述`1-2-3-4-5`的顺序进行书写。这样做的目的是**减少浏览器reflow（回流），提升浏览器渲染dom的性能
+一般都是按照上述`1-2-3-4-5`的顺序进行书写。这样做的目的是**减少浏览器reflow（回流）**，提升浏览器渲染dom的性能
 
 
 
