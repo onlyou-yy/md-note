@@ -94,6 +94,10 @@ https://blog.csdn.net/adorable_/article/details/116590749
 
 ![image-20220508163113492](flutter/image-20220508163113492.png)
 
+[vscode中Flutter开发中常用的快捷键](https://juejin.cn/post/6998726767074623496/)
+
+
+
 ### 创建项目
 
 创建 flutter 项目可以使用`flutter create 项目名`直接创建。
@@ -184,13 +188,71 @@ class MyApp extends StatelessWidget {
 
 有状态组件则相反，在修改状态数据之后页面也会更新，比较适合做交互组件。
 
-> 其实在 flutter 中所用的 widget 都是不能改变的，因为几乎所有的 widget 都继承于 Widget 类，而 Widget 类是被 `@immutable`装饰，表示不可变，所以无论是在`StatelessWidget`中还是`StatefulWidget`中都是不能直接定义可修改的状态的，如果要定义状态需要在`StatefulWidget`中的 `createStatus`方法返回的 继承于`State`的组件中定义。
+> 其实在 flutter 中所有的 widget 都是不能改变的，因为几乎所有的 widget 都继承于 Widget 类，而 Widget 类是被 `@immutable`装饰，表示不可变，所以无论是在`StatelessWidget`中还是`StatefulWidget`中都是不能直接定义可修改的状态的，而且其中的变量都应该使用 final 或者 const 来进行定义，如果要定义状态需要在`StatefulWidget`中的 `createStatus`方法返回的 继承于`State`的组件中定义。
+>
+> 在 StatefulWidget 中是没有 build 方法的，StatefulWidget 组件的 build 方法是放在 State 组件中的，这是因为：
+>
+> 1. build 出来的 widget 是需要依赖 State 中的变量；
+> 2. 在 Flutter 的运行过程中，widget 是不断的销毁和创建的，当我们自己的状态发送改变时并不希望创建一个新的 State
+
+
+
+### 生命周期
+
+生命周期函数可以让我们在合适的时机做正确的事，比如在初始化的时候获取数据，初始化数据，进行组件事件监听等，在 flutter 中无状态组件 StatelessWidget 的生命周期之后构造函数和build方法。
+
+```dart
+class Test extends StatelessWidget{
+	Text(){
+    print('实例化完成');
+  }
+  @override
+  Widget build(BuildContext context){
+    print('调用build方法');
+    return Text("hello");
+  }
+}
+```
+
+有状态组件 StatefulWidget 的生命周期函数如下：
+
+- 在下图中，灰色部分的内容是Flutter内部操作的，我们并不需要手动去设置它们；
+- 白色部分表示我们可以去监听到或者可以手动调用的方法；
+
+![image-20220607152848376](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/image-20220607152848376.png)
+
+首先，执行**StatefulWidget**中相关的方法：
+
+1. 执行StatefulWidget的构造函数（Constructor）来创建出StatefulWidget；
+2. 执行StatefulWidget的createState方法，来创建一个维护StatefulWidget的State对象；
+
+其次，调用createState创建State对象时，执行State类的相关方法：
+
+1. 执行State类的构造方法（Constructor）来创建State对象；
+2. 执行initState，我们通常会在这个方法中执行一些数据初始化的操作，或者也可能会发送网络请求；
+
+![图片](https://mmbiz.qpic.cn/mmbiz_jpg/O8xWXzAqXuswRnN2TtnykKuZ5VJibJcVKLBOvkpcqFXPENRFyDlDgb6JBgJZvaFFGpoOyLbIcEdd0IKwYy3WU6g/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1)
+
+- - 注意：这个方法是重写父类的方法，必须调用super，因为父类中会进行一些其他操作；
+  - 并且如果你阅读源码，你会发现这里有一个注解（annotation）：@mustCallSuper
+
+3. 执行didChangeDependencies方法，这个方法在两种情况下会调用
+
+- - 情况一：调用initState会调用；
+  - 情况二：从其他对象中依赖一些数据发生改变时，比如 InheritedWidget
+
+4. Flutter执行build方法，来看一下我们当前的Widget需要渲染哪些Widget；
+5. 当前的Widget不再使用时，会调用dispose进行销毁；
+6. 手动调用setState方法，会根据最新的状态（数据）来重新调用build方法，构建对应的Widgets；
+7. 执行didUpdateWidget方法是在当父Widget触发**重建**（rebuild）时，系统会调用didUpdateWidget方法；
 
 ### 常用组件
 
 **容器类**
 
-+ `Text`文本组件，相当于就是一个普通`span`
++ `Text`文本组件，相当于就是一个普通`span`，（最终渲染的并不是 Text ，而是一个`RichText`）
+
++ `Text.rich`富文本组件
 
 + `Center`上下左右居中容器组件，相当于一个设置了`display:flex;just-content:center;align-items:center;`的 `div`
 
@@ -204,6 +266,8 @@ class MyApp extends StatelessWidget {
 	+ `ListView.builder`这个构造函数是用来创建动态列表的，会进行循环创建，通过`itemCount`定义循环的次数，通过`itemBuilder`来定义渲染函数。
 
 + `GridView`网格容器列表，相当定义了`display:grid`的`div`，可以设置`crossAxisSpacing`水平间距，`mainAxisSpacing`垂直间距等，和`ListView`一样拥有`GridView.builder`构造方法进行动态列表的生成，不过要定义水平间距等其他属性需要使用`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`定义
+
++ `Flex`弹性盒子布局容器，就是相当于一个`display:flex`的`div`，可以设置 flex 的相关属性，比如排列方向`direction`.
 
 + `PageView`页面滚动容器组件，效果类似于抖音等视频的单页面视频滚动效果，每个子元素都相当于是一个页面。
 
@@ -349,6 +413,8 @@ class MyDialog extends Dialog {
 ```
 
 flutter中的组件很装饰类组件很多，不需要去记，只需要知道有哪些常用的组件就好，而且官网的组件例子写得不太好，还都是英文的不好看，所以推荐去看**(老孟的 300 多个组件例子)[http://laomengit.com/]**
+
+
 
 **组件目录**
 
