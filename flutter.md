@@ -252,11 +252,11 @@ class Test extends StatelessWidget{
 
 + `Text`文本组件，相当于就是一个普通`span`，（最终渲染的并不是 Text ，而是一个`RichText`）
 
-+ `Text.rich`富文本组件
++ `Text.rich`富文本组件，第一个参数可以放`TextSpan`，这是一个多节点容器，里面可以放多个文本组件，比如文本容器`TextSpan`，组件容器`WidgetSpan`。
 
 + `Center`上下左右居中容器组件，相当于一个设置了`display:flex;just-content:center;align-items:center;`的 `div`
 
-+ `Row`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是横向排列，相当于一个设置了`display:flex;flex-direction:row`的 `div`
++ `Row`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是横向排列，且默认占满一行，可以通过`mainAxisSize`来设置占据空间的大小，相当于一个设置了`display:flex;flex-direction:row`的 `div`
 
 + `Column`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是纵向排列，相当于一个设置了`display:flex;flex-direction:column`的 `div`
 
@@ -318,6 +318,7 @@ class Test extends StatelessWidget{
 + `TextStyle`为`Text`组件的文字设置样式、大小、加粗等
 + `EdgeInsets`可以为盒子容器的`margin padding`提供值
 + `Transform`设置平移，旋转，缩放等transform过度效果
++ `Alignment`相对于父容器进行位置设置，如果是`Alignment(x,y)`，x和y的值取值范围是`[-1,1]`
 
 **MaterialApp UI库类**
 
