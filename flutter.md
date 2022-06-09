@@ -266,21 +266,95 @@ class Test extends StatelessWidget{
 + `Expanded`弹性盒子容器，继承于`Flexible`，相当于是设置了`display:flex`的`div`，可以设置`flex`比例，不能设置`fit`，默认是`tight`
 + `Divider`分割线
 + `Theme`主题容器，可以快速为子容器设置主题，比如颜色风格
++ `SafeArea`安全区域容器，不会遮挡状态栏和底部菜单
 
 **多子节点容器**
 
 + `Row`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是横向排列，且默认占满一行，可以通过`mainAxisSize`来设置占据空间的大小；相当于一个设置了`display:flex;flex-direction:row`的 `div`
 + `Column`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是纵向排列，相当于一个设置了`display:flex;flex-direction:column`的 `div`
 + `Flex`弹性盒子布局容器，就是相当于一个`display:flex`的`div`，可以设置 flex 的相关属性，比如排列方向`direction`，当设置`direction:Axis.vertical`时就相当于是一个 `Column`，当设置`direction:Axis.horizontal`时就相当于是一个 `Row`。
-+ `ListView`多节点容器组件，一般用做列表显示，可以通过`scrollDirection`定义列表的方向。不过需要注意子节点的宽度（垂直列表）/高度（水平列表）会被强制铺满适应父容器的宽度/高度，如果要设置列表的宽度，就需要设置其父容器的宽度，或者通过设置padding属性将它进行挤压，还有就是默认情况下`ListView`下不能在使用`ListView`，如果要使用需要设置`shrinkWrap`属性为`true`;
-  + `ListTitle`文章列表组件，可以定义标题和子标题，通常配`ListView`使用，也可以通过`leading`定义列表项前图标，`trailing`在列表项后定义图标
-  + `ListView.builder`这个构造函数是用来创建动态列表的，会进行循环创建，通过`itemCount`定义循环的次数，通过`itemBuilder`来定义渲染函数。
-+ `GridView`网格容器列表，相当定义了`display:grid`的`div`，可以设置`crossAxisSpacing`水平间距，`mainAxisSpacing`垂直间距等，和`ListView`一样拥有`GridView.builder`构造方法进行动态列表的生成，不过要定义水平间距等其他属性需要使用`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`定义
 + `PageView`页面滚动容器组件，效果类似于抖音等视频的单页面视频滚动效果，每个子元素都相当于是一个页面。
 + `Wrap`子节点在一行/列放不下时会自动换行，通过`direction`属性定义接单排序方向，可以用来做瀑布流布局
 + `Stack`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点之间是重在一起的，相当于给每个子组件都设置了绝对定位。可以使用`Positioned`或者`Align`来控制位置，也可以使用`alignment`属性定义内容的位置。通过`fit`可以设置子元素的填充模式
++ `ListView`多节点容器组件，一般用做列表显示，可以通过`scrollDirection`定义列表的方向。不过需要注意子节点的宽度（垂直列表）/高度（水平列表）会被强制铺满适应父容器的宽度/高度，如果要设置列表的宽度，就需要设置其父容器的宽度，或者通过设置padding属性将它进行挤压，还有就是默认情况下`ListView|Column`下不能在使用`ListView`，如果要使用需要设置`shrinkWrap`属性为`true`;
+  + `ListTile`文章列表组件，可以定义标题和子标题，通常配`ListView`使用，也可以通过`leading`定义列表项前图标，`trailing`在列表项后定义图标
+  + `ListView.builder`这个构造函数是用来创建动态列表的，会进行循环创建，通过`itemCount`定义循环的次数，通过`itemBuilder`来定义渲染函数，**当节点显示时才会被创建**。
+  + `ListView.separated`这个构造函数是用来创建带分割组件的动态列表的
+  + `ListView(children:List.generate(count,genFn))`，`List.generate(count,genFn)`可以生成一个固定长度的widget列表，但是这种方式会比较消耗性能，因为**无论节点是否显示都会被创建**。
++ `GridView`网格容器列表，相当定义了`display:grid`的`div`，可以用`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`定义设置`crossAxisSpacing`水平间距，`mainAxisSpacing`垂直间距等，和`ListView`一样拥有`GridView.builder`构造方法进行动态列表的生成（`flutter_staggered_grid_view`库可以实现瀑布流布局）
+  + `GridView.builder`创建动态列表
+  + `GridView.count`默认设置了`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`的`GridView`
+  + `GridView.Extent`默认设置了`gridDelegate:SliverGridDelegateWithFixedCrossAxisExtent()`的`GridView`
 
-### 图片类
+
+其实`ListView/GridView/PageView`等可滚动的视图都是由各种`sliver`组件包装而来，不过这些都是flutter 帮我们定义好了的滚动列表，如果要实现一些比较复杂或者自定义的可滚动列表的话就需要使用`CustomScrollView`来进行设计，比如说我要在一个`ListView`中嵌套`ListView、GridView、PageView`等其他的列表的话就不容易实现了，因为一个不确定大小的容器是不能在嵌套一个不确定大小的容器的（虽然可以定义`shrinkWrap`让列表大小等于内容大小，但是会比较消耗性能）。
+
+[Flutter - 循序渐进 Sliver](https://juejin.cn/post/6844904155195129864)       [Flutter-Sliver](https://www.jianshu.com/p/c892587fed97)
+
++ `CustomScrollView`自定义的可滚动容器，不过这个容器的子元素不再是`Text`等简单的容器了，而应该是`sliver`。常用的Sliver容器
+  + `SliverSafeArea`安全区域，滚动时滚出容器区域的内容不会被隐藏，如果是`SafeArea`就会隐藏
+  + `SliverGrid`类似于`GridView`也是创建一个网格布局的列表
+  + `SliverList`类似于`ListView`也是创建一个列表
+  + `SliverChildBuilderDelegate`是创建`Sliver`节点的方法，和`ListView.builder`类似都是循环创建，当节点显示时才会被创建，通过`delegate`参数创建
+  + `SliverChildListDelegate`是创建`Sliver`节点的方法，和`ListView(children:List.generate(count,genFn))`一致，通过`delegate`参数创建
+  + `SliverAppBar`页面顶部的导航
+  + `SliverPadding`设置内边距，滚动出区域的容器不会隐藏
+
+> 单子节点`Sliver`容器的子节点参数应该是`sliver`，多子节点`Sliver`容器的子节点参数一般是`slivers`，而且`Sliver`系列组件需要在`CustomScrollView`中使用
+
+```dart
+class SliverDemo extends StatelessWidget {
+  const SliverDemo({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: 300,
+              flexibleSpace:FlexibleSpaceBar(
+                title: Text('hello'),
+                background: Image.network("https://picsum.photos/300/300",fit: BoxFit.cover,),
+              ),
+            ),
+            SliverSafeArea(
+              sliver: SliverPadding(
+              padding: EdgeInsets.all(10),
+              sliver: SliverGrid(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return Container(
+                        color: Color.fromARGB(255, Random().nextInt(256),
+                            Random().nextInt(256), Random().nextInt(256)),
+                      );
+                    },
+                    childCount: 20,
+                  ),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                  )),
+            )),
+            SliverList(delegate: SliverChildListDelegate(
+              List.generate(10, (index) => Text("list $index",textScaleFactor: 4,))
+            ))
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+```
+
+
+
+### 媒体类
 
 + `image`相当于`img`标签，可以用来加载网络图片（Image.network）、应用资源图片（Image.asset）、文件图片（Image.file）。并且可以通过`colorBlendMode`设置混合模式，一般都是作为其他容器的子容器使用，以便于设置其他样式，如圆角等.
 
@@ -298,6 +372,13 @@ class Test extends StatelessWidget{
 + `FadeInImage`占位图容器，可以用来设置在加载真正要显示的图片之前显示另外一张图片，等图片加载完成之后再淡入显示。
 
 > flutter 会默认进行图片缓存（限制是 1000 张，100MB），如果flutter 发现要加载的图片的地址和缩放和之前加载过的图片是一样的话就会使用缓存中的图片不会重复加载。
+
+### 控制器
+
++ `ScrollController`滚动列表的监控控件，可以通过滚动列表的controller参数进行绑定
+  + `ins.addListener()`添加滚动事件回调函数，`ins.offset`可以获取滚动的距离
+  + `ins.animationTo()`动态跳转到指定位置
++ `NotificationListener`监听子节点事件的组件，可以通过`onNotification`来定义事件回调，如监听滚动事件`onNotification:(ScrollNotification noti){}`
 
 ### **工具类**
 
@@ -328,7 +409,7 @@ class Test extends StatelessWidget{
 
 + `TextFiled`文本输入框，类型`input`标签，可以通过`controller: TextEditingController实例`来设置初始输入以及之后获取输入框组件的数据，通过`onChanged`来监听输入改变的事件
 + `CheckBox`多选盒子，需要通过定义`onChanged`事件之后才能改变。
-+ `CheckboxListTitle`可定义大小标题的可选中的列表项，类似于`ListTitle`但是在右侧多一个`CheckBox`
++ `CheckboxListTitle`可定义大小标题的可选中的列表项，类似于`ListTile`但是在右侧多一个`CheckBox`
 + `Radio`单选按钮，可以通过`groupValue`来指定同一变量来为多个单选按钮规划到一个组上
 + `RadioListTitle`和`CheckboxListTitle`相似
 + `Switch`开关
@@ -951,6 +1032,8 @@ class _CState extends State<C> {
 
 
 ## 网络请求
+
+flutter 中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。
 
 flutter 中的网络请求方法是由`dart:io`库提供的，前端发请求需要使用其中的`HttpClient`类。而且这个类支持多种请求方式，比如`get post head put patch delete`。
 

@@ -498,16 +498,39 @@ class SingerDancer extends Musician with Musical {
 
 开发中很多时候我们都需要处理一些异步的操作，比如发送请求，I/O 操作等，我们需要在获取到结果之后在进行处理，这个并不好处理，因为我们不知道结果何时会返回。异步编程通常使用回调方法来实现，但是 Dart 提供了其他方案：Future和 Stream 对象。 Future 类似与 JavaScript 中的 Promise ，代表在将来某个时刻会返回一个结果。 Stream 类可以用来获取一系列的值，比如，一系列事件。
 
+> Dart中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。
+
 **对于Future**
 
+有以下一个例子，线程将会被阻塞，会顺序输出`start inner end`
+
 ```dart
-// 假如 HttpRequest.getString(url) 返回一个 Future
-HttpRequest.getString(url).then((String res){
-  print(res);
-}).catchError(e=>print(e))
+print('start');
+print(getData());
+print('end');
+
+String getData(){
+  sleep(Duration(seconds:5));
+  return "inner";
+}
 ```
 
-Futurn 和 Promise 一样他们的then 都接收两个回调函数，第一个是成功回调，第二个是失败回调。并且最终错误使用`catchError`进行捕获
+在使用`Future`之后就会阻塞线程了，会输出`start end inner`;
+
+```dart
+print('start');
+getData().then(res=>print(res)).catchError(e=>print(e));
+print('end');
+
+Future getData(){
+  return Future((){
+    sleep(Duration(seconds:5));
+  	return "inner";
+  })
+}
+```
+
+Futurn 和 Promise 一样他们的 then 都接收两个回调函数，第一个是成功回调，第二个是失败回调。并且最终错误使用`catchError`进行捕获.
 
 为了更加方便的解决异步问题，dart 引入了 async / await 关键字，使得异步操作可以已同步的方式进行书写。并且 aysnc 方法返回的是一个 Future，同样的 await 必须用于 async 中
 
