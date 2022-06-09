@@ -500,7 +500,7 @@ class SingerDancer extends Musician with Musical {
 
 > Dart中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。
 
-**对于Future**
+### **对于Future**
 
 有以下一个例子，线程将会被阻塞，会顺序输出`start inner end`
 
@@ -530,18 +530,33 @@ Future getData(){
 }
 ```
 
-Futurn 和 Promise 一样他们的 then 都接收两个回调函数，第一个是成功回调，第二个是失败回调。并且最终错误使用`catchError`进行捕获.
+Future 和 Promise 一样他们的 then 都接收两个回调函数，第一个是成功回调，第二个是失败回调。并且最终错误使用`catchError`进行捕获，使用`whenComplete`无论成功或者失败都会执行。
+
+如果在Future中并不需要使用到异步的或可以直接使用`Future.value()`来直接将值返回（就相关与是 Promise.resolve，还有`Future.error`相当于 Promise.reject ）
+
+```dart
+Future.value('value1').then(res=>print(res));
+Future.error('error').catchError(err=>print(err));
+```
+
+还有可以延迟执行的Future
+
+```dart
+Future.delayed(Duration(seconds:3),(){return 'hi';}).then(res=>print(res));
+```
+
+### **关于  async / await** 
 
 为了更加方便的解决异步问题，dart 引入了 async / await 关键字，使得异步操作可以已同步的方式进行书写。并且 aysnc 方法返回的是一个 Future，同样的 await 必须用于 async 中
 
 ```dart
-Futurn<void> getData() async {
-  var data = await fetchData();
+Futurn<void> fetchData() async {
+  var data = await getData();
   print(data);
 }
 ```
 
-使用了 async 的函数返回的将会是一个Futurn，并且会在调用后立即返回，所以其中的内容才是真正的异步操作。
+使用了 async 的函数返回的将会是一个Future，并且会在调用后立即返回，所以其中的内容才是真正的异步操作。
 
 可以使用`Future.wait()`来实现 Promise.all 的效果
 
@@ -560,9 +575,35 @@ print('Done with all the long steps!');
 
 
 
-**关于 Stream**
+### **关于 Stream**
 
 Stream 用来表示一系列数据，HTML 中的按钮点击就是通过 stream 传递的。同样也可以将文件作为数据流来读取。一般是有`listen(cb)`来见监听数据的回调。可以通过`await for`、生产器、Stream 类来生产Stream数据。
+
+
+
+### Isolate 隔离区
+
+在 Dart 中有隔离区的概念，每个隔离区都有自己的一套独立的执行环境和事件循环，隔离区之间互不影响，但是可以通过消息管道来进行通信，当有一些比较耗时的操作需要处理的时候可以创建一个隔离区进行处理，这样就可以避免主线程的阻塞。
+
+```dart
+print("start");
+//Isolate.spawn(要在隔离区运行的函数,函数的参数)
+Isolate.spawn(calc,100);
+print("end");
+
+//很耗时的操作
+void calc(int count){
+  int total = 0;
+  for(int i = 0;i<count;i++){
+    total += i;
+  }
+  print(total);
+}
+```
+
+
+
+
 
 
 
