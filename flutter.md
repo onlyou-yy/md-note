@@ -545,7 +545,124 @@ flutter中的组件很多，并不需要去记，只需要知道有哪些常用�
 
 
 
-## 动画
+## 网络请求
+
+flutter 中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。
+
+flutter 中的网络请求方法是由`dart:io`库提供的，前端发请求需要使用其中的`HttpClient`类。而且这个类支持多种请求方式，比如`get post head put patch delete`。
+
+### 发送`get`请求
+
+```dart
+let client = HttpClient();
+//发起请求
+HttpClientRequest request = await client.get('localhost',80,'/file.txt');
+//请求完毕后关闭请求获得数据
+HttpClientResponse response = await request.close();
+//得到数据后还需要解析成真实数据
+final stringData = await response.transform(utf8.decoder).join();
+```
+
+在拿到数据之后，这些数据一般是json格式的数据，如果直接存储的话，在之后的使用中可能不是很方便，因为不会有类型检查以及代码提示，此时我们可以将这些数据转换成一个数据类，通过[`JSON to Dart`](https://jsontodart.com/)可以快速生成这个类。
+
+### json数据转换
+
+将`Map List`转换成JSON 字符串，使用`dart:convert`的`json.encode(d)`或者`jsonEncode(d)`进行转化，
+
+```dart
+Map m = {"key1": "val1"};
+List l = [1, 2, 3, 4];
+print(json.encode(m));
+print(jsonEncode(l));
+```
+
+如果要将JSON字符串转化成Map、List，就可以是使用`json.decode(s)`或者`jsonDecode(s)`
+
+```dart
+String s = '{"key1": "val1"}';
+String al = '[1,2,3,4]';
+print(json.decode(s));
+print(jsonDecode(al)[1]);
+```
+
+### 处理Uri
+
+通过`Uri`类可以对url进行处理，比如将一个url 处理成一个对象，或者说将一个对象处理成Url
+
+```dart
+httpsUri = Uri(
+    scheme: 'https',
+    host: 'example.com',
+    path: '/page/',
+    queryParameters: {'search': 'blue', 'limit': '10'});
+print(httpsUri); // https://example.com/page/?search=blue&limit=10
+
+final uri = Uri.parse(
+    'https://dart.dev/guides/libraries/library-tour#utility-classes');
+print(uri); // https://dart.dev
+print(uri.isScheme('https')); // true
+```
+
+### Dio
+
+dio 是一个类似于 axios 的强大的网络请求库
+
+使用前首先需要在`pubspec.yaml`中安装dio库，或者直接运行`pub get dio`
+
+简单使用
+
+```dart
+final dio = Dio();
+dio.get("http://httpbin.org/get").then(res => print(res));
+dio.post("http://httpbin.org/post").then(res => print(res));
+```
+
+为了方便维护，一般都不会直接去使用第三方库，而是对他做一层封装
+
+```dart
+//基础配置类
+class HttpConfig{
+  static const String baseURL = "http://httpbin.org";
+  static const int timeout = 5000;
+}
+//封装类
+class HttpRequest{
+  //基础配置数据
+  static final BaseOptions baseOptions = BaseOptions(baseUrl:HttpConfig.baseURL,connectTimeout:HttpConfig.timeout);
+  static final Dio dio = Dio(baseOptions);
+  
+  //公共请求方法
+  static Future<T> request<T>(String url,{
+    String method = "get",
+    Map<String,dynamic> params,
+    Interceptor inters,
+  }) async {
+    //创建单独配置
+    final option = Options(method:method);
+    
+    //创建默认的全局拦截器
+    Interceptor DInter = InterceptorsWrapper(
+    	onRequest:options=>options,
+      onResponse:response => response,
+      onError:err => err;
+    )
+    List<Interceptor> inters = [dInter];
+    if(inter != null){
+      inters.add(inter)
+    }
+    
+    //发送请求
+    try{
+      Response response = await dio.request(url,queryParamters:params,options:options);
+      return response.data;
+    }on DioError catch(e){
+      return Future.error(e);
+    }
+  }
+}
+```
+
+
 
 ## 路由
 
@@ -779,6 +896,8 @@ MaterialApp(
 ```
 
 
+
+## 动画
 
 ## 状态管理
 
@@ -1030,68 +1149,6 @@ class _CState extends State<C> {
 ```
 
 
-
-## 网络请求
-
-flutter 中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。
-
-flutter 中的网络请求方法是由`dart:io`库提供的，前端发请求需要使用其中的`HttpClient`类。而且这个类支持多种请求方式，比如`get post head put patch delete`。
-
-### 发送`get`请求
-
-```dart
-let client = HttpClient();
-//发起请求
-HttpClientRequest request = await client.get('localhost',80,'/file.txt');
-//请求完毕后关闭请求获得数据
-HttpClientResponse response = await request.close();
-//得到数据后还需要解析成真实数据
-final stringData = await response.transform(utf8.decoder).join();
-```
-
-在拿到数据之后，这些数据一般是json格式的数据，如果直接存储的话，在之后的使用中可能不是很方便，因为不会有类型检查以及代码提示，此时我们可以将这些数据转换成一个数据类，通过[`JSON to Dart`](https://jsontodart.com/)可以快速生成这个类。
-
-### json数据转换
-
-将`Map List`转换成JSON 字符串，使用`dart:convert`的`json.encode(d)`或者`jsonEncode(d)`进行转化，
-
-```dart
-Map m = {"key1": "val1"};
-List l = [1, 2, 3, 4];
-print(json.encode(m));
-print(jsonEncode(l));
-```
-
-如果要将JSON字符串转化成Map、List，就可以是使用`json.decode(s)`或者`jsonDecode(s)`
-
-```dart
-String s = '{"key1": "val1"}';
-String al = '[1,2,3,4]';
-print(json.decode(s));
-print(jsonDecode(al)[1]);
-```
-
-### 处理Uri
-
-通过`Uri`类可以对url进行处理，比如将一个url 处理成一个对象，或者说将一个对象处理成Url
-
-```dart
-httpsUri = Uri(
-    scheme: 'https',
-    host: 'example.com',
-    path: '/page/',
-    queryParameters: {'search': 'blue', 'limit': '10'});
-print(httpsUri); // https://example.com/page/?search=blue&limit=10
-
-final uri = Uri.parse(
-    'https://dart.dev/guides/libraries/library-tour#utility-classes');
-print(uri); // https://dart.dev
-print(uri.isScheme('https')); // true
-```
-
-
-
-## flutter 生命周期
 
 ## 移动端适配方案
 

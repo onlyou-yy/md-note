@@ -24,6 +24,15 @@ Dart 常用的内置类型有
 + `Set`与js中的Set一致
 + `Map`与js中的Map一致
 
+可以通过变量的runtimeType 获取到当前数据的类型
+
+```dart
+var str = "ss";
+print(str.runtimeType);//String
+```
+
+
+
 
 
 ## Dart 中的定义变量
@@ -496,7 +505,7 @@ class SingerDancer extends Musician with Musical {
 
 ## 异步支持 async/await
 
-开发中很多时候我们都需要处理一些异步的操作，比如发送请求，I/O 操作等，我们需要在获取到结果之后在进行处理，这个并不好处理，因为我们不知道结果何时会返回。异步编程通常使用回调方法来实现，但是 Dart 提供了其他方案：Future和 Stream 对象。 Future 类似与 JavaScript 中的 Promise ，代表在将来某个时刻会返回一个结果。 Stream 类可以用来获取一系列的值，比如，一系列事件。
+开发中很多时候我们都需要处理一些异步的操作，比如发送请求，I/O 操作等，我们需要在获取到结果之后在进行处理，这个并不好处理，因为我们不知道结果何时会返回。异步编程通常使用回调方法来实现，但是 Dart 提供了其他方案：Future和 Stream 对象。 Future 类似与 JavaScript 中的 Promise ，代表在将来某个时刻会返回一个结果，不过与 Pormise 不同的是 Future 只有两种状态：**完成状态**和**未完成状态**。 Stream 类可以用来获取一系列的值，比如，一系列事件。
 
 > Dart中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。
 
@@ -600,10 +609,6 @@ void calc(int count){
   print(total);
 }
 ```
-
-
-
-
 
 
 
