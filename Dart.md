@@ -507,8 +507,6 @@ class SingerDancer extends Musician with Musical {
 
 开发中很多时候我们都需要处理一些异步的操作，比如发送请求，I/O 操作等，我们需要在获取到结果之后在进行处理，这个并不好处理，因为我们不知道结果何时会返回。异步编程通常使用回调方法来实现，但是 Dart 提供了其他方案：Future和 Stream 对象。 Future 类似与 JavaScript 中的 Promise ，代表在将来某个时刻会返回一个结果，不过与 Pormise 不同的是 Future 只有两种状态：**完成状态**和**未完成状态**。 Stream 类可以用来获取一系列的值，比如，一系列事件。
 
-> Dart中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。
-
 ### **对于Future**
 
 有以下一个例子，线程将会被阻塞，会顺序输出`start inner end`
@@ -581,6 +579,82 @@ await Future.wait([
 ]);
 print('Done with all the long steps!');
 ```
+
+> Dart中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。在Future中也中宏任务和微任务队列的概念，只是在这里 宏任务 被称为 任务队列 Event queue，他的执行顺序如下，一样是先执行 微任务队列（Microtask Queue）再执行 事件队列（Event Queue）。
+>
+> ![图片](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/Dart/640.jpeg)
+>
+> 不过需要注意的是
+>
+> + Future构造函数传入的函数体放在事件队列中，并不会立即执行
+> + then的函数体要分成三种情况：
+>   + 情况一：Future没有执行完成（有任务需要执行，或者说传入的函数体中有代内容），那么then会直接被添加到Future的函数执行体后，也就是在处理了Future构造函数传入的函数体之后在将其放入到 任务队列 中等待执行；
+>   + 情况二：如果Future执行完后就then（也就是传入的函数体中没有内容，如`()=>null`），该then的函数体被放到微任务队列，当前Future执行完后执行微任务队列；
+>   + 情况三：如果Future是链式调用，意味着then未执行完，下一个then不会执行；
+>
+> ```dart
+> // future_1加入到eventqueue中，紧随其后then_1被加入到eventqueue中
+> Future(() => print("future_1")).then((_) => print("then_1"));
+> 
+> // Future没有函数执行体，then_2被加入到microtaskqueue中
+> Future(() => null).then((_) => print("then_2"));
+> 
+> // future_3、then_3_a、then_3_b依次加入到eventqueue中
+> Future(() => print("future_3")).then((_) => print("then_3_a")).then((_) => print("then_3_b"));
+> ```
+>
+> ```dart
+> 
+> import "dart:async";
+> 
+> main(List<String> args) {
+>   print("main start");
+> 
+>   Future(() => print("task1"));
+> 	
+>   final future = Future(() => null);
+> 
+>   Future(() => print("task2")).then((_) {
+>     print("task3");
+>     scheduleMicrotask(() => print('task4'));
+>   }).then((_) => print("task5"));
+> 
+>   future.then((_) => print("task6"));
+>   scheduleMicrotask(() => print('task7'));
+> 
+>   Future(() => print('task8'))
+>     .then((_) => Future(() => print('task9')))
+>     .then((_) => print('task10'));
+> 
+>   print("main end");
+> }
+> ```
+>
+> `scheduleMicrotask` 用来创建 微任务，输出
+>
+> ```dart
+> main start
+> main end
+> task7
+> task1
+> task6
+> task2
+> task3
+> task5
+> task4
+> task8
+> task9
+> task10
+> ```
+>
+> - 1、main函数先执行，所以`main start`和`main end`先执行，没有任何问题；
+> - 2、main函数执行`过程中`，会将一些任务分别加入到`EventQueue`和`MicrotaskQueue`中；
+> - 3、task7通过`scheduleMicrotask`函数调用，所以它被最早加入到`MicrotaskQueue`，会被先执行；
+> - 4、然后开始执行`EventQueue`，task1被添加到`EventQueue`中被执行；
+> - 5、通过`final future = Future(() => null);`创建的future的then被添加到微任务中，微任务直接被优先执行，所以会执行task6；
+> - 6、一次在`EventQueue`中添加task2、task3、task5被执行；
+> - 7、task3的打印执行完后，调用`scheduleMicrotask`，那么在执行完这次的`EventQueue`后会执行，所以在task5后执行task4（注意：`scheduleMicrotask`的调用是作为task3的一部分代码，所以task4是要在task5之后执行的）
+> - 8、task8、task9、task10一次添加到`EventQueue`被执行；
 
 
 

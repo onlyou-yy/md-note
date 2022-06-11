@@ -666,7 +666,9 @@ class HttpRequest{
 
 ## 路由
 
-在`Scaffold`组件中可以通过`bottomNavigationBar`属性可以定义底部的导航选项卡，这个属性的值容器是`BottomNavigationBar`，通过`items`选项定义选项卡列表项，`currentIndex`定义选中当前选中的项的索引，`onTab`定义点击选项卡的回调函数所以可以通过`BottomNavigationBar`来控制`Scaffold`组件的`body`显示的组件来实现路由的效果。需要注意的是，如果`items`超过3项就需要设置`type: BottomNavigationBarType.fixed`选项卡才会显示
+在`Scaffold`组件中可以通过`bottomNavigationBar`属性可以定义底部的导航选项卡，这个属性的值容器是`BottomNavigationBar`，通过`items`选项定义选项卡列表项，`currentIndex`定义选中当前选中的项的索引，`onTab`定义点击选项卡的回调函数所以可以通过`BottomNavigationBar`来控制`Scaffold`组件的`body`显示的组件来实现路由的效果。需要注意的是，如果`items`超过3项就需要设置`type: BottomNavigationBarType.fixed`选项卡才会显示。
+
+还有需要显示的页面可以通过`body`来定义，在 flutter 中有个组件可以根据输入的index来显示对应索引的页面 `IndexedStack`，当也可以使用一个`List`来存储所有的页面，然后通过修改索引来显示页面的。
 
 ```dart
 class Tab extends StatefulWidget {
@@ -678,14 +680,16 @@ class Tab extends StatefulWidget {
 
 class _TabState extends State<Tab> {
   int currentIndex = 0;
-  List<Widget> pageList = [Page1(), Page2(), Page3()];
+  //List<Widget> pageList = [Page1(), Page2(), Page3()];
+  Widget pages = IndexedStack(index:this.currentIndex,children:[Page1(), Page2(), Page3()]);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('hello world'),
       ),
-      body: this.pageList[this.currentIndex],
+      //body: this.pageList[this.currentIndex],
+      body: pages,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,//如果items超过3项就需要设置
