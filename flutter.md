@@ -84,7 +84,7 @@ https://blog.csdn.net/adorable_/article/details/116590749
 + `c`清除屏幕
 + `q`退出项目
 
-![image-20220520121443016](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/image-20220520121443016.png)
+![image-20220520121443016](flutter/image-20220520121443016.png)
 
 ## 安装编辑器插件
 
@@ -217,7 +217,7 @@ class Test extends StatelessWidget{
 - 在下图中，灰色部分的内容是Flutter内部操作的，我们并不需要手动去设置它们；
 - 白色部分表示我们可以去监听到或者可以手动调用的方法；
 
-![image-20220607152848376](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/image-20220607152848376.png)
+![image-20220607152848376](flutter/image-20220607152848376.png)
 
 首先，执行**StatefulWidget**中相关的方法：
 
@@ -244,6 +244,8 @@ class Test extends StatelessWidget{
 6. 手动调用setState方法，会根据最新的状态（数据）来重新调用build方法，构建对应的Widgets；
 7. 执行`didUpdateWidget`方法是在当父Widget触发**重建**（rebuild）时，系统会调用`didUpdateWidget`方法；
 
+https://juejin.cn/post/7056646298073563166
+
 ## 常用组件
 
 ### **容器类**
@@ -251,7 +253,7 @@ class Test extends StatelessWidget{
 **单子节点容器**
 
 + `Text`文本组件，相当于就是一个普通`span`，（最终渲染的并不是 Text ，而是一个`RichText`）
-+ `Text.rich`富文本组件，第一个参数可以放`TextSpan`，这是一个多节点容器，里面可以放多个文本组件，比如文本容器`TextSpan`，组件容器`WidgetSpan`。
++ `Text.rich`富文本组件，第一个参数可以放`TextSpan`，这是一个多节点容器，里面可以放多个文本组件，比如文本容器`TextSpan`(空间不够将会换行显示，单前提是宽度明确)，组件容器`WidgetSpan`（主要用来包裹非TextSpan 的组件，并且可以定义垂直方向的对齐方式，但只有全部兄弟节点都是`WidgetSpan`时才有效）。
 + `Center`上下左右居中容器组件，相当于一个设置了`display:flex;just-content:center;align-items:center;`的 `div`
 + `Positioned`绝对定义的容器，相当于设置了`position:absolute;`的`div`
 + `Align`设置位置的容器，可以通过设置`aligment`属性操作元素在容器中的位置，通过`widthFactory，heightFactory`设置容器宽高是子容器的大小的倍数。（其实在一些组件中设置的布局排序属性`alignment`，本质上也是使用`Align`再给子元素包裹一层的）
@@ -260,6 +262,8 @@ class Test extends StatelessWidget{
 + `Icon`图标容器，方便快捷得生成图标，是一种矢量图。
 + `Card`卡片容器组件
 + `ClipOval`裁剪容器，可以将容器裁剪成其他的形状，默认是处理成圆形/椭圆型，一般会配合`Image`使用
++ `ClipRRect`圆角边框容器
++ `ClipRect`矩形裁剪区域容器，可以自定义裁剪的区域，通过`clipper`来指定（可能需要自己通过继承`CustomClipper`来定义裁剪区域）
 + `SizeBox`空白的容器组件，通常用来做占位空间。
 + `Padding`内间距容器，相当于设置了`padding:xx`的`div`
 + `Flexible`弹性盒子容器，可以通过设置`flex`来按比例分配空间，设置`fit`来确定剩余空间的分配使用，如果设置了`fit:FlexFit.loose`（默认），表示是分配了但是不使用，`fit:FlexFit.tight`就是使用。
@@ -271,6 +275,7 @@ class Test extends StatelessWidget{
 **多子节点容器**
 
 + `Row`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是横向排列，且默认占满一行，可以通过`mainAxisSize`来设置占据空间的大小；相当于一个设置了`display:flex;flex-direction:row`的 `div`
+	+ 如果希望所有的子节点的高度都一样可以在外层包裹一个`IntrinsicHeight`
 + `Column`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是纵向排列，相当于一个设置了`display:flex;flex-direction:column`的 `div`
 + `Flex`弹性盒子布局容器，就是相当于一个`display:flex`的`div`，可以设置 flex 的相关属性，比如排列方向`direction`，当设置`direction:Axis.vertical`时就相当于是一个 `Column`，当设置`direction:Axis.horizontal`时就相当于是一个 `Row`。
 + `PageView`页面滚动容器组件，效果类似于抖音等视频的单页面视频滚动效果，每个子元素都相当于是一个页面。
@@ -1154,19 +1159,41 @@ class _CState extends State<C> {
 
 
 
+## Flutter的三棵树渲染机制和原理
+
+
+
+[Flutter的三棵树渲染机制和原理](https://juejin.cn/post/6916113193207070734)
+
+
+
 ## 移动端适配方案
 
-Flutter的三棵树渲染机制和原理(https://juejin.cn/post/6916113193207070734)
 
-https://juejin.cn/post/7056646298073563166
 
 
 
 ## bug
 
-黄色警告空间
+### 黄色警告空间
 
-hasSize错误
+### hasSize错误
+
+### 底部导航栏切换闪烁问题
+
+在首次加载应用之后，如果底部导航栏的图片项`BottomNavigationBarItem `是由图片来制作的，在首次切换的时候可能会有一个闪烁的问题，这是因为在首次切换的时候是先将当前状态的图标删除掉之后再加载新状态的图标的，所以在等待图片加载的时候就有一个空白时间导致闪烁问题
+
+解决方法是在`BottomNavigationBarItem`的图片组件添加一个`gaplessPlayback:true`
+
+```dart
+BottomNavigationBarItem(
+  label: "xxx",
+  icon: Image.asset('xxx',gaplessPlayback:true),
+  activeIcon: Image.asset('xxx',gaplessPlayback:true),
+)
+```
+
+
 
 
 

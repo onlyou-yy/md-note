@@ -23,6 +23,7 @@ Dart 常用的内置类型有
 + `List`列表，类式于js中数组，但是List 中只能放同一类型的数据
 + `Set`与js中的Set一致
 + `Map`与js中的Map一致
++ `Runes`文字编码
 
 可以通过变量的runtimeType 获取到当前数据的类型
 
