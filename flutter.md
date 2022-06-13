@@ -1161,7 +1161,67 @@ class _CState extends State<C> {
 
 ## Flutter的三棵树渲染机制和原理
 
+在flutter中是通过声明式的编程方式来通过 `widget`编写页面的，但是我们知道当某个组件通过`setState`进行状态更新的时候就会调用 `build`方法来更新组件，这时候它的子节点也会被重新创建，这样显然会是一个非常消耗性能的方法，没当一个组件状态更新的时候当前组件和所有的子节点组件都可以被销毁后并重新创建。不过 flutter 中并不是直接将 `widget` 渲染成页面的。
 
+flutter 的渲染页面主要通过以下几个步骤完成
+
+```
+-> 通过编写的 Widget 生成 Widget Tree
+-> 并且通过调用 Widget 的 createElement 方法生成 Element Tree
+-> 通过 Element 的 createRenderObject 方法生成 RenderObject Tree
+```
+
+![图片](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/640.jpeg)
+
+上面就是他们之间的关系，这里的Render Tree并不是和Element Tree、Widget Tree 一一对应的，这是因为并不是所有的Widget/Element都会被渲染只有继续于`RenderObjectWidget`的组件才会被最终渲染出来，其他的Widget都可以理解为是对`RenderObjectWidget`的修饰，所以虽然我们编写页面的时候Widget会嵌套很多层，但是真正渲染出来的时候层数并不会很深。
+
+### Widget 树
+
+#### Widget是什么？
+
+- Widget就是一个个描述文件，这些描述文件在我们进行状态改变时会不断的build。
+- 但是对于渲染对象来说，只会使用最小的开销来更新渲染界面。
+
+#### Widget 分类
+
+*组件Widget*：不会生成 RenderObject，如 Container，Text
+
+*渲染 Widget*：会生成 RenderObject，如 Padding
+
+可以通过他们的父类来确定他们是那种类型的组件，比如
+
+```
+Container -> StatelessWidget -> Widget
+Padding -> SingleChildRenderObjectWidget -> RenderObjectWidget -> Widget
+```
+
+可以看到 Padding 是有继承于`RenderObjectWidget`的，所以 Padding 是一个 渲染的 Widget。
+
+### Element 树
+
+#### Element是什么？
+
+- Element是一个Widget的实例，在树中详细的位置。
+- Widget描述和配置子树的样子，而Element实际去配置在Element树中特定的位置。
+
+#### Element 怎么被创建？
+
+在`Widget`中有一个`createElement`的抽象方法需要实现，在flutter 中每个组件都是一个`Widget`所以无论是 组件Widget 还是 渲染 Widget 都会用`createElement`方法，这个方法就是用来创建`Element`的，不过每个组件的Element都不同。
+
+### RenderObject 树
+
+#### RenderObject是什么？
+
+- 渲染树上的一个对象
+- RenderObject层是渲染库的核心。
+
+#### RenderObject 怎么被创建？
+
+继承于`RenderObjectWidget`的子类都必须要实现一个`createRenderObject`的抽象方法，这个方法就是用来创建`RenderObject`的，这个方法是会在`Element`的`mount`方法中被调用
+
+### BuildContext context 是什么 
+
+### key 的作用
 
 [Flutter的三棵树渲染机制和原理](https://juejin.cn/post/6916113193207070734)
 
