@@ -1171,7 +1171,7 @@ flutter 的渲染页面主要通过以下几个步骤完成
 -> 通过 Element 的 createRenderObject 方法生成 RenderObject Tree
 ```
 
-![图片](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/640.jpeg)
+![图片](flutter/640.jpeg)
 
 上面就是他们之间的关系，这里的Render Tree并不是和Element Tree、Widget Tree 一一对应的，这是因为并不是所有的Widget/Element都会被渲染只有继续于`RenderObjectWidget`的组件才会被最终渲染出来，其他的Widget都可以理解为是对`RenderObjectWidget`的修饰，所以虽然我们编写页面的时候Widget会嵌套很多层，但是真正渲染出来的时候层数并不会很深。
 
@@ -1179,7 +1179,7 @@ flutter 的渲染页面主要通过以下几个步骤完成
 
 #### Widget是什么？
 
-- Widget就是一个个描述文件，这些描述文件在我们进行状态改变时会不断的build。
+- Widget就是一个个描述文件，这些描述文件在我们进行状态改变时会不断的build。（其实就相当于是vue 中的 template）
 - 但是对于渲染对象来说，只会使用最小的开销来更新渲染界面。
 
 #### Widget 分类
@@ -1201,27 +1201,249 @@ Padding -> SingleChildRenderObjectWidget -> RenderObjectWidget -> Widget
 
 #### Element是什么？
 
-- Element是一个Widget的实例，在树中详细的位置。
+- Element是一个Widget的实例，在树中详细的位置。（其实就相当于vue/react中的虚拟dom）
 - Widget描述和配置子树的样子，而Element实际去配置在Element树中特定的位置。
 
 #### Element 怎么被创建？
 
-在`Widget`中有一个`createElement`的抽象方法需要实现，在flutter 中每个组件都是一个`Widget`所以无论是 组件Widget 还是 渲染 Widget 都会用`createElement`方法，这个方法就是用来创建`Element`的，不过每个组件的Element都不同。
+在`Widget`中有一个`createElement`的抽象方法需要实现，在flutter 中每个组件都是一个`Widget`所以无论是 组件Widget 还是 渲染 Widget 都会用`createElement`方法，这个方法就是用来创建`Element`的，不过每个组件的Element都不同，如组件Widget是`ComponentElement`，渲染Widget为`RenderObjectElement`。
+
+#### 在 `Element`保存着什么？
+
++ `_renderObject`是渲染Widget创建出来的`RenderObjectElement`调用`createRenderObject`方法创建出来的`RenderObject`的引用。
++ `_widget`保存创建出当前`Element`的 Widget 的引用
++ `_state`是`StatefulWidget`里面生成的`StatefulElement`中调用`widget.createState()`方法返回的`State`实例，并且找个`StatefulElement`中还做了一个`_state.widget = _widget`的操作，所以我们能在`State`中访问`StatefulWidget`
 
 ### RenderObject 树
 
 #### RenderObject是什么？
 
-- 渲染树上的一个对象
+- 渲染树上的一个对象（其实就相当于html 中的真实dom）
 - RenderObject层是渲染库的核心。
 
 #### RenderObject 怎么被创建？
 
-继承于`RenderObjectWidget`的子类都必须要实现一个`createRenderObject`的抽象方法，这个方法就是用来创建`RenderObject`的，这个方法是会在`Element`的`mount`方法中被调用
+继承于`RenderObjectWidget`的子类都必须要实现一个`createRenderObject`的抽象方法，这个方法就是用来创建`RenderObject`的，这个方法是会在`RenderObjectElement`的`mount`方法中被调用，在调用`Element`的`mount`方法的时候还会调用widget的build方法。
+
+
 
 ### BuildContext context 是什么 
 
+在`Element`中调用`mount`方法的时候是会调用`Widget`的`build`方法的，并且在此时会传入一个参数`this`（如果是普通Widget就是`_widget.build(this)`，如果是状态Widget就是`state.build(this)`），所以`BuildContext context`其实就是一个`Element`实例
+
 ### key 的作用
+
+有这样一个页面
+
+![1655133267404](flutter/1655133267404.png)
+
+```dart
+class _HYHomePageState extends State<HYHomePage> {
+  List<String> names = ["aaa", "bbb", "ccc"];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Test Key"),
+      ),
+      body: ListView(
+        children: names.map((name) {
+          return ListItemLess(name);
+        }).toList(),
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.delete),
+        onPressed: () {
+          setState(() {
+            names.removeAt(0);
+          });
+        }
+      ),
+    );
+  }
+}
+```
+
+**StatelessWidget的实现**
+
+当使用`StatelessWidget`来定义`ListItemLess`时
+
+```dart
+class ListItemLess extends StatelessWidget {
+  finalString name;
+  final Color randomColor = Color.fromARGB(255, Random().nextInt(256), Random().nextInt(256), Random().nextInt(256));
+
+  ListItemLess(this.name);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      child: Text(name),
+      color: randomColor,
+    );
+  }
+}
+```
+
+实现效果是每删除一个，所有的颜色都会发现一次变化，这是因为删除之后调用setState，会重新build，重新build出来的新的StatelessWidget会重新生成一个新的随机颜色
+
+![图片](flutter/640.jpg)
+
+**StatefulWidget的实现（没有key）**
+
+使用`StatefulWidget`来实现 `ListItemFul`
+
+```dart
+class ListItemFul extends StatefulWidget {
+  finalString name;
+  ListItemFul(this.name): super();
+  @override
+  _ListItemFulState createState() => _ListItemFulState();
+}
+
+class _ListItemFulState extends State<ListItemFul> {
+  final Color randomColor = Color.fromARGB(255, Random().nextInt(256), Random().nextInt(256), Random().nextInt(256));
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      child: Text(widget.name),
+      color: randomColor,
+    );
+  }
+}
+```
+
+我们发现一个很奇怪的现象，颜色不变化，但是数据向上移动了
+
+- 这是因为在删除第一条数据的时候，Widget对应的Element并没有改变；
+- 而Element中对应的State引用也没有发生改变；
+- 在更新Widget的时候，Widget使用了没有改变的Element中的State；
+
+![1655133762980](flutter/1655133762980.png)
+
+**StatefulWidget的实现（随机key）**
+
+我们使用一个随机的key
+
+ListItemFul的修改如下：
+
+```dart
+class ListItemFul extends StatefulWidget {  finalString name;  ListItemFul(this.name, {Key key}): super(key: key);  @override  _ListItemFulState createState() => _ListItemFulState();}
+```
+
+home界面代码修改如下：
+
+```dart
+body: ListView(  children: names.map((name) {    return ListItemFul(name, key: ValueKey(Random().nextInt(10000)),);  }).toList(),),
+```
+
+这一次我们发现，每次删除都会出现随机颜色的现象：
+
+- 这是因为修改了key之后，Element会强制刷新，那么对应的State也会重新创建
+
+```dart
+// Widget类中的代码
+staticbool canUpdate(Widget oldWidget, Widget newWidget) {  return oldWidget.runtimeType == newWidget.runtimeType    && oldWidget.key == newWidget.key;}
+```
+
+![图片](flutter/640-1655133982676.jpg)
+
+**StatefulWidget的实现（name为key）**
+
+这次，我们将name作为key来看一下结果：
+
+```dart
+body: ListView(  children: names.map((name) {    return ListItemFul(name, key: ValueKey(name));  }).toList(),),
+```
+
+我们理想中的效果：
+
+- 因为这是在更新widget的过程中根据key进行了diff算法
+- 在前后进行对比时，发现bbb对应的Element和ccc对应的Element会继续使用，那么就会删除之前aaa对应的Element，而不是直接删除最后一个Element
+
+![图片](flutter/640-1655134017702.jpg)
+
+###  Key的分类
+
+Key本身是一个抽象，不过它也有一个工厂构造器，创建出来一个ValueKey
+
+直接子类主要有：LocalKey和GlobalKey
+
+- LocalKey，它应用于具有相同父Element的Widget进行比较，也是diff算法的核心所在；
+- GlobalKey，通常我们会使用GlobalKey某个Widget对应的Widget或State或Element
+
+#### LocalKey
+
+**LocalKey有三个子类**
+
+ValueKey：
+
+- ValueKey是当我们以特定的值作为key时使用，比如一个字符串、数字等等
+
+ObjectKey：
+
+- 如果两个学生，他们的名字一样，使用name作为他们的key就不合适了
+- 我们可以创建出一个学生对象，使用对象来作为key
+
+UniqueKey
+
+- 如果我们要确保key的唯一性，可以使用UniqueKey；
+- 比如我们之前使用随机数来保证key的不同，这里我们就可以换成UniqueKey；
+
+#### GlobalKey
+
+GlobalKey可以帮助我们访问某个Widget的信息，包括Widget或State或Element等对象
+
+我们来看下面的例子：我希望可以在HYHomePage中直接访问HYHomeContent中的内容
+
+```dart
+class HYHomePage extends StatelessWidget {
+  final GlobalKey<_HYHomeContentState> homeKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("列表测试"),
+      ),
+      body: HYHomeContent(key: homeKey),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.data_usage),
+        onPressed: () {
+          print("${homeKey.currentState.value}");
+          print("${homeKey.currentState.widget.name}");
+          print("${homeKey.currentContext}");
+        },
+      ),
+    );
+  }
+}
+
+class HYHomeContent extends StatefulWidget {
+  finalString name = "123";
+
+  HYHomeContent({Key key}): super(key: key);
+
+  @override
+  _HYHomeContentState createState() => _HYHomeContentState();
+}
+
+class _HYHomeContentState extends State<HYHomeContent> {
+  finalString value = "abc";
+
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
+```
+
+
 
 [Flutter的三棵树渲染机制和原理](https://juejin.cn/post/6916113193207070734)
 
