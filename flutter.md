@@ -258,6 +258,7 @@ https://juejin.cn/post/7056646298073563166
 + `Positioned`绝对定义的容器，相当于设置了`position:absolute;`的`div`
 + `Align`设置位置的容器，可以通过设置`aligment`属性操作元素在容器中的位置，通过`widthFactory，heightFactory`设置容器宽高是子容器的大小的倍数。（其实在一些组件中设置的布局排序属性`alignment`，本质上也是使用`Align`再给子元素包裹一层的）
 + `Container`普通的单子节点容器组件，用来创建一个可见的矩形元素，可以通过设置`decoration`来设置背景色（color），背景图（image），边框（border），阴影（boxShader）等盒子类型效果。还可以设置`margin 外边距,padding 内边距`等。
+	+ 需要注意，当一个`Container`直接包裹一个`Container`的时候，子的`Container`的宽高将会失效，而且会以父`Container`的宽高来进行填充；可以通过设置一个中间容器来隔断`Container`与`Container`的直接子元素关系来解决，父组件设置`alignment`也可以解决（其实就是给子元素包裹一层`Align`）
 + `AspectRatio`可以设置相对宽高比的容器，通过`aspectRatio:宽/高`可以设置当前容器宽和高的比
 + `Icon`图标容器，方便快捷得生成图标，是一种矢量图。
 + `Card`卡片容器组件
@@ -271,6 +272,7 @@ https://juejin.cn/post/7056646298073563166
 + `Divider`分割线
 + `Theme`主题容器，可以快速为子容器设置主题，比如颜色风格
 + `SafeArea`安全区域容器，不会遮挡状态栏和底部菜单
++ `FittedBox`自动缩放容器，当子组件的宽或者高比当前容器的宽高大的时候就会将子节点进行整体的缩放来适应容器
 
 **多子节点容器**
 
@@ -542,11 +544,220 @@ flutter 中有多种已经定义好了样式的按钮，比如说上面用到的
 
 flutter中的组件很多，并不需要去记，只需要知道有哪些常用的组件就好，不过官网的组件例子写得不太好，还都是英文的不好看，所以推荐去看**(老孟的 300 多个组件例子)[http://laomengit.com/]**，在平时给组件设置属性的时候需要我们传递固定类型的数据比如设置`Container`组件的`decoration`需要使用`Decoration`类。
 
-![image-20220608145749937](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/image-20220608145749937.png)
+![image-20220608145749937](flutter/image-20220608145749937.png)
 
 但是发现`Decoration`是一个抽象类，也没有工厂构造函数（可以令抽象类也可以被实例化），所以我们需要去找实现或者继承了`Decoration`的类。此时可以点击`ctrl+F12`就可以看到实现的类了，再结合文档就可以知道应该如何使用
 
-![image-20220608150305374](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/flutter/image-20220608150305374.png)
+![image-20220608150305374](flutter/image-20220608150305374.png)
+
+
+
+## 事件监听
+
+在Flutter中，手势有两个不同的层次：
+
+- 第一层：原始指针事件（Pointer Events）：描述了屏幕上由触摸板、鼠标、指示笔等触发的指针的位置和移动。
+
+- 第二层：手势识别（Gesture Detector）：这个是在原始事件上的一种封装。
+
+- - 比如我们要监听用户长按，如果自己封装原始事件我们需要监听从用户按下到抬起的时间来判断是否是一次长按事件；
+	- 比如我们需要监听用户双击事件，我们需要自己封装监听用户两次按下抬起的时间间隔；
+	- 幸运的是各个平台几乎都对它们进行了封装，而Flutter中的手势识别就是对原始指针事件的封装；
+	- 包括哪些手势呢？比如点击、双击、长按、拖动等
+
+### 指针事件Pointer
+
+Pointer 代表的是人机界面交互的原始数据。一共有四种指针事件：
+
+- `PointerDownEvent` 指针在特定位置与屏幕接触
+- `PointerMoveEvent` 指针从屏幕的一个位置移动到另外一个位置
+- `PointerUpEvent` 指针与屏幕停止接触
+- `PointerCancelEvent` 指针因为一些特殊情况被取消
+
+Pointer的原理是什么呢？
+
+- 在指针落下时，框架做了一个 hit test 的操作，确定与屏幕发生接触的位置上有哪些Widget以及分发给最内部的组件去响应；
+- 事件会沿着最内部的组件向组件树的根冒泡分发；
+- 并且不存在用于取消或者停止指针事件进一步分发的机制；
+
+原始指针事件使用Listener来监听：
+
+```dart
+class HomeContent extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Listener(
+        child: Container(
+          width: 200,
+          height: 200,
+          color: Colors.red,
+        ),
+        onPointerDown: (event) => print("手指按下:$event"),
+        onPointerMove: (event) => print("手指移动:$event"),
+        onPointerUp: (event) => print("手指抬起:$event"),
+      ),
+    );
+  }
+}
+```
+
+### 手势识别Gesture
+
+Gesture是对一系列Pointer的封装，官方建议开发中尽可能使用Gesture，而不是Pointer
+
+**Gesture分层非常多的种类：**
+
+**点击**：
+
+- onTapDown：用户发生手指按下的操作
+- onTapUp：用户发生手指抬起的操作
+- onTap：用户点击事件完成
+- onTapCancel：事件按下过程中被取消
+
+**双击：**
+
+- onDoubleTap：快速点击了两次
+
+**长按：**
+
+- onLongPress：在屏幕上保持了一段时间
+
+**纵向拖拽：**
+
+- onVerticalDragStart：指针和屏幕产生接触并可能开始纵向移动；
+- onVerticalDragUpdate：指针和屏幕产生接触，在纵向上发生移动并保持移动；
+- onVerticalDragEnd：指针和屏幕产生接触结束；
+
+**横线拖拽：**
+
+- onHorizontalDragStart：指针和屏幕产生接触并可能开始横向移动；
+- onHorizontalDragUpdate：指针和屏幕产生接触，在横向上发生移动并保持移动；
+- onHorizontalDragEnd：指针和屏幕产生接触结束；
+
+**移动：**
+
+- onPanStart：指针和屏幕产生接触并可能开始横向移动或者纵向移动。如果设置了 `onHorizontalDragStart` 或者 `onVerticalDragStart`，该回调方法会引发崩溃；
+- onPanUpdate：指针和屏幕产生接触，在横向或者纵向上发生移动并保持移动。如果设置了 `onHorizontalDragUpdate` 或者 `onVerticalDragUpdate`，该回调方法会引发崩溃。
+- onPanEnd：指针先前和屏幕产生了接触，并且以特定速度移动，此后不再在屏幕接触上发生移动。如果设置了 `onHorizontalDragEnd` 或者 `onVerticalDragEnd`，该回调方法会引发崩溃。
+
+从Widget的层面来监听手势，我们需要使用：GestureDetector
+
+- 当然，我们也可以使用RaisedButton、FlatButton、InkWell等来监听手势
+- globalPosition用于获取相对于屏幕的位置信息
+- localPosition用于获取相对于当前Widget的位置信息
+
+```dart
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("手势测试"),
+      ),
+      body: GestureDetector(
+        child: Container(
+          width: 200,
+          height: 200,
+          color: Colors.red,
+        ),
+        onTap: () {},
+        onTapDown: (detail) {
+          print(detail.globalPosition);
+          print(detail.localPosition);
+        },
+        onTapUp: (detail) {
+          print(detail.globalPosition);
+          print(detail.localPosition);
+        }
+      ),
+    );
+  }
+}
+```
+
+### 关于阻止冒泡
+
+有两个嵌套的`Container`都绑定了点击事件 ，在连续点击内层的节点的时候可能会触发外层的事件
+
+```dart
+GestureDetector(
+  onTabDown:()=>print('outer tap'),
+	child:Container(
+    width:100,
+    height:100,
+    color:Colors.bue,
+    alignment:Alignment.center,
+    child:GestureDetector(
+      onTabDown:()=>print('inner tap'),
+    	child:Container(
+        width:100,
+        height:100,
+        color:Colors.red
+      )
+    )
+  )
+)
+
+```
+
+解决方法是，将这两个组件修改成不是嵌套的形式，比如说使用绝对定位`Stack`
+
+```dart
+Stack(
+  alignment:Alignment.center,
+	children:[
+    GestureDetector(
+      onTabDown:()=>print('outer tap'),
+    	child:Container(
+        width:200,
+        height:200,
+        color:Colors.blue
+      )
+    ),
+    GestureDetector(
+      onTabDown:()=>print('inner tap'),
+    	child:Container(
+        width:100,
+        height:100,
+        color:Colors.red
+      )
+    )
+  ]
+)
+```
+
+这样就可以解决这个问题了
+
+如果我们不希望某个组件响应事件了，可以使用`IgnorePointer`组件包裹一下不需要进行事件响应的组件，比如
+
+```dart
+Stack(
+  alignment:Alignment.center,
+	children:[
+    GestureDetector(
+      onTabDown:()=>print('outer tap'),
+    	child:Container(
+        width:200,
+        height:200,
+        color:Colors.blue
+      )
+    ),
+    IgnorePointer(
+    	child:GestureDetector(
+        onTabDown:()=>print('inner tap'),
+        child:Container(
+          width:100,
+          height:100,
+          color:Colors.red
+        )
+      )
+    )
+  ]
+)
+```
+
+这样即使点击了内层的`Container`也只会响应`outer tap`。
 
 
 
@@ -735,7 +946,7 @@ Padding -> SingleChildRenderObjectWidget -> RenderObjectWidget -> Widget
 
 继承于`RenderObjectWidget`的子类都必须要实现一个`createRenderObject`的抽象方法，这个方法就是用来创建`RenderObject`的，这个方法是会在`RenderObjectElement`的`mount`方法中被调用，在调用`Element`的`mount`方法的时候还会调用widget的build方法。
 
-
+![1655217183223](flutter/1655217183223.png)
 
 ### BuildContext context 是什么 
 
