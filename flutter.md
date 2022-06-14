@@ -669,496 +669,6 @@ class HttpRequest{
 
 
 
-## 路由
-
-在`Scaffold`组件中可以通过`bottomNavigationBar`属性可以定义底部的导航选项卡，这个属性的值容器是`BottomNavigationBar`，通过`items`选项定义选项卡列表项，`currentIndex`定义选中当前选中的项的索引，`onTab`定义点击选项卡的回调函数所以可以通过`BottomNavigationBar`来控制`Scaffold`组件的`body`显示的组件来实现路由的效果。需要注意的是，如果`items`超过3项就需要设置`type: BottomNavigationBarType.fixed`选项卡才会显示。
-
-还有需要显示的页面可以通过`body`来定义，在 flutter 中有个组件可以根据输入的index来显示对应索引的页面 `IndexedStack`，当也可以使用一个`List`来存储所有的页面，然后通过修改索引来显示页面的。
-
-```dart
-class Tab extends StatefulWidget {
-  const Tab({Key? key}) : super(key: key);
-
-  @override
-  State<Tab> createState() => _TabState();
-}
-
-class _TabState extends State<Tab> {
-  int currentIndex = 0;
-  //List<Widget> pageList = [Page1(), Page2(), Page3()];
-  Widget pages = IndexedStack(index:this.currentIndex,children:[Page1(), Page2(), Page3()]);
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('hello world'),
-      ),
-      //body: this.pageList[this.currentIndex],
-      body: pages,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,//如果items超过3项就需要设置
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '首页'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.ac_unit_rounded), label: '血'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.access_alarm_sharp), label: '时间'),
-        ],
-        onTap: (index) {
-          this.setState(() {
-            this.currentIndex = index;
-          });
-        },
-      ),
-    );
-  }
-}
-class Page1 extends StatelessWidget {
-  const Page1({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: Center(
-        child: Text("Page1"),
-      ),
-    );
-  }
-}
-class Page2 extends StatefulWidget {
-  const Page2({Key? key}) : super(key: key);
-  @override
-  State<Page2> createState() => _Page2State();
-}
-class _Page2State extends State<Page2> {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: Center(
-        child: Text("Page2"),
-      ),
-    );
-  }
-}
-class Page3 extends StatelessWidget {
-  const Page3({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: Center(
-        child: Text("Page3"),
-      ),
-    );
-  }
-}
-```
-
-通过`BottomNavigationBar`可以实现简单的路由效果，但是这个并不是真正的路由，因为这种方式搞多依赖于UI，其实在flutter中，路由是通过`Navigator`类来实现的
-
-### Navigator
-
-在 flutter 中几乎都是组件，所以flutter 的路由跳转实际上就是将当前的页面替换成其他的页面组件
-
-flutter 中有两种路由模式，一种是普通路由通过`Navigator`实现，一种是命名路由，通过`MaterialApp`的`routers`属性实现。
-
-**常用的方法**
-
-+ `Navigator.of(context).push()`普通跳转
-+ `Navigator.of(context).pop()`跳转到栈定的页面，相当于返回，返回时还可以传递传递参数`pop('xxx')`，之后可以在进入当前页面的那个路由中通过then接收，比如要返回的A页面`Navigator.of(context).push(MaterialPageRoute(builder:(context)=>A())).then(res=>print(res))`
-+ `Navigator.of(context).pushReplacementNamed()`跳转到另外一个页面，并替换当前记录
-+ `Navigator.of(context).pushAndRemoveUntil()`跳转到另外一个页面，对以往的历史记录做移除操作，比如跳转到`Page1`并移除跳转记录`Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(context)=>Page1())),(route)=>route == null`
-
-### **普通路由**
-
-将上面的 `Page1`改成
-
-```dart
-class Page1 extends StatefulWidget {
-  const Page1({Key? key}) : super(key: key);
-  @override
-  State<Page1> createState() => _Page1State();
-}
-class _Page1State extends State<Page1>{
- 	@override
-  Widget build(BuildContext context){
-    return Container(
-      child: ElevatedButton(
-        child:Text('点我跳转'),
-      	onPressed(){
-          // 路由跳转，of方法可以定义执行上下文，如果不使用of的话,可以在push的第二个参数传入 Navigator.push(context,...)
-         	Navigator.of(context).push(
-          	MaterialPageRoute(
-            	builder:(BuildContext context) => Page2(),
-            )
-          )
-        }
-      )
-    );
-  }
-}
-```
-
-上面就通过`Navigator.of().push`实现了一个简单的路由跳转，一般路由跳转都会携带参数的，在 flutter 中传递参数一般都是通过给构造函数传递参数实现的，路由和父子组件之间通信也是如此
-
-那么在`Page1` 向`page2`传递参数就是这样
-
-```dart
-Navigator.of(context).push(
-  MaterialPageRoute(
-    builder:(BuildContext context) => Page2('这是一个参数'),
-  )
-)
-```
-
-同时`Page2`也需要做一下修改
-
-```dart
-class Page2 extends StatefulWidget {
-  String? params;
-  Page2(this.params,{ Key? key }) : super(key: key);
-
-  @override
-  State<Page2> createState() => _Page2State();
-}
-
-class _Page2State extends State<Page2> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('page2'),
-      ),
-      body: Container(
-        child: Text('Page2 get params:${widget.params}'),
-      ),
-    );
-  }
-}
-```
-
-需要注意的是，如果是无状态组件的话可以直接使用传过来的构造参数，但是如果是有状态组件的话就需要通过`widget`来访问，因为 有状态组件的实体内容（状态类`_Page2State`）和构造类(`Page2`)是分开的，`widget`默认存在于状态类中，表示的就是`Page2`实例。
-
-### **命名路由**
-
-flutter 中的命名路由需要在`MaterialApp`的`routes`属性中配置路由映射，之后就可以使用`Navigator.pushNamed(context,'路由名')`方法就能跳转到对应的页面
-
-```dart
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'hello',
-      home: MyTab(),
-      routes:{
-        '/page1':(context)=>Page1(),
-        '/page2':(context)=>Page2(),
-      }
-    );
-  }
-}
-```
-
-之后在需要跳转的时候调用`Navigator.pushNamed(context,'/page1')`就能跳转到`Page1`了
-
-命名路由的传参方式有两种，一种是直接通过`Navigator.pushNamed()`的第三个参数`argumentss`来传递，然后在页面中通过`final args = ModalRoute.of(context)!.settings.arguments;`就可以获取到了
-
-### `onGenerateRoute`
-
-还有一种方式是通过`MaterialApp`的`onGenerateRoute`来进行统一的路由管理，也可以用来做路由拦截的功能。在调用`Navigator.pushNamed()`会先执行`onGenerateRoute`回调，这个回调接收一个`settings`的参数（包含要跳转的url和要传递的参数），在这里我们可以通过返回一个`MaterialPageRoute`对象来决定要跳转到的页面
-
-```dart
-const routes = {
-  '/':(context)=>Home(),
-  '/page1':(context)=>Page1(),
-  '/page2':(context,{arguments})=>Page2(arguments:arguments),
-}
-MaterialApp(
-  //初始路由，开始的时候会加载 Home();
-  initialRoute:'/',
-  onGenerateRoute: (settings) {
-    //settings.name 路由名，settings.arguments路由参数
-    final Function pageBuilder = this.routes[settings.name];
-    return MaterialPageRoute(
-      builder: (context) {
-        //Page2 需要在构造函数中接收参数
-        return pageBuilder(context,settings.arguments);
-      },
-    );
-  },
-)
-```
-
-`onUnknowRoute`
-
-当匹配不到想的路由的时候就会触发这个方法，可以在这个方法中放返回一个 404 的页面
-
-```dart
-MaterialApp(
-	onUnknowRoute:(settinggs){
-    return MaterialPageRoute(
-    	builder:(context) => Page404()
-    )
-  }
-)
-```
-
-
-
-## 动画
-
-## 状态管理
-
-### 父子组件通信
-
-父子组件之间的传值主要是通过 组件的构造函数参数进行传递，如果是父组件传递给子组件，那么就可以直接将数据传递过去；如果是子组件传给父组件就可以通过父组件传递过来的方法来将数据传递出去
-
-**通过构造函数参数传递数据**
-
-父组件
-
-```dart
-class A extends StatefulWidget {
-  A({Key? key}) : super(key: key);
-  @override
-  State<A> createState() => _AState();
-}
-
-class _AState extends State<A> {
-  String parentData = "parent";
-  String childData = '';
-  //父组件接收子组件传递过来的数据
-  void getChildData(data) {
-    setState(() {
-      childData = data;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView(
-        children: [
-          Text('child data:$childData'),
-          Divider(),
-          B(
-            data: parentData,//父组件传递数据给子组件
-            cb: (val) => {getChildData(val)},
-          )
-        ],
-      ),
-    );
-  }
-}
-```
-
-子组件
-
-```dart
-class B extends StatefulWidget {
-  late String data;
-  late Function cb;
-  B({required String data, required Function cb, Key? key}) : super(key: key) {
-    this.data = data;
-    this.cb = cb;
-  }
-  String childData = "child";
-  @override
-  State<B> createState() => _BState();
-}
-
-class _BState extends State<B> {
-  int count = 0;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text('parent data:${widget.data}'),
-        ElevatedButton(
-            onPressed: () {
-              //传递数据给父组件
-              count++;
-              this.widget.cb("${widget.childData}${count}");
-            },
-            child: Text('send data to parent'))
-      ],
-    );
-  }
-}
-```
-
-显然这种方式是非常麻烦的，当层级高了之后如果比层级差距比较高的两个组件想要进行通信的话，就需要中间的每个组件都传递一些不需要的数据，而且当状态更新时不相关的组件也会更新。
-
-**通过`inheritedWidget`实现数据共享**
-
-在高层级的组件树中通过 构造函数进行数据传递的方法是非常麻烦且耗费性能的，这是可以通过`inheritedWidget`组件创建一个状态数据中心提供给其他的子组件，然后在需要使用的组件中通过`context.dependOnInheritedWidgetOfExactType<A>().xxxx`来获取数据中心的数据。
-
-例如，有`Home -> A -> B -> C`，其中A作为数据中心
-
-```dart
-class InherHome extends StatefulWidget {
-  int counter = 0;
-  InherHome({Key? key }) : super(key: key);
-  @override
-  State<InherHome> createState() => _InherHomeState();
-}
-
-class _InherHomeState extends State<InherHome> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("data share"),
-      ),
-      body:A(
-        counter: this.widget.counter,
-        child: B(
-          child: C(),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: ()=>{
-          this.setState(() {
-            this.widget.counter ++;
-          })
-        },
-      )
-    );
-  }
-}
-//###########################################
-class A extends InheritedWidget{
-  int counter = 0;//需要共享的数据
-  A({required Widget child,required this.counter}):super(child: child);
-  // 为了方便获取A的数据，在这里定一个静态方法来返回
-  static A? of(BuildContext context){
-    return context.dependOnInheritedWidgetOfExactType<A>();
-  }
-  //控制状态改变时是否更新页面
-  @override
-  bool updateShouldNotify(covariant A oldWidget) {
-    return oldWidget.counter != this.counter;
-  }
-}
-//###########################################
-class B extends StatefulWidget {
-  final Widget child;
-  const B({required this.child, Key? key }) : super(key: key);
-
-  @override
-  State<B> createState() => _BState();
-}
-class _BState extends State<B> {
-  @override
-  Widget build(BuildContext context) {
-    print("B Build");
-    return Container(
-      child: this.widget.child,
-    );
-  }
-}
-//###########################################
-class C extends StatefulWidget {
-  const C({ Key? key }) : super(key: key);
-
-  @override
-  State<C> createState() => _CState();
-}
-class _CState extends State<C> {
-  //当共享数据更新（updateShouldNotify 返回true）时执行 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    print("C didChangeDependencies");
-  }
-  @override
-  Widget build(BuildContext context) {
-    print("C Build");
-    return Container(
-      child: Text('从 Home-> 获取到的值是：${A.of(context)?.counter}'),
-    );
-  }
-}
-```
-
-这样就把A作为了一个数据中心，当`counter`发送改变的时候，页面就会更新。也可以在A中定义修改状态的方法，方便修改状态时调用.
-
-> 这种方式其实并不是完整的数据中心，因为其中还确实了更新状态的方法，在`inheritedWidget`中是没有`setState`方法的，所以如果要实现一个真中的数据中心的话就需要在外层在包裹一层`StatefulWidget`组件，为数据中心提供一个初始状态数据和修改状态的方法，但是因为状态是顶层组件提供的，调用`setState`来更新状态时就意味着整个组件树都要调用build方法重构，是非常损耗性能的。
-
-但是当更新状态的时候会发现控制台中会输出
-
-```
-B Build
-C didChangeDependencies
-C Build
-```
-
-也就是说 不相关的B组件也执行了`build`重建了组件，这就导致了性能损耗，可以通过`ValueNotifier`来解决
-
-```dart
-class A extends InheritedWidget {
-  // int counter = 0; //需要共享的数据
-  late ValueNotifier<int> _valueNotifier;
-  A({required Widget child, required int counter}) : super(child: child) {
-    this._valueNotifier = new ValueNotifier(counter);
-  }
-  ValueNotifier<int> get valueNotifier => this._valueNotifier;
-  // 为了方便获取A的数据，在这里定一个静态方法来返回
-  static A of(BuildContext context) {
-    // return context.dependOnInheritedWidgetOfExactType<A>();
-    return context.getElementForInheritedWidgetOfExactType<A>()?.widget as A;
-  }
-
-  add(int step) {
-    _valueNotifier.value += step;
-  }
-
-  //控制状态改变时是否更新页面
-  @override
-  bool updateShouldNotify(covariant A oldWidget) {
-    return false;
-  }
-}
-//#################################
-class C extends StatefulWidget {
-  const C({Key? key}) : super(key: key);
-
-  @override
-  State<C> createState() => _CState();
-}
-
-class _CState extends State<C> {
-  //当共享数据更新时执行
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    print("C didChangeDependencies");
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    print("C Build");
-    return ValueListenableBuilder(
-      valueListenable: A.of(context).valueNotifier,
-      builder: (BuildContext context, int value, Widget? child) {
-        return Container(
-          child: Column(
-            children: [
-              Text('从 Home-> 获取到的值是：${value}'),
-              ElevatedButton(
-                  onPressed: () => {A.of(context).add(2)}, child: Text('添加2'))
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-```
-
-
-
 ## Flutter的三棵树渲染机制和原理
 
 在flutter中是通过声明式的编程方式来通过 `widget`编写页面的，但是我们知道当某个组件通过`setState`进行状态更新的时候就会调用 `build`方法来更新组件，这时候它的子节点也会被重新创建，这样显然会是一个非常消耗性能的方法，没当一个组件状态更新的时候当前组件和所有的子节点组件都可以被销毁后并重新创建。不过 flutter 中并不是直接将 `widget` 渲染成页面的。
@@ -1443,9 +953,685 @@ class _HYHomeContentState extends State<HYHomeContent> {
 }
 ```
 
-
-
 [Flutter的三棵树渲染机制和原理](https://juejin.cn/post/6916113193207070734)
+
+
+
+## 状态管理
+
+在 flutter 中有两种状态概念，一种是**短时状态**，尽在自己的 widget 内使用的状态，这种状态主要使用`setState`进行管理；一种是**应用状态**，多个widget或者页面共用的状态，这种方式主要使用`InheritedWidget`或者`Provider`。
+
+### 父子组件通信
+
+父子组件之间的传值主要是通过 组件的构造函数参数进行传递，如果是父组件传递给子组件，那么就可以直接将数据传递过去；如果是子组件传给父组件就可以通过父组件传递过来的方法来将数据传递出去
+
+**通过构造函数参数传递数据**
+
+父组件
+
+```dart
+class A extends StatefulWidget {
+  A({Key? key}) : super(key: key);
+  @override
+  State<A> createState() => _AState();
+}
+
+class _AState extends State<A> {
+  String parentData = "parent";
+  String childData = '';
+  //父组件接收子组件传递过来的数据
+  void getChildData(data) {
+    setState(() {
+      childData = data;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ListView(
+        children: [
+          Text('child data:$childData'),
+          Divider(),
+          B(
+            data: parentData,//父组件传递数据给子组件
+            cb: (val) => {getChildData(val)},
+          )
+        ],
+      ),
+    );
+  }
+}
+```
+
+子组件
+
+```dart
+class B extends StatefulWidget {
+  late String data;
+  late Function cb;
+  B({required String data, required Function cb, Key? key}) : super(key: key) {
+    this.data = data;
+    this.cb = cb;
+  }
+  String childData = "child";
+  @override
+  State<B> createState() => _BState();
+}
+
+class _BState extends State<B> {
+  int count = 0;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('parent data:${widget.data}'),
+        ElevatedButton(
+            onPressed: () {
+              //传递数据给父组件
+              count++;
+              this.widget.cb("${widget.childData}${count}");
+            },
+            child: Text('send data to parent'))
+      ],
+    );
+  }
+}
+```
+
+显然这种方式是非常麻烦的，当层级高了之后如果比层级差距比较高的两个组件想要进行通信的话，就需要中间的每个组件都传递一些不需要的数据，而且当状态更新时不相关的组件也会更新。
+
+### **通过`InheritedWidget`实现数据共享**
+
+在高层级的组件树中通过 构造函数进行数据传递的方法是非常麻烦且耗费性能的，这是可以通过`inheritedWidget`组件创建一个状态数据中心提供给其他的子组件，然后在需要使用的组件中通过`context.dependOnInheritedWidgetOfExactType<A>().xxxx`来获取数据中心的数据
+
+例如，有`Home -> A -> B -> C`，其中A作为数据中心
+
+```dart
+class InherHome extends StatefulWidget {
+  int counter = 0;
+  InherHome({Key? key }) : super(key: key);
+  @override
+  State<InherHome> createState() => _InherHomeState();
+}
+
+class _InherHomeState extends State<InherHome> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("data share"),
+      ),
+      body:A(
+        counter: this.widget.counter,
+        child: B(
+          child: C(),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: ()=>{
+          this.setState(() {
+            this.widget.counter ++;
+          })
+        },
+      )
+    );
+  }
+}
+//###########################################
+class A extends InheritedWidget{
+  int counter = 0;//需要共享的数据
+  A({required Widget child,required this.counter}):super(child: child);
+  // 为了方便获取A的数据，在这里定一个静态方法来返回
+  static A? of(BuildContext context){
+    //`dependOnInheritedWidgetOfExactType`的作用是沿着`Element`树找到最近的 A，从Element树中取出Widget对象。
+    return context.dependOnInheritedWidgetOfExactType<A>();
+  }
+  // 如果返回 true：执行依赖当前的 InheritedWidget 的 State中的didChangeDependencies
+  @override
+  bool updateShouldNotify(covariant A oldWidget) {
+    return oldWidget.counter != this.counter;
+  }
+}
+//###########################################
+class B extends StatefulWidget {
+  final Widget child;
+  const B({required this.child, Key? key }) : super(key: key);
+
+  @override
+  State<B> createState() => _BState();
+}
+class _BState extends State<B> {
+  @override
+  Widget build(BuildContext context) {
+    print("B Build");
+    return Container(
+      child: this.widget.child,
+    );
+  }
+}
+//###########################################
+class C extends StatefulWidget {
+  const C({ Key? key }) : super(key: key);
+
+  @override
+  State<C> createState() => _CState();
+}
+class _CState extends State<C> {
+  //当共享数据更新（updateShouldNotify 返回true）时执行 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print("C didChangeDependencies");
+  }
+  @override
+  Widget build(BuildContext context) {
+    print("C Build");
+    return Container(
+      child: Text('从 Home-> 获取到的值是：${A.of(context)?.counter}'),
+    );
+  }
+}
+```
+
+这样就把A作为了一个数据中心，当`counter`发送改变的时候，页面就会更新。也可以在A中定义修改状态的方法，方便修改状态时调用.
+
+> 这种方式其实并不是完整的数据中心，因为其中还确实了更新状态的方法，在`inheritedWidget`中是没有`setState`方法的，所以如果要实现一个真中的数据中心的话就需要在外层在包裹一层`StatefulWidget`组件，为数据中心提供一个初始状态数据和修改状态的方法。
+
+但是当更新状态的时候会发现控制台中会输出
+
+```
+B Build
+C didChangeDependencies
+C Build
+```
+
+也就是说 不相关的B组件也执行了`build`重建了组件，这就导致了性能损耗，可以通过`ValueNotifier`来解决
+
+```dart
+class A extends InheritedWidget {
+  // int counter = 0; //需要共享的数据
+  late ValueNotifier<int> _valueNotifier;
+  A({required Widget child, required int counter}) : super(child: child) {
+    this._valueNotifier = new ValueNotifier(counter);
+  }
+  ValueNotifier<int> get valueNotifier => this._valueNotifier;
+  // 为了方便获取A的数据，在这里定一个静态方法来返回
+  static A of(BuildContext context) {
+    // return context.dependOnInheritedWidgetOfExactType<A>();
+    return context.getElementForInheritedWidgetOfExactType<A>()?.widget as A;
+  }
+
+  add(int step) {
+    _valueNotifier.value += step;
+  }
+
+  //控制状态改变时是否更新页面
+  @override
+  bool updateShouldNotify(covariant A oldWidget) {
+    return false;
+  }
+}
+//#################################
+class C extends StatefulWidget {
+  const C({Key? key}) : super(key: key);
+
+  @override
+  State<C> createState() => _CState();
+}
+
+class _CState extends State<C> {
+  //当共享数据更新时执行
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print("C didChangeDependencies");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print("C Build");
+    return ValueListenableBuilder(
+      valueListenable: A.of(context).valueNotifier,
+      builder: (BuildContext context, int value, Widget? child) {
+        return Container(
+          child: Column(
+            children: [
+              Text('从 Home-> 获取到的值是：${value}'),
+              ElevatedButton(
+                  onPressed: () => {A.of(context).add(2)}, child: Text('添加2'))
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+```
+
+
+
+### Provider
+
+`Provider`是官方推荐的一个状态管理库，`InheritedWidget`实现的是对子组件的数据共享，而且如果想要修改状态还是比较麻烦的。
+
+**Provider 基本使用**
+
+1.创建自己需要共享的数据
+
+```dart
+//ChangeNotifier 有可以通知所有使用当前状态的组件进行更新的方法
+class CounterViewModel extends ChangeNotifier{
+  int? _counter;
+  int get counter => counter;
+  set counter(int val){
+    _counter = val;
+    //通知所有使用了 counter 的组件进行更新
+    notifyListeners();
+  }
+}
+```
+
+2.在应用程序的顶层包裹一个 `ChangeNotifierProvider`
+
+```dart
+void main(){
+  runApp(
+  	changeNotifierProvider(
+    	create:(context)=>CounterViewModel,
+    	child:MyApp(),
+    )
+  )
+}
+```
+
+3.在其他文件使用共享数据
+
+```dart
+//在 build 中通过 Provider.of() 获取数据实例
+class Home extends StatelessWidget {
+  const Home({ Key? key }) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    int counter = Provider.of<CounterViewModel>(context).counter;
+    return Text("counter:$counter");
+  }
+}
+```
+
+这种方式是用几个弊端的，
+
+1. 就是依赖于build中的`context`，在没有`context`的场景下是无法使用的，比如说`floatingActionButton`按钮来修改状态就无法获取到状态了，
+2. 当状态改变的时候，通过`Provider.of`引用的状态的组件的build方法会被重新执行，也就意味着整个组件都被重新构建了
+
+**通过`Consumer`解决**
+
+```dart
+class Home extends StatelessWidget {
+  const Home({ Key? key }) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<CounterViewModel>(
+      builder: (ctx, counterPro, child) {
+        return Text("counter:$counter");
+      },
+    );
+  }
+}
+
+floatingActionButton:Consumer<CounterViewModel>(
+  builder: (ctx, counterPro, child) {
+    return FloatingActionButton(
+      child: child,
+      onPressed: () {
+        counterPro.counter += 1;
+      },
+    );
+  },
+  child:Icon(Icons.add),
+)
+```
+
+> Consumer的builder方法解析：
+>
+> - 参数一：context，每个build方法都会有上下文，目的是知道当前树的位置
+> - 参数二：ChangeNotifier对应的实例，也是我们在builder函数中主要使用的对象
+> - 参数三：child，目的是进行优化，如果builder下面有一颗庞大的子树，当模型发生改变的时候，我们并不希望重新build这颗子树，那么就可以将这颗子树放到Consumer的child中，在这里直接引入即可（注意我案例中的Icon所放的位置）
+
+使用`Consumer`就不需要依赖`context`了，而且当状态发生改变的时候就会调用`Consumer`的`builder`方法而不会将整个组件进行重建了。
+
+不过还有个问题是`FloatingActionButton`只是要修改状态并不依赖状态的，但是当状态改变的时候还是会被重新构建
+
+**可以使用`Selector`解决**
+
+```dart
+floatingActionButton: Selector<CounterProvider, CounterProvider>(
+  selector: (ctx, provider) => provider,
+  shouldRebuild: (pre, next) => false,
+  builder: (ctx, counterPro, child) {
+    print("floatingActionButton展示的位置builder被调用");
+    return FloatingActionButton(
+      child: child,
+      onPressed: () {
+        counterPro.counter += 1;
+      },
+    );
+  },
+  child: Icon(Icons.add),
+),
+```
+
+Selector和Consumer对比，不同之处主要是三个关键点：
+
+- 关键点1：泛型参数是两个
+
+- - 泛型参数一：我们这次要使用的Provider
+  - 泛型参数二：转换之后的数据类型，比如我这里转换之后依然是使用CounterProvider，那么他们两个就是一样的类型
+
+- 关键点2：selector回调函数
+
+- - 转换的回调函数，你希望如何进行转换
+  - S Function(BuildContext, A) selector
+  - 我这里没有进行转换，所以直接将A实例返回即可
+
+- 关键点3：是否希望重新rebuild
+
+- - 这里也是一个回调函数，我们可以拿到转换前后的两个实例；
+  - bool Function(T previous, T next);
+  - 因为这里我不希望它重新rebuild，无论数据如何变化，所以这里我直接return false；
+
+**多数据`MultiProvider`**
+
+上面的几种方法都是针对于**单个对象数据**的操作的，但是在开发中，我们需要共享的数据肯定不止一个，并且数据之间我们需要组织到一起，所以一个Provider必然是不够的。
+
+我们在增加一个新的`ChangeNotifier`
+
+```dart
+class UserInfo {
+  String nickname;
+  int level;
+
+  UserInfo(this.nickname, this.level);
+}
+
+class UserProvider extends ChangeNotifier {
+  UserInfo _userInfo = UserInfo("why", 18);
+
+  set userInfo(UserInfo info) {
+    _userInfo = info;
+    notifyListeners();
+  }
+
+  get userInfo {
+    return _userInfo;
+  }
+}
+```
+
+如果在开发中我们有多个Provider需要提供应该怎么做呢？
+
+方式一：多个Provider之间嵌套
+
+- 这样做有很大的弊端，如果嵌套层级过多不方便维护，扩展性也比较差
+
+```dart
+  runApp(ChangeNotifierProvider(
+    create: (context) => CounterProvider(),
+    child: ChangeNotifierProvider(
+      create: (context) => UserProvider(),
+      child: MyApp()
+    ),
+  ));
+```
+
+方式二：使用`MultiProvider`
+
+```dart
+runApp(MultiProvider(
+  providers: [
+    ChangeNotifierProvider(create: (ctx) => CounterProvider()),
+    ChangeNotifierProvider(create: (ctx) => UserProvider()),
+  ],
+  child: MyApp(),
+));
+```
+
+
+
+## 路由
+
+在`Scaffold`组件中可以通过`bottomNavigationBar`属性可以定义底部的导航选项卡，这个属性的值容器是`BottomNavigationBar`，通过`items`选项定义选项卡列表项，`currentIndex`定义选中当前选中的项的索引，`onTab`定义点击选项卡的回调函数所以可以通过`BottomNavigationBar`来控制`Scaffold`组件的`body`显示的组件来实现路由的效果。需要注意的是，如果`items`超过3项就需要设置`type: BottomNavigationBarType.fixed`选项卡才会显示。
+
+还有需要显示的页面可以通过`body`来定义，在 flutter 中有个组件可以根据输入的index来显示对应索引的页面 `IndexedStack`，当也可以使用一个`List`来存储所有的页面，然后通过修改索引来显示页面的。
+
+```dart
+class Tab extends StatefulWidget {
+  const Tab({Key? key}) : super(key: key);
+
+  @override
+  State<Tab> createState() => _TabState();
+}
+
+class _TabState extends State<Tab> {
+  int currentIndex = 0;
+  //List<Widget> pageList = [Page1(), Page2(), Page3()];
+  Widget pages = IndexedStack(index:this.currentIndex,children:[Page1(), Page2(), Page3()]);
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('hello world'),
+      ),
+      //body: this.pageList[this.currentIndex],
+      body: pages,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentIndex,
+        type: BottomNavigationBarType.fixed,//如果items超过3项就需要设置
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '首页'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.ac_unit_rounded), label: '血'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.access_alarm_sharp), label: '时间'),
+        ],
+        onTap: (index) {
+          this.setState(() {
+            this.currentIndex = index;
+          });
+        },
+      ),
+    );
+  }
+}
+class Page1 extends StatelessWidget {
+  const Page1({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Text("Page1"),
+      ),
+    );
+  }
+}
+class Page2 extends StatefulWidget {
+  const Page2({Key? key}) : super(key: key);
+  @override
+  State<Page2> createState() => _Page2State();
+}
+class _Page2State extends State<Page2> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Text("Page2"),
+      ),
+    );
+  }
+}
+class Page3 extends StatelessWidget {
+  const Page3({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Text("Page3"),
+      ),
+    );
+  }
+}
+```
+
+通过`BottomNavigationBar`可以实现简单的路由效果，但是这个并不是真正的路由，因为这种方式搞多依赖于UI，其实在flutter中，路由是通过`Navigator`类来实现的
+
+### Navigator
+
+在 flutter 中几乎都是组件，所以flutter 的路由跳转实际上就是将当前的页面替换成其他的页面组件
+
+flutter 中有两种路由模式，一种是普通路由通过`Navigator`实现，一种是命名路由，通过`MaterialApp`的`routers`属性实现。
+
+**常用的方法**
+
++ `Navigator.of(context).push()`普通跳转
++ `Navigator.of(context).pop()`跳转到栈定的页面，相当于返回，返回时还可以传递传递参数`pop('xxx')`，之后可以在进入当前页面的那个路由中通过then接收，比如要返回的A页面`Navigator.of(context).push(MaterialPageRoute(builder:(context)=>A())).then(res=>print(res))`
++ `Navigator.of(context).pushReplacementNamed()`跳转到另外一个页面，并替换当前记录
++ `Navigator.of(context).pushAndRemoveUntil()`跳转到另外一个页面，对以往的历史记录做移除操作，比如跳转到`Page1`并移除跳转记录`Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(context)=>Page1())),(route)=>route == null`
+
+### **普通路由**
+
+将上面的 `Page1`改成
+
+```dart
+class Page1 extends StatefulWidget {
+  const Page1({Key? key}) : super(key: key);
+  @override
+  State<Page1> createState() => _Page1State();
+}
+class _Page1State extends State<Page1>{
+ 	@override
+  Widget build(BuildContext context){
+    return Container(
+      child: ElevatedButton(
+        child:Text('点我跳转'),
+      	onPressed(){
+          // 路由跳转，of方法可以定义执行上下文，如果不使用of的话,可以在push的第二个参数传入 Navigator.push(context,...)
+         	Navigator.of(context).push(
+          	MaterialPageRoute(
+            	builder:(BuildContext context) => Page2(),
+            )
+          )
+        }
+      )
+    );
+  }
+}
+```
+
+上面就通过`Navigator.of().push`实现了一个简单的路由跳转，一般路由跳转都会携带参数的，在 flutter 中传递参数一般都是通过给构造函数传递参数实现的，路由和父子组件之间通信也是如此
+
+那么在`Page1` 向`page2`传递参数就是这样
+
+```dart
+Navigator.of(context).push(
+  MaterialPageRoute(
+    builder:(BuildContext context) => Page2('这是一个参数'),
+  )
+)
+```
+
+同时`Page2`也需要做一下修改
+
+```dart
+class Page2 extends StatefulWidget {
+  String? params;
+  Page2(this.params,{ Key? key }) : super(key: key);
+
+  @override
+  State<Page2> createState() => _Page2State();
+}
+
+class _Page2State extends State<Page2> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('page2'),
+      ),
+      body: Container(
+        child: Text('Page2 get params:${widget.params}'),
+      ),
+    );
+  }
+}
+```
+
+需要注意的是，如果是无状态组件的话可以直接使用传过来的构造参数，但是如果是有状态组件的话就需要通过`widget`来访问，因为 有状态组件的实体内容（状态类`_Page2State`）和构造类(`Page2`)是分开的，`widget`默认存在于状态类中，表示的就是`Page2`实例。
+
+### **命名路由**
+
+flutter 中的命名路由需要在`MaterialApp`的`routes`属性中配置路由映射，之后就可以使用`Navigator.pushNamed(context,'路由名')`方法就能跳转到对应的页面
+
+```dart
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'hello',
+      home: MyTab(),
+      routes:{
+        '/page1':(context)=>Page1(),
+        '/page2':(context)=>Page2(),
+      }
+    );
+  }
+}
+```
+
+之后在需要跳转的时候调用`Navigator.pushNamed(context,'/page1')`就能跳转到`Page1`了
+
+命名路由的传参方式有两种，一种是直接通过`Navigator.pushNamed()`的第三个参数`argumentss`来传递，然后在页面中通过`final args = ModalRoute.of(context)!.settings.arguments;`就可以获取到了
+
+### `onGenerateRoute`
+
+还有一种方式是通过`MaterialApp`的`onGenerateRoute`来进行统一的路由管理，也可以用来做路由拦截的功能。在调用`Navigator.pushNamed()`会先执行`onGenerateRoute`回调，这个回调接收一个`settings`的参数（包含要跳转的url和要传递的参数），在这里我们可以通过返回一个`MaterialPageRoute`对象来决定要跳转到的页面
+
+```dart
+const routes = {
+  '/':(context)=>Home(),
+  '/page1':(context)=>Page1(),
+  '/page2':(context,{arguments})=>Page2(arguments:arguments),
+}
+MaterialApp(
+  //初始路由，开始的时候会加载 Home();
+  initialRoute:'/',
+  onGenerateRoute: (settings) {
+    //settings.name 路由名，settings.arguments路由参数
+    final Function pageBuilder = this.routes[settings.name];
+    return MaterialPageRoute(
+      builder: (context) {
+        //Page2 需要在构造函数中接收参数
+        return pageBuilder(context,settings.arguments);
+      },
+    );
+  },
+)
+```
+
+`onUnknowRoute`
+
+当匹配不到想的路由的时候就会触发这个方法，可以在这个方法中放返回一个 404 的页面
+
+```dart
+MaterialApp(
+	onUnknowRoute:(settinggs){
+    return MaterialPageRoute(
+    	builder:(context) => Page404()
+    )
+  }
+)
+```
 
 
 
