@@ -273,6 +273,9 @@ https://juejin.cn/post/7056646298073563166
 + `Theme`主题容器，可以快速为子容器设置主题，比如颜色风格
 + `SafeArea`安全区域容器，不会遮挡状态栏和底部菜单
 + `FittedBox`自动缩放容器，当子组件的宽或者高比当前容器的宽高大的时候就会将子节点进行整体的缩放来适应容器
++ `Opacity`设置透明度
++ `Transform`可以定义子节点进行，旋转、平移、缩放等效果，最重要的是可以通过`alignment`设置变换中心
++ `FadeTransition`淡入过渡动画容器
 
 **多子节点容器**
 
@@ -761,6 +764,42 @@ Stack(
 
 
 
+### EventBus
+
+**事件总线**可以实现较为复杂层级结构组件之间的通信，不需要依赖于父组件也可以实现通信，其原理是采用发布订阅模式实现。
+
+1.下载`event_bus`库
+
+2.在全局环境下创建一个EventBus实例
+
+```dart
+final eventBus = EventBus();
+```
+
+3.定义一个事件对象，这个事件对象可以理解成事件的名字，之后会根据这个对象来派发任务，多个不同的时间可以用继承来定义
+
+```dart
+class UserInfo{
+  String name;
+  int level;
+  UserInfo(this.name, this.level);
+}
+```
+
+4.使用`eventBus.on<UserInfo>().listen(cb)`监听事件，一般是在`initState`中进行监听
+
+```dart
+eventBus.on<UserInfo>().listen((data) {
+  setState(() {
+    message = "${data.name}-${data.level}";
+  });
+});
+```
+
+5.使用`eventBus.fire(UserInfo('jack',19))`派发事件
+
+
+
 ## 网络请求
 
 flutter 中的异步处理是采用事件循环和非阻塞IO的模式的（其实就JavaScript的模式）。
@@ -928,6 +967,8 @@ Padding -> SingleChildRenderObjectWidget -> RenderObjectWidget -> Widget
 #### Element 怎么被创建？
 
 在`Widget`中有一个`createElement`的抽象方法需要实现，在flutter 中每个组件都是一个`Widget`所以无论是 组件Widget 还是 渲染 Widget 都会用`createElement`方法，这个方法就是用来创建`Element`的，不过每个组件的Element都不同，如组件Widget是`ComponentElement`，渲染Widget为`RenderObjectElement`。
+
+> Element 只有在 Widget 重新构建并且key或者Widget的类发生改变的时候才会重新构建
 
 #### 在 `Element`保存着什么？
 
@@ -1251,6 +1292,8 @@ class _BState extends State<B> {
 ```
 
 显然这种方式是非常麻烦的，当层级高了之后如果比层级差距比较高的两个组件想要进行通信的话，就需要中间的每个组件都传递一些不需要的数据，而且当状态更新时不相关的组件也会更新。
+
+
 
 ### **通过`InheritedWidget`实现数据共享**
 
@@ -1693,7 +1736,39 @@ class Page3 extends StatelessWidget {
 }
 ```
 
-通过`BottomNavigationBar`可以实现简单的路由效果，但是这个并不是真正的路由，因为这种方式搞多依赖于UI，其实在flutter中，路由是通过`Navigator`类来实现的
+通过`BottomNavigationBar`可以实现简单的路由效果，但是这个并不是真正的路由，因为这种方式搞多依赖于UI
+
+在Flutter中，路由管理主要有两个类：**Route**和**Navigator**
+
+### Route
+
+Route：一个页面要想被路由统一管理，必须包装为一个Route，但是Route是一个抽象类，所以它是不能实例化的，所以可以使用他的子类，常用的是`MaterialPageRoute`。
+
+```dart
+MaterialPageRoute(
+  builder:(BuildContext context) => Page(),
+  fullScreenDialog:true,//以全屏弹窗的形似显示，这样的话页面会从底部弹出
+)
+```
+
+如果需要自定义页面切换的过度动画可以使用`PageRouteBuilder`
+
+```dart
+//页面淡入
+PageRouteBuilder(
+	transitionDuration:Duration(seconds:2),
+  pageBuilder:(ctx,ani1,ani2){
+    return FadeTransition(
+    	opacity:ani1,
+      child:Page(),
+    )
+  }
+)
+```
+
+
+
+
 
 ### Navigator
 
@@ -1704,8 +1779,18 @@ flutter 中有两种路由模式，一种是普通路由通过`Navigator`实现�
 **常用的方法**
 
 + `Navigator.of(context).push()`普通跳转
-+ `Navigator.of(context).pop()`跳转到栈定的页面，相当于返回，返回时还可以传递传递参数`pop('xxx')`，之后可以在进入当前页面的那个路由中通过then接收，比如要返回的A页面`Navigator.of(context).push(MaterialPageRoute(builder:(context)=>A())).then(res=>print(res))`
+
++ `Navigator.of(context).pop()`跳转到栈定的页面，相当于返回，
+
+  + 返回时还可以传递传递参数`pop('xxx')`，之后可以在进入当前页面的那个路由中通过then接收，比如要返回的A页面`Navigator.of(context).push(MaterialPageRoute(builder:(context)=>A())).then(res=>print(res))`
+
+  + 如果点击左上角的返回键进行返回的时候也需要传参数的话，有两种方法可以解决，一种是通过`AppBar`的`leading`自定义返回按钮，一种是通过`WillPopScope`将当前的`Scaffold`页面包裹，然后`onWillPop`定义返回的事件监听，这个函数要求有一个Future的返回值：
+
+  + - true：那么系统会自动帮我们执行pop操作
+    - false：系统不再执行pop操作，需要我们自己来执行
+
 + `Navigator.of(context).pushReplacementNamed()`跳转到另外一个页面，并替换当前记录
+
 + `Navigator.of(context).pushAndRemoveUntil()`跳转到另外一个页面，对以往的历史记录做移除操作，比如跳转到`Page1`并移除跳转记录`Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(context)=>Page1())),(route)=>route == null`
 
 ### **普通路由**
@@ -1737,6 +1822,8 @@ class _Page1State extends State<Page1>{
   }
 }
 ```
+
+**路由传参**
 
 上面就通过`Navigator.of().push`实现了一个简单的路由跳转，一般路由跳转都会携带参数的，在 flutter 中传递参数一般都是通过给构造函数传递参数实现的，路由和父子组件之间通信也是如此
 
@@ -1780,7 +1867,7 @@ class _Page2State extends State<Page2> {
 
 ### **命名路由**
 
-flutter 中的命名路由需要在`MaterialApp`的`routes`属性中配置路由映射，之后就可以使用`Navigator.pushNamed(context,'路由名')`方法就能跳转到对应的页面
+flutter 中的命名路由需要在`MaterialApp`的`routes`属性中配置路由映射，之后就可以使用`Navigator.of(context).pushNamed(context,'路由名')`方法就能跳转到对应的页面
 
 ```dart
 class MyApp extends StatelessWidget {
@@ -1800,39 +1887,57 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-之后在需要跳转的时候调用`Navigator.pushNamed(context,'/page1')`就能跳转到`Page1`了
+之后在需要跳转的时候调用`Navigator.of(context).pushNamed(context,'/page1')`就能跳转到`Page1`了
 
-命名路由的传参方式有两种，一种是直接通过`Navigator.pushNamed()`的第三个参数`argumentss`来传递，然后在页面中通过`final args = ModalRoute.of(context)!.settings.arguments;`就可以获取到了
+不过一般在开发中路由的名字不会直接写成字符串，而是在每个页面中定义个静态的常量来记录路由名字
+
+```dart
+class Page1 extends StatelessWidget{
+  static const String routeName = '/page1';
+}
+
+routes:{
+  Page1.routeName:(context)=>Page1(),
+  Page2.routeName:(context)=>Page2(),
+}
+
+Navigator.of(context).pushNamed(context,Page1.routeName)
+```
+
+**路由传参**
+
+命名路由的传参方式有两种，一种是直接通过`Navigator.pushNamed()`的第三个参数`argumentss`来传递，然后在页面中通过`final args = ModalRoute.of(context)!.settings.arguments;`就可以获取到了，**需要注意**的是不能在`build`方法中获取。
 
 ### `onGenerateRoute`
 
-还有一种方式是通过`MaterialApp`的`onGenerateRoute`来进行统一的路由管理，也可以用来做路由拦截的功能。在调用`Navigator.pushNamed()`会先执行`onGenerateRoute`回调，这个回调接收一个`settings`的参数（包含要跳转的url和要传递的参数），在这里我们可以通过返回一个`MaterialPageRoute`对象来决定要跳转到的页面
+还有一种方式是通过`MaterialApp`的`onGenerateRoute`来进行统一的路由管理，也可以用来做路由拦截的功能。在调用`Navigator.pushNamed()`会先执行`onGenerateRoute`回调，如果没有匹配返回路由就会继续去`routes`中匹配，这个回调接收一个`settings`的参数（包含要跳转的url和要传递的参数），在这里我们可以通过返回一个`MaterialPageRoute`对象来决定要跳转到的页面
 
 ```dart
-const routes = {
-  '/':(context)=>Home(),
-  '/page1':(context)=>Page1(),
-  '/page2':(context,{arguments})=>Page2(arguments:arguments),
-}
 MaterialApp(
   //初始路由，开始的时候会加载 Home();
   initialRoute:'/',
+  routes:{
+    Home.routeName:(context)=>Home(),
+    Page1.routeName:(context)=>Page1(),
+  },
   onGenerateRoute: (settings) {
     //settings.name 路由名，settings.arguments路由参数
-    final Function pageBuilder = this.routes[settings.name];
-    return MaterialPageRoute(
-      builder: (context) {
-        //Page2 需要在构造函数中接收参数
-        return pageBuilder(context,settings.arguments);
-      },
-    );
+    if(settings.name == Page2.routeName){
+      return MaterialPageRoute(
+        builder: (context) {
+          //Page2 需要在构造函数中接收参数
+          return Page2(arguments:settings.arguments);
+        },
+      );
+    }
+    return null;
   },
 )
 ```
 
 `onUnknowRoute`
 
-当匹配不到想的路由的时候就会触发这个方法，可以在这个方法中放返回一个 404 的页面
+当匹配不到相应的路由的时候就会触发这个方法，可以在这个方法中放返回一个 404 的页面
 
 ```dart
 MaterialApp(
@@ -1842,6 +1947,330 @@ MaterialApp(
     )
   }
 )
+```
+
+
+
+## 动画
+
+动画其实是我们通过某些方式（比如对象，Animation对象）给Flutter引擎提供不同的值，而Flutter可以根据我们提供的值，给对应的Widget添加顺滑的动画效果。
+
+在Flutter中，实现动画的核心类是Animation，Widget可以直接将这些动画合并到自己的build方法中来读取它们的当前值或者监听它们的状态变化
+
+### Animation
+
+`Animation`是一个抽象类，里面有些比较重要的方法
+
++ `addListener`
+
+  - 每当动画的状态值发生变化时，动画都会通知所有通过 `addListener` 添加的监听器。
+
+  - 通常，一个正在监听动画的`state`对象会调用自身的`setState`方法，将自身传入这些监听器的回调函数来通知 widget 系统需要根据新状态值进行重新构建。
+
++ `addStatusListener`
+
+  - 当动画的状态发生变化时，会通知所有通过 `addStatusListener` 添加的监听器。
+
+  - 通常情况下，动画会从 `dismissed` 状态开始，表示它处于变化区间的开始点。
+
+  - 举例来说，从 0.0 到 1.0 的动画在 `dismissed` 状态时的值应该是 0.0。
+
+  - 动画进行的下一状态可能是 `forward`（比如从 0.0 到 1.0）或者 `reverse`（比如从 1.0 到 0.0）。
+
+  - 最终，如果动画到达其区间的结束点（比如 1.0），则动画会变成 `completed` 状态。
+
+Animation是一个抽象类，并不能用来直接创建对象实现动画的使用，开发中使用的是他的实现类。其中比较常用的有`AnimationController`，`CurvedAnimation`，`Tween`。
+
+
+
+### AnimationController
+
+AnimationController 是 Animation 的一个子类，实现动画通常我们需要创建 AnimationController 对象。
+
+- AnimationController 会生成一系列的值，默认情况下值是0.0到1.0区间的值，可以通过`lowerBound upperBound`来设置这个区间；
+
+除了上面的监听，获取动画的状态、值之外，AnimationController 还提供了对动画的控制：
+
+- `forward()`：向前执行动画
+- `reverse()`：方向播放动画
+- `stop()`：停止动画
+- `inAnimating`：是否在运动中
+- `status`：当前运动的状态
+
+> AnimationController 有一个必传的参数vsync，它是什么呢？
+>
+> - Flutter每次渲染一帧画面之前都需要等待一个vsync信号。
+> - 这里也是为了监听vsync信号，当Flutter开发的应用程序不再接受同步信号时（比如锁屏或退到后台），那么继续执行动画会消耗性能。
+> - 这个时候我们设置了Ticker，就不会再出发动画了。
+> - 开发中比较常见的是将SingleTickerProviderStateMixin混入到State的定义中。
+
+
+
+### CurvedAnimation
+
+CurvedAnimation也是Animation的一个实现类，它的目的是为了给AnimationController增加动画曲线：
+
+- CurvedAnimation可以将AnimationController和Curve结合起来，生成一个新的Animation对象
+
+Curve类型的对象的有一些常量Curves（和Color类型有一些Colors是一样的），可以供我们直接使用：
+
+- 对应值的效果，可以直接查看官网（有对应的gif效果，一目了然）
+- https://api.flutter.dev/flutter/animation/Curves-class.html
+
+官方也给出了自己定义Curse的一个示例
+
+```dart
+import'dart:math';
+
+class ShakeCurve extends Curve {
+  @override
+  double transform(double t) => sin(t * pi * 2);
+}
+```
+
+```dart
+final controller = AnimationController(duration: Duration(seconds: 2), vsync:this);
+final animation = CurvedAnimation(parent:controller,curve:Curves.elasticInOut);
+```
+
+
+
+### Tween
+
+默认情况下，AnimationController动画生成的值所在区间是0.0到1.0
+
+- 如果希望使用这个以外的值，或者其他的数据类型，就需要使用Tween
+
+Tween也有一些子类，比如 ColorTween 、BorderTween 可以针对颜色或者边框来设置动画的值。
+
+**Tween.animate**
+
+要使用Tween对象，需要调用Tween的animate()方法，传入一个Animation对象。
+
+```dart
+final controller = AnimationController(duration: Duration(seconds: 2), vsync:this,lowerBound:50,upperBound:150);
+final animation = CurvedAnimation(parent:controller,curve:Curves.elasticInOut);
+final valueAnimation = Tween(begin:100,end:200).animate(animation);
+```
+
+需要注意的时候，并不是所有的值都支持用`CurvedAnimation`来进行变化的，一般来说没有明确的数值的Tween是不支持使用`CurvedAnimation`的，比如`ColorTween`，这使用就只能使用Controller了`ColorTween(begin:Colors.red,end:Colors.blue).animate(controller)`
+
+### 实例
+
+```dart
+class HomeContent extends StatefulWidget {
+  const HomeContent({Key? key}) : super(key: key);
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> with SingleTickerProviderStateMixin {
+  List<MovieItem> movies = [];
+  AnimationController controller;
+  Animation animation;
+  Animation valueAnimation;
+  @override
+  void initState(){
+    //要使用CurvedAnimation就不能定义值返回超过 [0,1]
+    //final controller = AnimationController(vsync:this,lowerBound:50,upperBound:150);
+
+    controller = AnimationController(duration: Duration(seconds: 2), vsync:this);
+    animation = CurvedAnimation(parent:controller,curve:Curves.elasticInOut);
+    valueAnimation = Tween(begin:100,end:200).animate(animation);
+    controller.addListener((){this.setState((){})});
+    
+  }
+    
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+    	children:[
+        //Icon(Icons.like,color:Colors.red,size:controller.value),
+        Icon(Icons.favorite,color:Colors.red,size:valueAnimation.value),
+        ElevetedButton(
+        	child:Text('forward'),
+          onPressed:(){
+            controller.forward();
+          }
+        )
+      ]
+    );
+  }
+  
+  @override
+  void dispose(){
+    controller.dispose();
+    super.dispose();
+  }
+}
+```
+
+需要注意的是，当调用`controller.forward()`时`controller.value`就已经开始不断变化了，不过如果没有调用`setState`页面是不会发生改变的，所以当每次值发生改变的时候都要在`addListener`的回调中调用`setState`。
+
+如果要做循环播放的动画就需要使用到`addStatusListener`
+
+```dart
+controller.addStatusListener((status){
+  if(status == AnimationStatus.completed){
+    controller.reverse();
+  }else(status == AnimationStatus.dismissed){
+    controller.forward();
+  }
+});
+```
+
+
+
+**问题**
+
+在上面的代码中，我们必须监听动画值的改变，并且改变后需要调用setState，这会带来两个问题：
+
+- 1.执行动画必须包含这部分代码，代码比较冗余
+- 2.调用setState意味着整个State类中的build方法就会被重新build
+
+如何可以优化上面的操作呢？
+
+**AnimatedWidget**
+
+创建一个Widget继承自AnimatedWidget：
+
+```dart
+class IconAnimation extends AnimatedWidget {
+  IconAnimation(Animation animation): super(listenable: animation);
+
+  @override
+  Widget build(BuildContext context) {
+    Animation animation = listenable;
+    return Icon(Icons.favorite, color: Colors.red, size: animation.value,);
+  }
+}
+```
+
+修改`Icon(Icons.like,color:Colors.red,size:valueAnimation.value)`为`IconAnimation(valueAnimation)`
+
+但是还是有问题的
+
+- 1.我们每次都要新建一个类来继承自AnimatedWidget
+- 2.如果我们的动画Widget有子Widget，那么意味着它的子Widget也会重新build
+
+**AnimatedBuilder**
+
+```dart
+AnimatedBuilder(
+  animation: valueAnimation,
+  builder: (ctx, child) {
+    return Icon(Icons.favorite, color: Colors.red, size: valueAnimation.value,);
+  },
+  //child:这个是不希望重建的子节点，和Consumer的child一样
+)
+```
+
+
+
+### Hero动画
+
+移动端开发会经常遇到类似这样的需求：
+
+- 点击一个头像，显示头像的大图，并且从原来图像的Rect到大图的Rect
+- 点击一个商品的图片，可以展示商品的大图，并且从原来图像的Rect到大图的Rect
+
+这种跨页面共享的动画被称之为享元动画（Shared Element Transition）
+
+在Flutter中，有一个专门的Widget可以来实现这种动画效果：Hero
+
+实现Hero动画，需要如下步骤：
+
+- 1.在第一个Page1中，定义一个起始的Hero Widget，被称之为source hero，并且绑定一个tag；
+- 2.在第二个Page2中，定义一个终点的Hero Widget，被称之为 destination hero，并且绑定相同的tag；
+- 3.可以通过Navigator来实现第一个页面Page1到第二个页面Page2的跳转过程；
+
+Flutter会设置Tween来界定Hero从起点到终端的大小和位置，并且在图层上执行动画效果。
+
+```dart
+class MyApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+          primarySwatch: Colors.blue, splashColor: Colors.transparent),
+      home: HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Hero动画"),
+      ),
+      body: HomeContent(),
+    );
+  }
+}
+
+class HomeContent extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GridView(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 2
+      ),
+      children: List.generate(20, (index) {
+        String imageURL = "https://picsum.photos/id/$index/400/200";
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(PageRouteBuilder(
+              pageBuilder: (ctx, animation, animation2) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ImageDetail(imageURL),
+                );
+              }
+            ));
+          },
+          child: Hero(
+            tag: imageURL,//这个标记是用来记录比那话的目标
+            child: Image.network(imageURL)
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class ImageDetail extends StatelessWidget {
+  finalString imageURL;
+
+  ImageDetail(this.imageURL);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: GestureDetector(
+          onTap: () {
+            Navigator.of(context).pop();
+          },
+          child: Hero(
+            tag: imageURL,//这个标记是用来记录比那话的目标
+            child: Image.network(
+              this.imageURL,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          )),
+      ),
+    );
+  }
+}
 ```
 
 
