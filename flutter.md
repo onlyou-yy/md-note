@@ -405,6 +405,7 @@ class SliverDemo extends StatelessWidget {
 ### **MaterialApp UI库类**
 
 + `MaterialApp`应用程序容器，可以理解成一个应用程序的盒子，可以这个这个盒子上设置路由来管理多个页面，设置全局数据，应用主题等等。总之就相当于是一个应用实例，功能类似于Vue中的`new Vue({})`，为App确定一个设计的风格，应用的排序方向。
+	+ `title`参数可以设置应用在手机最近使用的应用栈中显示的名称，不过在IOS端是无效的
 + `Scaffold`应用页面级模版容器，可以设置页面的标题栏，选项卡等。
 + `AppBar`应用页面顶部选项卡容器。
 + `DefaultTabController`在`AppBar`下方的导航标签的容器，可以定义多个标签，并且可以通过`TabBarView`容器定义标签对应的页面。
@@ -1906,7 +1907,7 @@ Navigator.of(context).pushNamed(context,Page1.routeName)
 
 **路由传参**
 
-命名路由的传参方式有两种，一种是直接通过`Navigator.pushNamed()`的第三个参数`argumentss`来传递，然后在页面中通过`final args = ModalRoute.of(context)!.settings.arguments;`就可以获取到了，**需要注意**的是不能在`build`方法中获取。
+命名路由的传参方式有两种，一种是直接通过`Navigator.pushNamed()`的第三个参数`argumentss`来传递，然后在页面中通过`final args = ModalRoute.of(context)!.settings.arguments;`就可以获取到了(**需要注意**的是有可能是获取不到的，可以使用Timer来延迟获取)。
 
 ### `onGenerateRoute`
 
@@ -2275,7 +2276,97 @@ class ImageDetail extends StatelessWidget {
 
 
 
-## 移动端适配方案
+## 主题
+
+Theme分为：全局Theme和局部Theme
+
+主题有两个作用：
+
+- 设置了主题之后，某些Widget会自动使用主题的样式（比如AppBar的颜色）
+- 将某些样式放到主题中统一管理，在应用程序的其它地方直接引用
+
+### 全局Theme
+
+全局Theme会影响整个app的颜色和字体样式。
+
+使用起来非常简单，只需要向MaterialApp构造器传入 `ThemeData` 即可。
+
+- 如果没有设置Theme，Flutter将会使用预设的样式。
+- 当然，我们可以对它进行定制。
+
+```dart
+MaterialApp(
+  title: 'Flutter Demo',
+  theme: ThemeData(
+    // 1.亮度: light-dark
+    brightness: Brightness.light,
+    // 2.primarySwatch: primaryColor/accentColor的结合体
+    primarySwatch: Colors.red,
+    // 3.主要颜色: 导航/底部TabBar
+    primaryColor: Colors.pink,
+    // 4.次要颜色: FloatingActionButton/按钮颜色
+    accentColor: Colors.orange,
+    // 5.卡片主题
+    cardTheme: CardTheme(
+      color: Colors.greenAccent,
+      elevation: 10,
+      shape: Border.all(width: 3, color: Colors.red),
+      margin: EdgeInsets.all(10)
+    ),
+    // 6.按钮主题
+    buttonTheme: ButtonThemeData(
+      minWidth: 0,
+      height: 25
+    ),
+    // 7.文本主题
+    textTheme: TextTheme(
+      title: TextStyle(fontSize: 30, color: Colors.blue),
+      display1: TextStyle(fontSize: 10),
+    )
+  )
+```
+
+### 局部Theme
+
+如果某个具体的Widget不希望直接使用全局的Theme，而希望自己来定义，应该如何做呢？
+
+- 非常简单，只需要在Widget的父节点包裹一下Theme即可
+- 在新的页面的Scaffold外，包裹了一个Theme，并且设置data为一个新的ThemeData
+
+```dart
+class SecondPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: ThemeData(),
+      child: Scaffold(),
+    );
+  }
+}
+```
+
+但是，我们很多时候并不是想完全使用一个新的主题，而且在之前的主题基础之上进行修改：
+
+```dart
+class SecondPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        primaryColor: Colors.greenAccent
+      ),
+      child: Scaffold(
+        //Theme.of(context) 其实就是获取到MaterialApp中设置的ThemeData
+     		body:Text('hello',style:Theme.of(context).textTheme.display1),
+      ),
+    );
+  }
+}
+```
+
+
+
+## 屏幕适配方案
 
 
 
