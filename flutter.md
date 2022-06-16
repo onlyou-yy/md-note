@@ -2352,6 +2352,7 @@ class SecondPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Theme(
+      // Theme.of(context).copyWith 就是复制一份MaterialApp中设置的ThemeData
       data: Theme.of(context).copyWith(
         primaryColor: Colors.greenAccent
       ),
@@ -2364,9 +2365,231 @@ class SecondPage extends StatelessWidget {
 }
 ```
 
+但是需要注意的是，在修改`floatingActionButton`的按钮主题颜色的时候并不是使用`Theme.of(context).copyWith(accentColor: Colors.greenAccent)`的而是使用`Theme.of(context).copyWith(colorScheme:Theme.of(context).colorScheme.copyWith(secondary: Colors.greenAccent))`
+
+```dart
+class SecondPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+    	floatingActionButton:Theme(
+      	data:Theme.of(context).copyWith(
+          colorScheme:Theme.of(context).colorScheme.copyWith(
+            secondary: Colors.greenAccent
+          )
+        )
+      )
+    );
+  }
+}
+```
+
+
+
+### 暗黑模式的适配
+
+现在很多手机都是可以开启暗黑模式的，如果要在flutter 中适配暗黑模式的主题可以在`Scaffold`中进行适配，为了方便维护可以将所有的主题抽离出来。
+
+```dart
+class AppTheme{
+  static const ThemeData normalTheme = ThemeData(
+  	primarySwatch:Colors.red,
+  );
+  
+  static const ThemeData darkTheme = ThemeData(
+  	primarySwatch:Colors.black,
+  );
+}
+class SecondPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // 不是暗黑模式时使用的主题数据
+    	theme:AppTheme.normalTheme,
+      // 是暗黑模式时使用的主题数据
+      darkTheme:AppTheme.darkTheme
+    );
+  }
+}
+```
+
 
 
 ## 屏幕适配方案
+
+### Flutter中的单位
+
+在进行Flutter开发时，我们通常不需要传入尺寸的单位，那么Flutter使用的是什么单位呢？
+
+- Flutter使用的是类似于iOS中的点pt，也就是point。
+- 所以我们经常说iPhone6的尺寸是375x667，但是它的分辨率其实是750x1334。
+- 因为iPhone6的dpr（devicePixelRatio）是2.0，iPhone6plus的dpr是3.0
+
+在Flutter开发中，我们使用的是对应的逻辑分辨率
+
+![图片](flutter/640-5349562.jpeg)
+
+### Flutter设备信息
+
+可以通过 `window`对象获取设备的信息，比如手机的物理分辨率
+
+```dart
+final physicalWidth = window.physicalSize.width;
+final physicalHeight = window.physicalSize.height;
+print('物理分辨率：$physicalWidth * $physicalHeight');
+```
+
+获取屏幕上的一些信息，可以通过MediaQuery：媒体查询
+
+```dart
+// 1.媒体查询信息
+final mediaQueryData = MediaQuery.of(context);
+
+// 2.获取宽度和高度
+final screenWidth = mediaQueryData.size.width;
+final screenHeight = mediaQueryData.size.height;
+final physicalWidth = window.physicalSize.width;
+final physicalHeight = window.physicalSize.height;
+final dpr = window.devicePixelRatio;
+
+// 3.状态栏的高度
+// 有刘海的屏幕:44 没有刘海的屏幕为20
+final statusBarHeight = mediaQueryData.padding.top;
+
+// 4.底部操作条
+// 有刘海的屏幕:34 没有刘海的屏幕0
+final bottomHeight = mediaQueryData.padding.bottom;
+```
+
+不过需要注意的是，不要根组件的`Widget`的`build`方法中获取，因为此时`MediaQuery`还没有初始化完成，其实`MediaQuery`中获取到的数据都是通过`window`中的数据计算出来的，所以如果确实需要在根组件中使用`MediaQuery`中的数据的时候可以自己去`MediaQueryData.formWindow`方法中看是如何通过`window`计算出对应的值的。
+
+```dart
+// 获取宽度和高度
+final physicalWidth = window.physicalSize.width;
+final physicalHeight = window.physicalSize.height;
+final dpr = window.devicePixelRatio;
+final screenWidth = physicalWidth / dpr;
+final screenHeight = physicalHeight / dpr;
+
+// 状态栏的高度
+// 有刘海的屏幕:44 没有刘海的屏幕为20
+final statusBarHeight = window.padding.top / dpr;
+
+// 底部操作条
+// 有刘海的屏幕:34 没有刘海的屏幕0
+final bottomHeight = window.padding.bottom / dpr;
+```
+
+或者可以直接使用`MediaQueryData.fromWindow(window)`创建，不过需要注意的是`window`是`dart:ui`上的，不是`dart:html`上的
+
+获取一些设备相关的信息，可以使用官方提供的一个库：`device_info`
+
+### 屏幕适配
+
+由于移动设备有很多种，每种设备的屏幕是不用的，如果用一个固定的尺寸去创建组件的话，在一些设备上可能会过大或者过小，从而影响布局，所以一般在开发中都会从新使用一写相对的尺寸
+
+在前端开发中，针对不同的屏幕常见的适配方案有下面几种：
+
+- rem：
+
+- - rem是给根标签（HTML标签）设置一个字体大小；
+  - 但是不同的屏幕要动画设置不同的字体大小（可以通过媒体查询，也可以通过js动态计算）；
+  - 其它所有的单位都使用rem单位（相对于根标签）；
+
+- vw、wh：
+
+- - vw和vh是将屏幕（视口）分成100等份，一个1vw相当于是1%的大小；
+  - 其它所有的单位都使用vw或wh单位；
+
+- rpx：
+
+- - rpx是小程序中的适配方案，它将750px作为设计稿，1rpx=屏幕宽度/750；
+  - 其它所有的单位都使用rpx单位
+
+```dart
+class SizeFit{
+  static double physicalWidth;
+  static double physicalHeight;
+  static double dpr;
+  static double screenWidth;
+  static double screenHeight;
+  
+  static double rpx;
+  static double px;
+  
+  static double rem;
+  
+  static void initialize({double standardSize = 750,double standardRem = 16}){
+    physicalWidth = window.physicalSize.width;
+    physicalHeight = window.physicalSize.height;
+    dpr = window.devicePixelRatio;
+    screenWidth = physicalWidth / dpr;
+    screenHeight = physicalHeight / dpr;
+    
+    rpx = screenWidth / standardSize;
+    px = screenWidth / standardSize * 2;
+    
+    rem = standardRem;
+  }
+  
+  static double setRpx(double size){
+    return rpx * size;
+  }
+  static double setPx(double size){
+    return px * size;
+  }
+  
+  static double vw(double percent){
+    return percent / 100 * screenWidth;
+  }
+  static double vh(double percent){
+    return percent / 100 * screenHeight;
+  }
+  
+  static double setRem(double size){
+    return size * rem;
+  }
+}
+```
+
+之后就可以使用了
+
+```dart
+Container(
+	width:SizeFit.setRpx(200),
+  height:SizeFit.setPx(200),
+);
+```
+
+但是这样使用的时候还是比较麻烦的，我们还可以使用`extension`来为`double`和`int`扩展一下方法
+
+```dart
+extension DoubleFit on double{
+  double get rpx {
+    return SizeFit.setRpx(this);
+  }
+  double get px {
+    return SizeFit.setPx(this);
+  }
+}
+extension IntFit on int{
+  double get rpx {
+    return SizeFit.setRpx(this.toDouble());
+  }
+  double get px {
+    return SizeFit.setPx(this.toDouble());
+  }
+}
+```
+
+之后在需要使用的地方引入`DoubleFix IntFit`就可以直接使用了
+
+```dart
+Container(
+	width:200.0.rpx,
+  height:200.px,
+);
+```
 
 
 

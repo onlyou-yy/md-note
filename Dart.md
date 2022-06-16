@@ -502,6 +502,53 @@ class SingerDancer extends Musician with Musical {
 }
 ```
 
+### extension
+
+为类添加扩展方法
+
+```dart
+class Person{
+  say(){
+    print('hello');
+  }
+}
+extension ExtPerson on Person{
+  sayNo(){
+    print('no no no');
+  }
+}
+Person p = Person();
+p.say();
+p.sayNo();
+```
+
+也可以为`double,int`等添加方法
+
+```dart
+extension ExtDouble on double{
+	double dd(){
+    return this / 2;
+  }
+  double get gdd {
+    return this * 2;
+  }
+}
+extension ExtInt on int{
+	int cc(){
+    return this * 2;
+  }
+  int get gcc(){
+    return (this / 2).toInt();
+  }
+}
+print(10.0.dd());
+print(10.cc());
+print(10.0.gdd);
+print(10.gcc);
+```
+
+
+
 
 
 ## 异步支持 async/await
