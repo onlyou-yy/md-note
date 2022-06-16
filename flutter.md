@@ -2593,6 +2593,96 @@ Container(
 
 
 
+## Flutter应用信息
+
+真正开发一个完成的跨平台App需要针对不同的平台设置不同的应用信息，比如应用标识，应用名称，应用图标，应用启动图等。
+
+### 应用标识
+
+#### Android应用标识
+
+Android应用标识在对应的Android目录下：Android/app/build.gradle
+
+- applicationId：是打包时的应用标识
+
+```
+ defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId "com.coderwhy.catefavor"
+        minSdkVersion 16
+        targetSdkVersion 28
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+```
+
+#### iOS应用标识
+
+iOS应用标识在对应的iOS目录下：ios/Runner/Info.plist（可以通过Xcode打开来进行修改）
+
+![图片](flutter/640-1655389418864.jpg)
+
+### 应用名称
+
+#### Android应用名称
+
+Android应用名称在对应的Android目录下：android/app/src/main/AndroidMainifest.xml
+
+![图片](flutter/640-1655389451472.jpg)
+
+####  iOS应用名称
+
+iOS应用名称在对应的iOS目录下：ios/Runner/Info.plist（可以通过Xcode打开来进行修改）
+
+![图片](flutter/640-1655389470551.jpg)
+
+### 应用图标
+
+#### Android应用图标
+
+官方建议将图标（icon）根据不同的dpi放置在res/mipmap文件夹下。
+
+![图片](flutter/640.png)
+
+####  iOS应用图标
+
+iOS的应用图标在ios/Runner/Assets.xcassets/AppIcon.appiconset中管理（可以直接打开Xcode将对应的图标拖入）
+
+![图片](flutter/640-1655389528613.jpg)
+
+### 应用启动图
+
+#### Android应用启动图
+
+Android中默认的启动图是一片空白的，这是Flutter的默认设置效果。
+
+- 在哪里设置呢？android/app/src/main/res/drawable/launch_background.xml
+
+第一步：将对应的启动图片，添加到对应的minimap文件夹中
+
+![图片](flutter/640-1655389600403.jpg)启动图
+
+第二步：修改android/app/src/main/res/drawable/launch_background.xml文件如下：
+
+- 注意：我这里启动图命名为launcher_image，需要修改为你的名称
+
+```
+<?xml version="1.0" encoding="utf-8"?><!-- Modify this file to customize your launch splash screen --><layer-list xmlns:android="http://schemas.android.com/apk/res/android"><!--    <item android:drawable="@android:color/white" />-->    <!-- You can insert your own image assets here -->    <item>        <bitmap            android:gravity="center"            android:src="@mipmap/launcher_image"/>    </item></layer-list>
+```
+
+####  iOS应用启动图
+
+**iOS需要两步来完成：**
+
+第一步：将启动图片添加到资源依赖中
+
+![图片](flutter/640-1655389739595.jpg)添加依赖的启动图
+
+第二步：在LaunchScreen.storyboard中，添加一个ImageView，并且添加约束
+
+![图片](flutter/640-1655389739606.jpg)
+
 
 
 ## bug
