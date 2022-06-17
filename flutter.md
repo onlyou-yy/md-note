@@ -819,7 +819,7 @@ HttpClientResponse response = await request.close();
 final stringData = await response.transform(utf8.decoder).join();
 ```
 
-在拿到数据之后，这些数据一般是json格式的数据，如果直接存储的话，在之后的使用中可能不是很方便，因为不会有类型检查以及代码提示，此时我们可以将这些数据转换成一个数据类，通过[`JSON to Dart`](https://jsontodart.com/)可以快速生成这个类。
+在拿到数据之后，这些数据一般是json格式的数据，如果直接存储的话，在之后的使用中可能不是很方便，因为不会有类型检查以及代码提示，此时我们可以将这些数据转换成一个数据类，通过[`JSON to Dart`](https://jsontodart.com/)或[quicktype](https://app.quicktype.io/)可以快速生成这个类。
 
 ### json数据转换
 
@@ -917,6 +917,68 @@ class HttpRequest{
   }
 }
 ```
+
+### FutureBuilder
+
+flutter开发中对于有依赖于网络数据的组件都是`StatefulWidget`，因为需要在`initState`中获取到数据之后调用`setState`来刷新组件，比如
+
+```dart
+class HomeContent extends StatefulWidget {
+  const HomeContent({ Key? key }) : super(key: key);
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  List list = [];
+  @override
+  void initState() {
+    super.initState();
+    //加载数据
+    JsonParse.getCategoryData().then((value){
+      setState(() {
+        list = value;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount:list.length
+    	builder:(ctx,index){
+        ListTile("data:${list[index]}")
+      }
+    );
+  }
+}
+```
+
+但是这样是比较麻烦的，其实在`flutter`中提供了一个`FutureBuilder`，可以让我们能够在获取到请求之后再构建组件
+
+```dart
+class HomeContentState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+    	future:JsonParse.getCategoryData(),
+      builder:(ctx,snap){
+        //如果还没有数据就显示加载中组件
+        if(!snap.hasData) return Center(child:CircularProgressIndicator());
+        List list = snap.data;
+        return ListView.builder(
+          itemCount:list.length
+          builder:(ctx,index){
+            ListTile("data:${list[index]}")
+          }
+        )
+      }
+    );
+  }
+}
+```
+
+不过这种方式也是有局限性的，因为每次`build`都会重新构建，这样就每次`build`的时候就会重新请求数据，所以在要频繁`build`的组件中是不合适使用的，第二种情况就是请求依赖于一个变化的参数的时候也是不合适使用的，比如上拉加载更多，此时没次上来加载更多时当前页这个参数是会改变的，所以也不合适。
 
 
 
