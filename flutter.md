@@ -286,11 +286,13 @@ https://juejin.cn/post/7056646298073563166
 + `PageView`页面滚动容器组件，效果类似于抖音等视频的单页面视频滚动效果，每个子元素都相当于是一个页面。
 + `Wrap`子节点在一行/列放不下时会自动换行，通过`direction`属性定义接单排序方向，可以用来做瀑布流布局
 + `Stack`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点之间是重在一起的，相当于给每个子组件都设置了绝对定位。可以使用`Positioned`或者`Align`来控制位置，也可以使用`alignment`属性定义内容的位置。通过`fit`可以设置子元素的填充模式
-+ `ListView`多节点容器组件，一般用做列表显示，可以通过`scrollDirection`定义列表的方向。不过需要注意子节点的宽度（垂直列表）/高度（水平列表）会被强制铺满适应父容器的宽度/高度，如果要设置列表的宽度，就需要设置其父容器的宽度，或者通过设置padding属性将它进行挤压，还有就是默认情况下`ListView|Column`下不能在使用`ListView`，如果要使用需要设置`shrinkWrap`属性为`true`;
++ `ListView`多节点容器组件，一般用做列表显示，可以通过`scrollDirection`定义列表的方向。不过需要注意子节点的宽度（垂直列表）/高度（水平列表）会被强制铺满适应父容器的宽度/高度，如果要设置列表的宽度，就需要设置其父容器的宽度，或者通过设置padding属性将它进行挤压，还有就是默认情况下`ListView|Column`下不能在使用`ListView|Column`，如果要使用需要设置子节点的`ListView`的`shrinkWrap`属性为`true`，`Column`的`mainAxisSize`为`MainAxisSize.min`;
+  + **为什么`ListView|Column`下不能在使用`ListView`？**这是因为父容器在布局的时候他的大小是通过他的子节点来确定的，也就是说父容器在布局的时候需要子节点告知父容器高度。但是`ListView`在布局的时候会尽可能多的占据空间，到那时此时他是询问父容器自己最多能够占据多少空间，此时就出现矛盾了，比如`Column`下再使用`ListView`的情况，Column 需要 ListView 告诉 Column 自己的高低，ListView又问Column自己能占多少高度，而Column此时的高度还是不确定的，所以就报错了。**解决方法1**：给 ListView 包裹一层 Container 并设置一个明确的高度；**解决方法2**：ListView 设置 `shrinkWrap`为 true ，告诉 ListView 高度取决于子节点的内容高度。
   + `ListTile`文章列表组件，可以定义标题和子标题，通常配`ListView`使用，也可以通过`leading`定义列表项前图标，`trailing`在列表项后定义图标
   + `ListView.builder`这个构造函数是用来创建动态列表的，会进行循环创建，通过`itemCount`定义循环的次数，通过`itemBuilder`来定义渲染函数，**当节点显示时才会被创建**。
   + `ListView.separated`这个构造函数是用来创建带分割组件的动态列表的
   + `ListView(children:List.generate(count,genFn))`，`List.generate(count,genFn)`可以生成一个固定长度的widget列表，但是这种方式会比较消耗性能，因为**无论节点是否显示都会被创建**。
+  
 + `GridView`网格容器列表，相当定义了`display:grid`的`div`，可以用`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`定义设置`crossAxisSpacing`水平间距，`mainAxisSpacing`垂直间距等，和`ListView`一样拥有`GridView.builder`构造方法进行动态列表的生成（`flutter_staggered_grid_view`库可以实现瀑布流布局）
   + `GridView.builder`创建动态列表
   + `GridView.count`默认设置了`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`的`GridView`
@@ -412,7 +414,7 @@ class SliverDemo extends StatelessWidget {
 + `TabBar`标签容器，通过`tabs`定义多个标签，一般定义在`AppBar`的`bottom`或者`title`上
 + `TabBarView`定义`TabBar`中标签对应的内容。
 + `TabController` 可以定义自定义或者监听标签的行为，不过需要注意的是使用这个组件必须要使用动态组件，并且混入`SingleTickerProviderStateMixin`，而且在`TabBar TabBarView`中的`controller`都定义赋值给同一个`TabController`,之后就可以通过`TabController.addLisener`进行变化的监听了
-+ `Drawer`抽屉式侧边栏，可以通过`MaterialApp`的`drawer endDrawer`分别定义左右两边的侧边栏。
++ `Drawer`抽屉式侧边栏，可以通过`MaterialApp`的`drawer endDrawer`分别定义左右两边的侧边栏。可以通过`Scaffold.of(context).openDrawer()`来手动打开
 + `DrawerHeader`抽屉式侧边栏顶部容器，可以通过调用 `Navigator.pop` 关闭打开的抽屉。
 + `UserAccountDrawerHeader`抽屉式侧边栏顶部容器，提供和很多可选项，可以快速实现用户侧边栏布局。
 
@@ -1055,6 +1057,35 @@ Padding -> SingleChildRenderObjectWidget -> RenderObjectWidget -> Widget
 ### BuildContext context 是什么 
 
 在`Element`中调用`mount`方法的时候是会调用`Widget`的`build`方法的，并且在此时会传入一个参数`this`（如果是普通Widget就是`_widget.build(this)`，如果是状态Widget就是`state.build(this)`），所以`BuildContext context`其实就是一个`Element`实例
+
+> ```dart
+> class  Home extends StatelessWidget {
+>   static const routeName = "/home";
+>   const  Home({ Key? key }) : super(key: key);
+> 
+>   @override
+>   Widget build(BuildContext context) {
+>     return Scaffold(
+>       appBar: AppBar(
+>         title: Text("美食广场"),
+>         leading: Builder(
+>           //其实就是等当前的widget构建完成生成Element 之后在进行构建，这样才能拿到当前设置了drawer 的Scaffold的Element
+>           builder: (ctx){
+>             return IconButton(
+>               onPressed: (){
+>                 Scaffold.of(ctx).openDrawer();
+>               }, 
+>               icon: Icon(Icons.list)
+>             );
+>           },
+>         ),
+>       ),
+>       body: HomeContent(),
+>       drawer: Drawer(),
+>     );
+>   }
+> }
+> ```
 
 ### key 的作用
 
