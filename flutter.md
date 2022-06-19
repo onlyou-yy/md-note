@@ -197,6 +197,8 @@ class MyApp extends StatelessWidget {
 
 ## 生命周期
 
+### 组件生命周期
+
 生命周期函数可以让我们在合适的时机做正确的事，比如在初始化的时候获取数据，初始化数据，进行组件事件监听等，在 flutter 中无状态组件 StatelessWidget 的生命周期之后构造函数和build方法。
 
 ```dart
@@ -240,11 +242,105 @@ class Test extends StatelessWidget{
   - 情况二：从其他对象中依赖一些数据发生改变时，比如 InheritedWidget
 
 4. Flutter执行build方法，来看一下我们当前的Widget需要渲染哪些Widget；
-5. 当前的Widget不再使用时，会调用dispose进行销毁；
-6. 手动调用setState方法，会根据最新的状态（数据）来重新调用build方法，构建对应的Widgets；
-7. 执行`didUpdateWidget`方法是在当父Widget触发**重建**（rebuild）时，系统会调用`didUpdateWidget`方法；
+5. `deactivate`在组件被移除时调用，在dispose之前
+6. 当前的Widget不再使用时，会调用dispose进行销毁；
+7. 手动调用setState方法，会根据最新的状态（数据）来重新调用build方法，构建对应的Widgets；
+8. 执行`didUpdateWidget`方法是在当父Widget触发**重建**（rebuild）时，系统会调用`didUpdateWidget`方法；
 
 https://juejin.cn/post/7056646298073563166
+
+### App应用的生命周期
+
+```dart
+import 'package:flutter/material.dart';
+ 
+class AppLife extends StatefulWidget {
+  @override
+  _AppLifeState createState() => _AppLifeState();
+}
+ 
+class _AppLifeState extends State<AppLife> with WidgetsBindingObserver {
+ 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this); //添加观察者
+  }
+ 
+  ///生命周期变化时回调
+//  resumed:应用可见并可响应用户操作,app进入前台
+//  inactive:用户可见，但不可响应用户操作，比如来了个电话,前后台切换的过渡状态
+//  paused:已经暂停了，用户不可见、不可操作，app进入后台
+//  suspending：应用被挂起，此状态IOS永远不会回调
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    print("didChangeAppLifecycleState: $state");
+  }
+ 
+  ///当前系统改变了一些访问性活动的回调
+  @override
+  void didChangeAccessibilityFeatures() {
+    super.didChangeAccessibilityFeatures();
+    print("didChangeAccessibilityFeatures");
+  }
+ 
+  ///低内存回调
+  @override
+  void didHaveMemoryPressure() {
+    super.didHaveMemoryPressure();
+    print("didHaveMemoryPressure");
+  }
+ 
+  ///用户本地设置变化时调用，如系统语言改变
+  @override
+  void didChangeLocales(List<Locale> locale) {
+    super.didChangeLocales(locale);
+    print("didChangeLocales");
+  }
+ 
+  ///应用尺寸改变时回调，例如旋转
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    Size size = WidgetsBinding.instance.window.physicalSize;
+    print("didChangeMetrics  ：宽：${size.width} 高：${size.height}");
+  }
+ 
+  /// {@macro on_platform_brightness_change}
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    print("didChangePlatformBrightness");
+  }
+ 
+  ///文字系数变化
+  @override
+  void didChangeTextScaleFactor() {
+    super.didChangeTextScaleFactor();
+    print(
+        "didChangeTextScaleFactor  ：${WidgetsBinding.instance.window.textScaleFactor}");
+  }
+ 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("App生命周期"),),
+      body: Column(children: <Widget>[],),
+    );
+  }
+ 
+  @override
+  void dispose() {
+    super.dispose();
+    WidgetsBinding.instance.removeObserver(this); //销毁观察者
+  }
+}
+```
+
+[flutter 页面 生命周期，APP应用的生命周期](https://blog.csdn.net/litter_lj/article/details/99690614)
+
+
 
 ## 常用组件
 
@@ -282,6 +378,7 @@ https://juejin.cn/post/7056646298073563166
 + `Row`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是横向排列，且默认占满一行，可以通过`mainAxisSize`来设置占据空间的大小；相当于一个设置了`display:flex;flex-direction:row`的 `div`
 	+ 如果希望所有的子节点的高度都一样可以在外层包裹一个`IntrinsicHeight`
 + `Column`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是纵向排列，相当于一个设置了`display:flex;flex-direction:column`的 `div`
++ `SingleChildScrollView`单子节点容器，但是子节点容器可滚动，可以将Column，Row等不可滚动的容器包装成可滚动的。
 + `Flex`弹性盒子布局容器，就是相当于一个`display:flex`的`div`，可以设置 flex 的相关属性，比如排列方向`direction`，当设置`direction:Axis.vertical`时就相当于是一个 `Column`，当设置`direction:Axis.horizontal`时就相当于是一个 `Row`。
 + `PageView`页面滚动容器组件，效果类似于抖音等视频的单页面视频滚动效果，每个子元素都相当于是一个页面。
 + `Wrap`子节点在一行/列放不下时会自动换行，通过`direction`属性定义接单排序方向，可以用来做瀑布流布局
@@ -292,12 +389,10 @@ https://juejin.cn/post/7056646298073563166
   + `ListView.builder`这个构造函数是用来创建动态列表的，会进行循环创建，通过`itemCount`定义循环的次数，通过`itemBuilder`来定义渲染函数，**当节点显示时才会被创建**。
   + `ListView.separated`这个构造函数是用来创建带分割组件的动态列表的
   + `ListView(children:List.generate(count,genFn))`，`List.generate(count,genFn)`可以生成一个固定长度的widget列表，但是这种方式会比较消耗性能，因为**无论节点是否显示都会被创建**。
-  
 + `GridView`网格容器列表，相当定义了`display:grid`的`div`，可以用`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`定义设置`crossAxisSpacing`水平间距，`mainAxisSpacing`垂直间距等，和`ListView`一样拥有`GridView.builder`构造方法进行动态列表的生成（`flutter_staggered_grid_view`库可以实现瀑布流布局）
   + `GridView.builder`创建动态列表
   + `GridView.count`默认设置了`gridDelegate:SliverGridDelegateWithFixedCrossAxisCount()`的`GridView`
   + `GridView.Extent`默认设置了`gridDelegate:SliverGridDelegateWithFixedCrossAxisExtent()`的`GridView`
-
 
 其实`ListView/GridView/PageView`等可滚动的视图都是由各种`sliver`组件包装而来，不过这些都是flutter 帮我们定义好了的滚动列表，如果要实现一些比较复杂或者自定义的可滚动列表的话就需要使用`CustomScrollView`来进行设计，比如说我要在一个`ListView`中嵌套`ListView、GridView、PageView`等其他的列表的话就不容易实现了，因为一个不确定大小的容器是不能在嵌套一个不确定大小的容器的（虽然可以定义`shrinkWrap`让列表大小等于内容大小，但是会比较消耗性能）。
 
@@ -1744,6 +1839,27 @@ runApp(MultiProvider(
 ));
 ```
 
+**状态依赖**
+
+如果一个状态A依赖于另一个状态B的时候，在A状态就导入B的状态，但是并不能简单的通过`import`进行导入，而需要通过`ChangeNotifierProxyProvider`进行依赖
+
+```dart
+runApp(MultiProvider(
+  providers: [
+    ChangeNotifierProvider(create: (ctx) => B()),
+    ChangeNotifierProxyProvider<B,A>(
+      create: (ctx) => A(),
+      update:(ctx,bVM,aVM){
+        //调用 A 中的方法将 B 的实例保存下来
+        aVM.updateBVM(bvm);
+        return aVM
+      }
+    ),
+  ],
+  child: MyApp(),
+));
+```
+
 
 
 ## 路由
@@ -2807,6 +2923,12 @@ BottomNavigationBarItem(
 [codewhy 老师的flutter系列文章](https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg5MDAzNzkwNA==&action=getalbum&album_id=1566028536430247937&scene=173&from_msgid=2247483705&from_itemidx=1&count=3&nolastread=1#wechat_redirect)
 
 [老孟的 300 多个组件例子](http://laomengit.com/)
+
+[`JSON to Dart`](https://jsontodart.com/)
+
+[quicktype](https://app.quicktype.io/)
+
+[flutter 页面 生命周期，APP应用的生命周期](https://blog.csdn.net/litter_lj/article/details/99690614)
 
 **组件目录**
 
