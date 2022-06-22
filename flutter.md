@@ -2916,6 +2916,49 @@ BottomNavigationBarItem(
 
 
 
+## 编译模式与开发环境区分
+
+### 编译模式
+
+flutter 有三种编译模式，一种是`debug `模式，一种是`profile`模式还有一种`release`模式
+
++ `debug`模式中dart开启的是 jit 模式，就是边运行边编译，提供热更新等开发所需的功能，所以该模式下性能是比较低的
++ `release`模式中dart开启的是 AOT 模式，就是预编译，移除了许多开发中使用的扩展，性能会比`debug`模式高
++ `profile`模式是接近于`release`模式的打包模式，不过相比于`release`模式保留了性能分析相关的扩展，可以用来做线上版本的性能分析
+
+命令开启
+
+```shell
+# debug
+flutter run
+# profile
+flutter run --profile
+# release
+flutter run --release
+```
+
+### 开发环境区分
+
+在开发中，我们可能要对`debug`模式和`release`模式进行区分，根据不同的模式进行不同的设置，比如网络请求的url。
+
+flutter 中区分的方法用两种
+
++ 使用`assert`断言，因为 `release` 模式下断言是无效的
++ 通过`kReleaseMode`常量进行区分
+
+```dart
+String baseURL = "release.com";
+assert((){
+  baseURL = "dev.com";
+}());
+```
+
+```dart
+String baseURL = kRealseMode ? "release.com" : "dev.com";
+```
+
+
+
 
 
 ## 参考
