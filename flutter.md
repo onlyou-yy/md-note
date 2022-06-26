@@ -1658,7 +1658,7 @@ class _CState extends State<C> {
 
 `Provider`是官方推荐的一个状态管理库，`InheritedWidget`实现的是对子组件的数据共享，而且如果想要修改状态还是比较麻烦的。
 
-**Provider 基本使用**
+#### **Provider 基本使用**
 
 1.创建自己需要共享的数据
 
@@ -1707,7 +1707,7 @@ class Home extends StatelessWidget {
 1. 就是依赖于build中的`context`，在没有`context`的场景下是无法使用的，比如说`floatingActionButton`按钮来修改状态就无法获取到状态了，
 2. 当状态改变的时候，通过`Provider.of`引用的状态的组件的build方法会被重新执行，也就意味着整个组件都被重新构建了
 
-**通过`Consumer`解决**
+#### **通过`Consumer`解决**
 
 ```dart
 class Home extends StatelessWidget {
@@ -1745,7 +1745,7 @@ floatingActionButton:Consumer<CounterViewModel>(
 
 不过还有个问题是`FloatingActionButton`只是要修改状态并不依赖状态的，但是当状态改变的时候还是会被重新构建
 
-**可以使用`Selector`解决**
+#### **可以使用`Selector`解决**
 
 ```dart
 floatingActionButton: Selector<CounterProvider, CounterProvider>(
@@ -1783,7 +1783,7 @@ Selector和Consumer对比，不同之处主要是三个关键点：
   - bool Function(T previous, T next);
   - 因为这里我不希望它重新rebuild，无论数据如何变化，所以这里我直接return false；
 
-**多数据`MultiProvider`**
+#### **多数据`MultiProvider`**
 
 上面的几种方法都是针对于**单个对象数据**的操作的，但是在开发中，我们需要共享的数据肯定不止一个，并且数据之间我们需要组织到一起，所以一个Provider必然是不够的。
 
@@ -1839,7 +1839,7 @@ runApp(MultiProvider(
 ));
 ```
 
-**状态依赖**
+#### **状态依赖**
 
 如果一个状态A依赖于另一个状态B的时候，在A状态就导入B的状态，但是并不能简单的通过`import`进行导入，而需要通过`ChangeNotifierProxyProvider`进行依赖
 
@@ -1858,6 +1858,132 @@ runApp(MultiProvider(
   ],
   child: MyApp(),
 ));
+```
+
+
+
+### GetX
+
+GetX 是一个多功能的集合，提供了许多实用的功能和组件，比如方便调用的弹窗，路由，状态管理，依赖注入等功能，目前大多数情况使用的都是他的状态管理功能，比`Provider`、`InheritedWidget`要简单得多
+
+如果需要使用其中的路由、snackbar、国际化、bottomSheet、对话框以及与路由相关的高级apis和没有上下文（context）的情况下时就需要使用`GetMaterialApp`替换原来的`MaterialApp`组件，通过`GetMaterialApp`就能够提供相应的功能（GetMaterialApp并不是修改后的MaterialApp，它只是一个预先配置的Widget，它的子组件是默认的MaterialApp）。
+
+```dart
+void main => runApp(GetMaterialApp(home:CounterPage()));
+```
+
+```dart
+class CounterPage extends StatelessWidget {
+  const CounterPage({ Key? key }) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('GetX'),
+      ),
+      body: Text("hello"),
+    );
+  }
+}
+```
+
+
+
+#### 状态管理
+
+首先需要创建一个状态类
+
+```dart
+class Controller extends GetxController{
+  var count = 0.obs;
+  increment() => count++;
+}
+```
+
+其中`.obs`表示这个数据需要进行监听
+
+然后在需要使用到状态的地方通过使用`Get.put()`实例化你的类，使其对当下的所有子路由可用，并且通过`Obx()`来包裹依赖状态的组件即可（也就是说只有`Obx`包裹的部分是依赖状态，其他的都不会是动态的所以以后可以尽量使用`StatelessWidget`）。
+
+```dart
+class CounterPage extends StatelessWidget {
+  const CounterPage({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    final Controller c = Get.put(Controller());
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('GetX'),
+      ),
+      body: Obx(()=>Text("hello count:${c.count}")),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed:  c.increment,
+      ),
+    );
+  }
+}
+```
+
+需要注意的是是`Get.put(Controller(),tag:名字)`，是先将`Controller()`进行实例化之后放到`GetX`进行统一管理，之后再返回实例的，所以之后要进行管理的状态类都需要通过`Get.put`放到管理中心，之后需要再次使用的时候可以使用`Get.find(tag:名字)`来获取
+
+#### 弹窗调用
+
+使用 flutter 中原生的弹窗是非常麻烦的，比如调用`SnackBar`吐司弹窗需要`ScaffoldMessenger.of(context).showSnackBar(SnackBar(),),`这样来调用，而在GetX中可以直接使用`Get.snackBar()`就可以调用起来了，还用模态弹窗也是`Get.defaultDialog()`就可以
+
+#### 路由功能
+
+导航到新页面
+
+```dart
+Get.to(NextScreen());
+Get.to(NextScreen(),arguments:{name:'jack'});
+```
+
+接收参数只需要通过`Get.arguments`就能获取到了，而且通过`transion`直接定义跳转动画。`Get.to()`返回的也是一个Future，用来接收`Get.back()`返回时传递的参数
+
+要关闭`snackbars, dialogs, bottomsheets`或任何你通常会用`Navigator.pop(context)`关闭的东西。
+
+```dart
+Get.back();
+Get.back(result:'success');
+```
+
+进入下一个页面，但没有返回上一个页面的选项（用于闪屏页，登录页面等）。
+
+```dart
+Get.off(NextScreen());
+```
+
+进入下一个页面并取消之前的所有路由（在购物车、投票和测试中很有用）。
+
+```dart
+Get.offAll(NextScreen());
+```
+
+**命名路由**
+
+定义路由列表
+
+```dart
+GetMaterialApp(
+  initialRoute: '/',
+  getPages: [
+    GetPage(name: '/', page: () => MyHomePage()),
+    GetPage(name: '/details', page: () => Details()),
+    GetPage(
+      name: '/third',
+      page: () => Third(),
+      transition: Transition.zoom  
+    ),
+  ],
+  unknownRoute: GetPage(name: '/notfound', page: () => UnknownRoutePage()),
+)
+```
+
+```dart
+Get.toNamed('/details');
+Get.offNamed("/NextScreen");
+Get.offAllNamed("/NextScreen");
 ```
 
 
@@ -1989,19 +2115,17 @@ flutter 中有两种路由模式，一种是普通路由通过`Navigator`实现�
 **常用的方法**
 
 + `Navigator.of(context).push()`普通跳转
-
 + `Navigator.of(context).pop()`跳转到栈定的页面，相当于返回，
-
-  + 返回时还可以传递传递参数`pop('xxx')`，之后可以在进入当前页面的那个路由中通过then接收，比如要返回的A页面`Navigator.of(context).push(MaterialPageRoute(builder:(context)=>A())).then(res=>print(res))`
-
-  + 如果点击左上角的返回键进行返回的时候也需要传参数的话，有两种方法可以解决，一种是通过`AppBar`的`leading`自定义返回按钮，一种是通过`WillPopScope`将当前的`Scaffold`页面包裹，然后`onWillPop`定义返回的事件监听，这个函数要求有一个Future的返回值：
-
-  + - true：那么系统会自动帮我们执行pop操作
++ 返回时还可以传递传递参数`pop('xxx')`，之后可以在进入当前页面的那个路由中通过then接收，比如要返回的A页面`Navigator.of(context).push(MaterialPageRoute(builder:(context)=>A())).then(res=>print(res))`
+  
++ 如果点击左上角的返回键进行返回的时候也需要传参数的话，有两种方法可以解决，一种是通过`AppBar`的`leading`自定义返回按钮，一种是通过`WillPopScope`将当前的`Scaffold`页面包裹，然后`onWillPop`定义返回的事件监听，这个函数要求有一个Future的返回值：
+  
++ - true：那么系统会自动帮我们执行pop操作
     - false：系统不再执行pop操作，需要我们自己来执行
-
 + `Navigator.of(context).pushReplacementNamed()`跳转到另外一个页面，并替换当前记录
-
 + `Navigator.of(context).pushAndRemoveUntil()`跳转到另外一个页面，对以往的历史记录做移除操作，比如跳转到`Page1`并移除跳转记录`Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(context)=>Page1())),(route)=>route == null`
+
+> 其实也可以使用`navigator`，一般情况下就是`Navigator.of(context)`，所以可以`navigator.push()`
 
 ### **普通路由**
 
@@ -2958,6 +3082,35 @@ String baseURL = kRealseMode ? "release.com" : "dev.com";
 ```
 
 
+
+## 混合开发
+
+当flutter中需要嗲用一些原生的能力，如相机，相册，位置信息，地图等时就需要使用原生中提供的功能，也可以在pub.dev 中查找相应的库，如果没有就需要自己调用原生中的接口来实现了。
+
+flutter 是通过 `MethodChannel`来调用原生的方法，使用原生的功能的
+
+![图片](flutter/640-1656167117641.png)
+
+调用过程大致如下：
+
+- 1.客户端（Flutter端）发送与方法调用相对应的消息
+
+- 2.平台端（iOS、Android端）接收方法，并返回结果；
+
+- - iOS端通过`FlutterMethodChannel`做出响应；
+	- Android端通过`MethodChannel`做出响应；
+
+```dart
+static const platform = const MethodChannel("coderwhy.com/battery");
+final int result = await platform.invokeMethod("getBatteryInfo");
+```
+
+当我们通过 `platform.invokeMethod` 调用对应平台方法时，需要在对应的平台实现其操作：
+
+- iOS中可以通过Objective-C或Swift来实现
+- Android中可以通过Java或者Kotlin来实现
+
+> 我们通过`flutter create proj`的时候默认ios是使用swift，android 是使用 kotlin 实现的，如果要指定ios 使用 Objective-C 或者 android 使用 java 可以使用 `flutter create -i objc -a java proj`指定
 
 
 
