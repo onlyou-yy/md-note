@@ -1866,6 +1866,11 @@ runApp(MultiProvider(
 
 GetX 是一个多功能的集合，提供了许多实用的功能和组件，比如方便调用的弹窗，路由，状态管理，依赖注入等功能，目前大多数情况使用的都是他的状态管理功能，比`Provider`、`InheritedWidget`要简单得多
 
+> 插件
+>
+> + **getx_template**：一键生成每个页面必需的文件夹、文件、模板代码等等
+> + **GetX Snippets**：输入少量字母，自动提示选择后，可生成常用的模板代码
+
 如果需要使用其中的路由、snackbar、国际化、bottomSheet、对话框以及与路由相关的高级apis和没有上下文（context）的情况下时就需要使用`GetMaterialApp`替换原来的`MaterialApp`组件，通过`GetMaterialApp`就能够提供相应的功能（GetMaterialApp并不是修改后的MaterialApp，它只是一个预先配置的Widget，它的子组件是默认的MaterialApp）。
 
 ```dart
@@ -1902,6 +1907,43 @@ class Controller extends GetxController{
 
 其中`.obs`表示这个数据需要进行监听
 
+> `.obs`本质上是使用GetX 中的`RxInt(0)`或者`Rx<Int>(0)`来实现的，所以被`.obs`修饰的状态，不再是dart中的基础类型而是`RxInt`这种类型。这也就意味着创建响应式数据的时候并不需要通过继承`GetxController`实现。而是可以直接使用上面的方法在任意位置创建（不过为了方便管理和维护最好还是统一创建为好）。
+>
+> 在访问的时候其本质上是访问`.value`属性，如`count.value`在使用`final`进行数据定义的时候，如果后续需要修改状态就可以通过`count.value`来修改
+>
+> ```dart
+> class Controller extends GetxController{
+>   final count = RxInt(0);
+>   increment() => count.value++;
+> }
+> ```
+>
+> 不过需要注意的是对于类的修饰，访问和更新数据的方式是不一样的
+>
+> ```dart
+> class User{
+>     User({this.name = '', this.age = 0});
+>     String name;
+>     int age;
+> }
+> // controller
+> final user = User().obs;
+> //当你需要更新user变量时。
+> user.update( (user) { // 这个参数是你要更新的类本身。
+>     user.name = 'Jonny';
+>     user.age = 18;
+> });
+> // 更新user变量的另一种方式。
+> user(User(name: 'João', age: 35));
+> 
+> // view
+> Obx(()=> Text("Name ${user.value.name}: Age: ${user.value.age}"));
+> // 你也可以不使用.value来访问模型值。
+> user().name; // 注意是user变量，而不是类变量（首字母是小写的）。
+> ```
+>
+> 
+
 然后在需要使用到状态的地方通过使用`Get.put()`实例化你的类，使其对当下的所有子路由可用，并且通过`Obx()`来包裹依赖状态的组件即可（也就是说只有`Obx`包裹的部分是依赖状态，其他的都不会是动态的所以以后可以尽量使用`StatelessWidget`）。
 
 ```dart
@@ -1924,7 +1966,165 @@ class CounterPage extends StatelessWidget {
 }
 ```
 
-需要注意的是是`Get.put(Controller(),tag:名字)`，是先将`Controller()`进行实例化之后放到`GetX`进行统一管理，之后再返回实例的，所以之后要进行管理的状态类都需要通过`Get.put`放到管理中心，之后需要再次使用的时候可以使用`Get.find(tag:名字)`来获取
+需要注意的是是`Get.put(Controller(),tag:名字)`，是先将`Controller()`进行实例化之后放到`GetX`进行统一管理，之后再返回实例的，所以之后要进行管理的状态类都需要通过`Get.put`放到管理中心，之后需要再次使用的时候可以使用`Get.find(tag:名字)`或者`Get.find<类型>()`来获取
+
+```dart
+class Controller extends GetxController{
+  var count = 0.obs;
+  increment() => count++;
+  static Controller get to => Get.find();
+}
+//使用
+FloatingActionButton(
+  onPressed: () {
+    Controller.to.increment(),
+  } // 是不是贼简单！
+  child: Text("${Controller.to.count}"),
+),
+```
+
+> 有多种方法向依赖管理器中添加控制器
+>
+> ```dart
+> Get.put<SomeClass>(SomeClass());
+> //可以懒加载一个依赖，这样它只有在使用时才会被实例化
+> Get.lazyPut<ApiMock>(() => ApiMock());
+> //当初始化需要远程的数据的时候会有用。
+> Get.putAsync<SharedPreferences>(() async {
+>   final prefs = await SharedPreferences.getInstance();
+>   await prefs.setInt('counter', 12345);
+>   return prefs;
+> });
+> ```
+
+**GetX**
+
+除了使用`Obx`来监听状态改变外，还可以使用`GetX`来监听，他们的区别在于`Obx`需要先通过`Get.put()	`或者`Get.find()`获取到控制器，而`GetX`就不需要。
+
+```dart
+GetX<Controller>(
+  builder: (controller) {
+    print("count 2 rebuild");
+    return Text('${controller.count2}');
+  },
+),
+```
+
+**Wokers**
+
+`GetxController`中有个`onInit()`方法是用来初始化状态的，在其中可以使用相关的woker来对状态进行监听
+
+```dart
+class Controller extends GetxController{
+  var count = 0.obs;
+  increment() => count++;
+ 	@override
+  void onInit(){
+    //初始化状态
+    ///每次`count1`变化时调用。
+    ever(count, (_) => print("$_ has been changed"));
+    ///只有在变量$_第一次被改变时才会被调用。
+    once(count, (_) => print("$_ was changed once"));
+    ///防DDos - 每当用户停止输入1秒时调用，例如。
+    debounce(count, (_) => print("debouce$_"), time: Duration(seconds: 1));
+    ///忽略1秒内的所有变化。
+    interval(count, (_) => print("interval $_"), time: Duration(seconds: 1));
+  }
+}
+```
+
+所有worker都会返回一个`Worker`实例，你可以用它来取消（通过`dispose()`）worker。一般可以在`GetxController`的`onClose()`中今天取消。
+
+**GetBuilder**
+
+如果不想使用响应式的状态的话，也可以使用简单模式来实现类似`Provider`的效果
+
+```dart
+// 创建控制器类并扩展GetxController。
+class Controller extends GetxController {
+  int counter = 0;//不创建响应式的状态
+  void increment() {
+    counter++;
+    update(); // 当调用增量时，使用update()来更新用户界面上的计数器变量。
+  }
+}
+// 在你的Stateless/Stateful类中，当调用increment时，使用GetBuilder来更新Text。
+GetBuilder<Controller>(
+  init: Controller(), // 首次启动
+  builder: (_) => Text(
+    '${_.counter}',
+  ),
+)
+```
+
+`update([ids])`可以传入一个id数组，可以指定哪些定义了id的`GetBuilder`更新，并且第二个参数还可以传入条件
+
+```dart
+update(['count1']);//只有第一个 GetBuilder 会更新
+update(['count2'], counter > 2);//当 counter 大于2的时候才更新第二个 GetBuilder
+//-----------------------
+GetBuilder<Controller>(
+  id:'count1',// 指定id
+  init: Controller(),
+  builder: (_) => Text(
+    'value1:${_.counter}',
+  ),
+),
+GetBuilder<Controller>(
+  id:'count2', // 指定id
+  init: Controller(),
+  builder: (_) => Text(
+    'value2:${_.counter}',
+  ),
+)
+```
+
+**GetView**
+
+它是一个对已注册的`Controller`有一个名为`controller`的getter的`const Stateless`的Widget，在里面可以直接通过`controller`访问到对应的控制器
+
+```dart
+class AwesomeController extends GetxController {
+  final String title = 'My Awesome View';
+}
+// 一定要记住传递你用来注册控制器的`Type`!
+class AwesomeView extends GetView<AwesomeController> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      child: Text( controller.title ), // 只需调用 "controller.something"。
+    );
+  }
+}
+```
+
+**Binding**
+
+上面说了可以通过`Get.find()`来获取控制器，但是前提条件是控制器已经通过`Get.put`添加到依赖中了，一般来说都会尽早的添加进去，比如在首页的`build`方法中或者在`main`中，如果想要在进入页面器添加就可以使用`Bindings`来进行绑定
+
+```dart
+class AwesomeBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => AwesomeController());
+  }
+}
+```
+
+当然还需要在路由处进行绑定
+
+```dart
+//普通路由
+Get.to(AwesomeView(), binding: AwesomeBinding());
+Get.off(AwesomeView(), binding: AwesomeBinding());
+//命名路由
+GetPage(name: "/awesome", page: () => AwesomeView(), binding: AwesomeBinding());
+```
+
+还有个`bindings`可以同时绑定多个
+
+
 
 #### 弹窗调用
 
@@ -1985,6 +2185,117 @@ Get.toNamed('/details');
 Get.offNamed("/NextScreen");
 Get.offAllNamed("/NextScreen");
 ```
+
+**路由传参**
+
+路由的传参可以再路由跳转的方法中通过`arguments`进行传递，然后在相应的页面通过`Get.arguments`就能获取到了
+
+```dart
+Get.to(NextScreen(),arguments:{name:'jack'});
+Get.toNamed('/details',arguments:{name:'jack'});
+```
+
+不过在命名路由中还可以通过配置动态路由或者路由名参数来实现另一种参数传递方式，比如配置动态路由
+
+```dart
+getPages: [
+  GetPage(name: '/users', page: () => Details()),
+  GetPage(name: '/details/:id', page: () => Details()),
+],
+```
+
+传递参数
+
+```dart
+Get.toNamed('/user?name=jack');
+Get.toNamed('/details/123?name=rocy');
+```
+
+获取参数
+
+```dart
+//user
+Get.parameters['name'];
+//details
+Get.parameters['id'];
+Get.parameters['name'];
+```
+
+
+
+#### 中间件
+
+可以通过`routingCallback`来定义路由中间件，这个中间件将会在路由跳转前执行，所以可以在这里做路由拦截的操作
+
+```dart
+GetMaterialApp(
+  routingCallback: (routing) {
+    if(routing.current == '/second'){
+      openAds();
+    }
+  }
+)
+```
+
+有些页面需要登录验证，有些不需要，这时候可以不使用 `routingCallback`，单独写一个验证的`GetMiddleware`：
+
+```dart
+class AuthMiddleware extends GetMiddleware {
+  @override
+  int? priority = 2;//这个是权重，越小越先执行
+
+  bool isAuthenticated = false;
+
+  @override
+  RouteSettings? redirect(String? route) {
+    debugPrint('=======AuthMiddleware.redirect:$route');
+    if (!isAuthenticated) {
+      return RouteSettings(name: Routes.LOGIN);
+    }
+    return super.redirect(route);
+  }
+
+  @override
+  GetPage? onPageCalled(GetPage? page) {
+    debugPrint('=======AuthMiddleware.onPageCalled:$page');
+    return super.onPageCalled(page);
+  }
+}
+```
+
+然后在 GetPage里使用：
+
+```dart
+GetPage(
+  name: Routes.MIDDLEWARE_PAGE,
+  page: () => MiddlewarePagePage(),
+  binding: MiddlewarePageBinding(),
+  middlewares: [AuthMiddleware()],
+),
+```
+
+```dart
+//当被调用路由的页面被搜索时，这个函数将被调用
+RouteSettings redirect(String route){}
+//在调用页面时，创建任何东西之前，这个函数会先被调用
+GetPage onPageCalled(GetPage page){}
+//这个函数将在绑定初始化之前被调用
+List<Bindings> onBindingsStart(List<Bindings> bindings){}
+//这个函数将在绑定初始化之后被调用
+GetPageBuilder onPageBuildStart(GetPageBuilder page){}
+//这个函数将在GetPage.page调用后被调用，并给出函数的结果，并获取将要显示的widget。
+onPageBuilt(){}
+//这个函数将在处理完页面的所有相关对象(Controllers, views, ...)之后被调用
+onPageDispose(){}
+```
+
+
+
+如果想要快速创建一个GetX风格的项目架构可以在`pub.dev`中安装`get_cli`来创建。
+
+[GetX文档](https://github.com/jonataslaw/getx/blob/master/README.zh-cn.md#%E4%BE%9D%E8%B5%96%E7%AE%A1%E7%90%86)
+
+
 
 
 
