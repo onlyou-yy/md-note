@@ -966,9 +966,21 @@ dio 是一个类似于 axios 的强大的网络请求库
 
 ```dart
 final dio = Dio();
-dio.get("http://httpbin.org/get").then(res => print(res));
-dio.post("http://httpbin.org/post").then(res => print(res));
+dio.get("http://httpbin.org/get",queryParameters:{id:1}).then(res => print(res));
+dio.post("http://httpbin.org/post",data:{id:1}).then(res => print(res));
 ```
+
+其中请求可以需要传递的参数是
+
++ **path：** 请求的url链接
++ **data：** 请求数据，例如上传用到的FromData，一般是在`post put`等请求上才用得到，可以理解为请求体
++ **queryParameters：** 查询参数
++ **options：** 请求选项，一些请求的配置都是在这个对象中进行配置的，比如请求头；在`dio.options`中可以设置全局的配置
++ **cancelToken：** 用来取消发送请求的token
++ **onSendProgress：** 网络请求发送的进度
++ **onReceiveProgress：** 网络请求接收的进度
+
+[dio 文档](https://github.com/flutterchina/dio/blob/master/README-ZH.md)
 
 为了方便维护，一般都不会直接去使用第三方库，而是对他做一层封装
 
@@ -1014,6 +1026,8 @@ class HttpRequest{
   }
 }
 ```
+
+上面这个库并不是很好，可以有更多具体的封装，[Flutter Dio源码分析(四)--封装](https://www.liujunmin.com/flutter/dio_encapsulation.html#%E5%89%8D%E8%A8%80)
 
 ### FutureBuilder
 
@@ -1076,6 +1090,70 @@ class HomeContentState extends StatelessWidget {
 ```
 
 不过这种方式也是有局限性的，因为每次`build`都会重新构建，这样就每次`build`的时候就会重新请求数据，所以在要频繁`build`的组件中是不合适使用的，第二种情况就是请求依赖于一个变化的参数的时候也是不合适使用的，比如上拉加载更多，此时没次上来加载更多时当前页这个参数是会改变的，所以也不合适。
+
+### StreamBuilder
+
+StreamBuilder与FutureBuilder类似，也是一个Widget控件，不一样的是FutureBuilder依靠Future来做异步数据获取，而StreamBuilder则是依赖Stream来做异步数据获取。可以做到持续的部分更新功能，比如说做一个时钟的功能
+
+```dart
+class _TestABPageState extends State {
+  ///测试数据
+  String _message = "--";
+  ///使用单订阅流即可
+  StreamController<String> _streamController = StreamController();
+  ///计时器
+  Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+
+
+    ///间隔1秒执行时间
+    _timer= Timer.periodic(Duration(milliseconds: 1000), (timer) {
+      ///获取当前的时间
+      DateTime dateTime= DateTime.now();
+      ///格式化时间
+      String formatTime = DateFormat("HH:mm:ss").format(dateTime);
+      _message=formatTime;
+      ///流数据更新
+      _streamController.add("$formatTime");
+    });
+  }
+  
+  @override
+  Widget build(BuildContext context){
+    return StreamBuilder<String>(
+     ///绑定stream
+     stream: _streamController.stream,
+     ///默认的数据
+     initialData: "00:00:00",
+     ///构建绑定数据的UI
+     builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+      ///snapshot.data 就是传递的数据对象
+       return Text(
+         '当前时间  ${snapshot.data} ',
+         style: TextStyle(fontSize: 22, color: Colors.blue),
+       );
+     },
+   );
+  }
+
+
+  @override
+  void dispose() {
+    super.dispose();
+    ///关闭
+    _streamController.close();
+    ///取消计时器
+    _timer.cancel();
+  }
+}
+```
+
+
+
+
 
 
 

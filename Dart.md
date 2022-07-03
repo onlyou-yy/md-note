@@ -710,6 +710,8 @@ print('Done with all the long steps!');
 
 Stream 用来表示一系列数据，HTML 中的按钮点击就是通过 stream 传递的。同样也可以将文件作为数据流来读取。一般是有`listen(cb)`来见监听数据的回调。可以通过`await for`、生产器、Stream 类来生产Stream数据。
 
+[Dart 语言Stream详解](https://arcticfox.blog.csdn.net/article/details/100855253)
+
 
 
 ### Isolate 隔离区
