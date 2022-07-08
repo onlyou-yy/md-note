@@ -381,6 +381,11 @@ class _AppLifeState extends State<AppLife> with WidgetsBindingObserver {
 + `SingleChildScrollView`单子节点容器，但是子节点容器可滚动，可以将Column，Row等不可滚动的容器包装成可滚动的。
 + `Flex`弹性盒子布局容器，就是相当于一个`display:flex`的`div`，可以设置 flex 的相关属性，比如排列方向`direction`，当设置`direction:Axis.vertical`时就相当于是一个 `Column`，当设置`direction:Axis.horizontal`时就相当于是一个 `Row`。
 + `PageView`页面滚动容器组件，效果类似于抖音等视频的单页面视频滚动效果，每个子元素都相当于是一个页面。
+
+  + PageView的渲染方式为Sliver模型(另一种是Box模型)，这种模型针对的是页面懒加载，比如列表视图在视窗显示范围内的显示，反之不显示。
+
+    所以，划出PageView显示区域的Widge、Element、RenderObject默认情况是会被销毁的。这也是State被反复重新创建的原因。可以让需要缓存的子节点的`State`混入`AutomaticKeepAliveClientMixin`来解决 
+
 + `Wrap`子节点在一行/列放不下时会自动换行，通过`direction`属性定义接单排序方向，可以用来做瀑布流布局
 + `Stack`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点之间是重在一起的，相当于给每个子组件都设置了绝对定位。可以使用`Positioned`或者`Align`来控制位置，也可以使用`alignment`属性定义内容的位置。通过`fit`可以设置子元素的填充模式
 + `ListView`多节点容器组件，一般用做列表显示，可以通过`scrollDirection`定义列表的方向。不过需要注意子节点的宽度（垂直列表）/高度（水平列表）会被强制铺满适应父容器的宽度/高度，如果要设置列表的宽度，就需要设置其父容器的宽度，或者通过设置padding属性将它进行挤压，还有就是默认情况下`ListView|Column`下不能在使用`ListView|Column`，如果要使用需要设置子节点的`ListView`的`shrinkWrap`属性为`true`，`Column`的`mainAxisSize`为`MainAxisSize.min`;
@@ -406,6 +411,7 @@ class _AppLifeState extends State<AppLife> with WidgetsBindingObserver {
   + `SliverChildListDelegate`是创建`Sliver`节点的方法，和`ListView(children:List.generate(count,genFn))`一致，通过`delegate`参数创建
   + `SliverAppBar`页面顶部的导航
   + `SliverPadding`设置内边距，滚动出区域的容器不会隐藏
+  + `SliverToBoxAdapter`一个加载普通widget的Sliver组件，如果是滑动的组件不推荐使用这个，而是使用Sliver滑动组件
 
 > 单子节点`Sliver`容器的子节点参数应该是`sliver`，多子节点`Sliver`容器的子节点参数一般是`slivers`，而且`Sliver`系列组件需要在`CustomScrollView`中使用
 
