@@ -376,6 +376,7 @@ class _AppLifeState extends State<AppLife> with WidgetsBindingObserver {
 **多子节点容器**
 
 + `Row`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是横向排列，且默认占满一行，可以通过`mainAxisSize`来设置占据空间的大小；相当于一个设置了`display:flex;flex-direction:row`的 `div`
+	
 	+ 如果希望所有的子节点的高度都一样可以在外层包裹一个`IntrinsicHeight`
 + `Column`多子节点容器组件，其中有`children`属性可以设置多个字节点的列表，子节点是纵向排列，相当于一个设置了`display:flex;flex-direction:column`的 `div`
 + `SingleChildScrollView`单子节点容器，但是子节点容器可滚动，可以将Column，Row等不可滚动的容器包装成可滚动的。
@@ -2371,6 +2372,89 @@ GetPageBuilder onPageBuildStart(GetPageBuilder page){}
 onPageBuilt(){}
 //这个函数将在处理完页面的所有相关对象(Controllers, views, ...)之后被调用
 onPageDispose(){}
+```
+
+#### 网络请求功能
+
+**GetConnect**可以便捷的通过http或websockets进行前后台通信。通过extend GetConnect 就能使用GET/POST/PUT/DELETE/SOCKET方法与你的Rest API或websockets通信。
+
+```dart
+class UserProvider extends GetConnect {
+  // Get request
+  Future<Response> getUser(int id) => get('http://youapi/users/$id');
+  // Post request
+  Future<Response> postUser(Map data) => post('http://youapi/users', body: data);
+  // Post request with File
+  Future<Response<CasesModel>> postCases(List<int> image) {
+    final form = FormData({
+      'file': MultipartFile(image, filename: 'avatar.png'),
+      'otherFile': MultipartFile(image, filename: 'cover.png'),
+    });
+    return post('http://youapi/users/upload', form);
+  }
+
+  GetSocket userMessages() {
+    return socket('https://yourapi/users/socket');
+  }
+}
+```
+
+GetConnect具有多种自定义配置。你可以配置base Url，配置响应，配置请求，添加权限验证，甚至是尝试认证的次数，除此之外，还可以定义一个标准的解码器，该解码器将把您的所有请求转换为您的模型，而不需要任何额外的配置。
+
+```dart
+class HomeProvider extends GetConnect {
+  @override
+  void onInit() {
+    // 设置默认的数据解码器
+    httpClient.defaultDecoder = CasesModel.fromJson;
+    httpClient.baseUrl = 'https://api.covid19api.com';
+    // baseUrl = 'https://api.covid19api.com'; // 默认请求基础路径
+
+    // 请求拦截
+    httpClient.addRequestModifier((request) {
+      request.headers['apikey'] = '12345678';
+      return request;
+    });
+
+    // 响应拦截
+    httpClient.addResponseModifier<CasesModel>((request, response) {
+      CasesModel model = response.body;
+      if (model.countries.contains('Brazil')) {
+        model.countries.remove('Brazilll');
+      }
+    });
+
+    httpClient.addAuthenticator((request) async {
+      final response = await get("http://yourapi/token");
+      final token = response.body['token'];
+      // Set the header
+      request.headers['Authorization'] = "$token";
+      return request;
+    });
+
+    //Autenticator will be called 3 times if HttpStatus is
+    //HttpStatus.unauthorized
+    httpClient.maxAuthRetries = 3;
+  }
+
+  @override
+  Future<Response<CasesModel>> getCases(String path) => get(path);
+}
+```
+
+**GetxService**
+
+这个类就像一个 "GetxController"，它共享相同的生命周期（"onInit()"、"onReady()"、"onClose()"）。通常用来做一些初始化的工作或者用来定义发起请求的类
+
+```dart
+class PopularProductRepo extends GetxService {
+  final ApiClient apiClient;
+  PopularProductRepo({required this.apiClient});
+
+  Future<Response> getPopularProductList() async {
+    return await apiClient.getData("https://www.dbestech.com/api/product/list");
+  }
+}
 ```
 
 
