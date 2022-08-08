@@ -340,3 +340,247 @@ git checkout -b dev(本地分支名称) origin/dev(远程分支名称)
 !index.php			   不过滤具体某个文件
 ```
 
+
+
+## 常用命令
+
+### 配置
+
+**查看配置**
+
+```shell
+git config user.name
+git config user.email
+```
+
+**设置**
+
+```shell
+git config --global user.name "zhanghs"
+git config --global user.email "zhang@163.com"
+```
+
+**删除配置**
+
+```shell
+git config —global —unset user.name
+```
+
+
+
+### 本地仓库管理
+
+```shell
+#提交到暂存区
+git add test.txt
+#提交到本地仓库
+git commit -m “提交测试”
+#查看是否有文件未提交
+git status
+#对比
+git diff test.txt 
+#查看提交记录
+git log 
+#格式话查看
+git log —pretty=oneline 
+#查看历史提交
+git reflog 
+```
+
+### 版本回退
+
+```shell
+#返回到上个版本
+git reset —hard HEAD^ 
+#返回到上上个版本
+git reset —hard HEAD^^ 
+#返回到100个版本之前
+git reset —hard HEAD100 
+```
+
+### 分支管理
+
+```shell
+#查看分支
+git branch 
+#创建分支
+git branch dev 
+#切换分支
+git checkout dev 
+git switch dev 
+#创建并切换分支
+git switch -c dev 
+#创建并切换分支
+git checkout -b dev 
+#删除分支
+git branch -d dev 
+#合并分支,把dev合并到 master ，要先切换到master
+git switch master
+git merge dev
+```
+
+### 合并指定提交记录
+
+```shell
+#单个
+git cherry-pick log1
+
+#多个
+git cherry-pick log1 log2
+```
+
+
+
+### 暂存修改
+
+将当前修改的内容暂时存起来，这个不会存到add的暂存区，只是保存修改，之后可以切换分支
+
+```shell
+暂存所有
+git stash
+
+暂存所有并命名sta1
+
+git stash save ”sta1”
+
+查看现有stash
+
+git stash list
+```
+
+重新应用缓存的stash
+
+使用栈定
+
+```shell
+#会删除记录
+git stash pop  
+#不会删除记录
+git stash apply
+```
+
+使用指定index的储藏
+
+```shell
+git stash apply stash@{index}
+```
+
+移除stash
+
+```shell
+git stash drop stash@{index}
+```
+
+
+
+### 打标签
+
+tag相当于是版本（commit）的快照
+
+```shell
+#创建标签
+git tag v0.1 
+#为指定commit创建标签
+git tag v0.9 commitid 
+#指定标签信息
+git tag -a v1.0 -m “blabla” 
+#查看标签
+git tag 
+#可以推送一个本地标签；
+git push origin <tagname>
+#可以推送全部未推送过的本地标签；
+git push origin --tags
+#可以删除一个本地标签；
+git tag -d <tagname>
+#可以删除一个远程标签。
+git push origin :refs/tags/<tagname>
+```
+
+### 
+
+### 远程仓库管理
+
+添加远程仓库，并起别名为origin
+
+```shell
+git remote add origin git@github.com:master/zhang.git
+```
+
+推送本地仓库到远程仓库
+
+```shell
+git push <远程主机名> <本地分支名>:<远程分支名>
+git push origin master:master
+```
+
+查看远程所有分支
+
+```shell
+git branch -a
+```
+
+新建分支并切换到指定分支
+
+```shell
+git checkout -b 本地分支名 origin/远程分支名
+git checkout -b 3.9.0 origin/3.9.0
+```
+
+删除远程分支
+
+```shel
+git push origin --delete [branchname]
+```
+
+在删除远程分支时，同名的本地分支并不会被删除，所以还需要单独删除本地同名分支（如果删除本地分支是报错`git checkout xxxxx-fixbug` ，切换到当前分支上， 然后再 进行` git push --delete origin origin/xxxxx-fixbug`此时将不会再发生错误 。）
+
+
+
+创建远程分支
+
+```shell
+git push —set-upstream origin dev
+```
+
+将本地分支与远程分支关联
+
+```shell
+git branch --set-upstream-to=远程分支 本地分支
+git branch --set-upstream-to=origin/feature feature
+```
+
+拉取远程分支
+
+```shell
+git pull <远程主机名> <远程分支名>:<本地分支名>
+git pull origin dev:dev
+```
+
+删除远程库文件,但本地保留该文件
+
+```shell
+git rm --cached xxx
+git commit -m "remove file from remote"
+git push -u origin master
+```
+
+删除远程库文件夹,但本地保留该文件夹
+
+```shell
+git rm --cached -r xxx
+git commit -m "remove file from remote"
+git push -u origin master
+```
+
+**git rm与git rm --cached 的区别**
+
+`git rm` 是删除暂存区或分支上的文件, 同时也删除工作区中这个文件。
+
+`git rm --cached`是删除暂存区或分支上的文件,但本地还保留这个文件， 是不希望这个文件被版本控制。
+
+
+
+**git 指定目录 拉取文件**
+
+https://www.jianshu.com/p/b67318c3433d
+
