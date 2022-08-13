@@ -183,6 +183,131 @@ sudo xcode-select --switch /Applications/Xcode.app
 
 
 
+### 对于旧项目迁移到新设备
+
+**arm64 问题**
+
+在用react native开发IOS端项目的时候，如果用比较新机器，或者说用新版本的xcode（12以上）来运行旧项目的时候可能会报错，显示很多第三方库或者原生东西需要`arm64`版本的包才可以运行。
+
+比如 原本是 rn 0.58 版本的ios项目在xcode12上运行是正常的，但是迁移到xcode13（macos mini M1芯片）的时候就会报错，需要`arm64`
+
+```
+"building for iOS Simulator, but linking in object file built for iOS, file '/Users/.../Pods/AlipaySDK-iOS/AlipaySDK.framework/AlipaySDK' for architecture arm64
+
+clang: error: linker command failed with exit code 1 (use -v to see invocation)"
+```
+
+原因是因为xcode 在12之后就默认只打包64位的应用了，之前是有使用32位的，所以会报错
+
+**解决**
+
+右键点击` xcode -> 显示简介 `然后将`使用Rosetta打开`钩上，之后关闭，重启 xcode ，清理掉缓冲就可以了，重新以debug模式运行到模拟器就好了，（但是需要注意的是这样改可以以debug模式运行到模拟器、真机，release模式只能运行到真机，但是不能运行到模拟器；也可以用来发布项目）
+
+![image-20220812155247935](/Users/gcb/Desktop/ljf_new/file/md-note/React Native/image-20220812155247935.png)
+
+https://mirari.cc/2021/07/28/M1%E8%8A%AF%E7%89%87Mac%E6%90%AD%E5%BB%BAios%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E8%B8%A9%E5%9D%91/
+
+
+
+**main.jsbundle 不存在问题**
+
+在完成上面的步骤之后运行到模拟器上是没有问题的，但是当发布项目的时候就可能会报错`main.jsbundle`文件不存在
+
+```
+main.jsbundle does not exist. this must be a bug with + echo 'react native
+```
+
+**解决**
+
+在项目中运行下面命令生成`main.jsbundle`
+
+```shell
+react-native bundle --entry-file index.js --platform ios --dev false --bundle-output ios/main.jsbundle --assets-dest ios
+```
+
+> 如果没有全局安装过`react-native-cli`，需要在前面加上 npx
+
+之后打开Xcode>选择项目目标>在构建阶段中将`main.jsbundle`添加到`Copy Bundle Resource`
+
+![image-20220812162420982](/Users/gcb/Desktop/ljf_new/file/md-note/React Native/image-20220812162420982.png)
+
+之后在 `AppDelegate.m`上替换
+
+```objc
+jsCodeLocation = [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index" fallbackResource:nil];
+```
+
+为
+
+```objc
+#if DEBUG
+jsCodeLocation = [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index" fallbackResource:nil];
+#else
+jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+#endif
+```
+
+> 如果只写`jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];`可能会导致debugger服务无法打开
+
+https://www.codenong.com/49505446/
+
+
+
+**打包到真机没有静态资源图片**
+
+完成上面操作之后运行到模拟器上可能是正常的，而到真机上可能会出现静态资源图片不显示的问题，这是因为，打包出来的图片并没有被添加到app程序上。
+
+**解决**
+
+其实在生成`main.jsbundle`文件的时候，同时也生成了`ios/assets`文件夹，这个文件夹就是打包生成的静态文件资源。然后将这个文件夹也添加到`Copy Bundle Resource`即可
+
+https://blog.csdn.net/weixin_43586120/article/details/104622566
+
+
+
+**关于`__attribute__((__unused__))`为null**
+
+```
+static BOOL RCTParseUnused(const char **input)
+{
+  return RCTReadString(input, "__unused") ||
+         RCTReadString(input, "__attribute__((unused))");
+}
+```
+
+替换为
+
+```
+static BOOL RCTParseUnused(const char **input)
+{
+  return RCTReadString(input, "attribute((unused))") ||
+         RCTReadString(input, "__attribute__((__unused__))") ||
+         RCTReadString(input, "__unused");
+}
+```
+
+
+
+**关于`_initializeModules:(NSArray<id<RCTBridgeModule>> *)modules`问题**
+
+```
+- (NSArray<RCTModuleData *> *)_initializeModules:(NSArray<id<RCTBridgeModule>> *)modules
+                               withDispatchGroup:(dispatch_group_t)dispatchGroup
+                                lazilyDiscovered:(BOOL)lazilyDiscovered
+```
+
+替换
+
+```
+- (NSArray<RCTModuleData *> *)_initializeModules:(NSArray *)modules
+                               withDispatchGroup:(dispatch_group_t)dispatchGroup
+                               lazilyDiscovered:(BOOL)lazilyDiscovered
+```
+
+
+
+
+
 ## 关于安装第三方库
 
 对于一些不依赖于与原生代码的库可以直接使用`npm`或`yarn`安装之后使用，有一些库基于一些原生代码实现，你必须把这些文件添加到你的应用，否则应用会在你使用这些库的时候产生报错
@@ -201,6 +326,12 @@ react-native link *****
 
 React Native 0.60 及更高版本链接是自动的，但是对于Mac开发IOS可能还需要在项目中运行`cd ios && pod install`进行链接
 
+> 在接入高德地图的时候，在使用`react-native-amap-geolocation`的时候需要注意rn 0.6之前的使用 1.0.0 版本的
+>
+> https://my.oschina.net/jack088/blog/4333197
+>
+> https://github.com/qiuxiang/react-native-amap-geolocation/tree/v1.0.0/docs
+
 
 
 ## 关于布局
@@ -212,6 +343,16 @@ React Native 0.60 及更高版本链接是自动的，但是对于Mac开发IOS�
 ## 关于样式
 
 在react-native中不支持使用样式类名（也就是className）来定义样式，仅支持通过style来设置样式，并且样式的设置需要使用对象来设置`style={{color:'white',backgroundColor:'blue'}}`，react-native中也不全支持css属性，每个组件也都有自己特定的属性，所以具体样式还是要参考文档。
+
+一般通过`StyleSheet`来创建样式
+
+```js
+const styles = StyleSheet.create({
+  width:110;
+})
+```
+
+https://www.bookstack.cn/read/react-native-stylesheet-guide/README.md
 
 ### 样式的继承
 
@@ -233,6 +374,21 @@ const commonStyle = {fontSize:30,color:'skyblue'};
 <Text style={[backgroundColor:'yellow',commonStyle]}>and red</Text>
 <Text style={[backgroundColor:'green',commonStyle]}>and red</Text>
 ```
+
+### StyleSheet样式表的优点
+
+采用StyleSheet样式表的优点注意如下： 
+
+ **从代码质量角度来分析:**
+
+- 从render渲染方法中移除了styles样式相关代码，这样可以使代码更加容易阅读
+- 通过对不同样式命名，正好也是对render方法中的组件的一种标志
+- 这样的写法做到了业务和样式的分离，为后面分层开发打下了基础
+
+**从性能角度来分析:** 
+
++ 通过StyleSheet，我们可以通过标志的样式ID来引用，而不是每次都要创建一个新的Style对象   
++ 该允许样式通过桥接在原生代码和JavaScript中传递一次，后面全部通过该id进行引用(不过现在该功能还没有实现)
 
 
 
@@ -386,7 +542,7 @@ react-native-debugger
 
 如果发现一直链接不上很有可以是因为`react-native`和`react-native-debugger`的版本对不上
 
-![image-20220712171704532](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/React Native/image-20220712171704532.png)
+![image-20220712171704532](React Native/image-20220712171704532.png)
 
 如果还是连不上就检查一下 debugger浏览器 是否关闭了。
 
@@ -420,11 +576,11 @@ GLOBAL.XMLHttpRequest = GLOBAL.originalXMLHttpRequest || GLOBAL.XMLHttpRequest
 
 **关于开发者菜单**
 
-再rn项目开发中很蛋疼的一件事就是通过按按键`command + D`或者`ctrl + m`的情况下无法打开开发者菜单，如果是android的话还可以通过`adb shell input keyevent 82`开打开，但是在IOS就不行了。
+再rn项目开发中很蛋疼的一件事就是通过按按键`command + D`或者`ctrl + m`的情况下无法打开开发者菜单，如果是android的话还可以通过`adb shell input keyevent 82`开打开，但是在IOS就不行了（其实可以在模拟器的`Device -> Shake`手动摇晃设备唤出，但是不一定成功）。
 
 但是在`react-native-debugger`就可以解决这个问题，在`Element`面板中右键点击就可以看到有显示菜单的选项了。完美解决!!!!~~~`react-native-debugger`牛逼
 
-![image-20220712172823955](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/React Native/image-20220712172823955.png)
+![image-20220712172823955](React Native/image-20220712172823955.png)
 
 而且`Toggle Element Inspector`可以直接快速切换聚焦模式，`Disable Network Inspect`可以打开或者关闭网络请求监听，`Log AsyncStorage content`可以打印缓存信息，`Clear AsyncStorage`可以快速清除缓存。
 
@@ -1289,6 +1445,91 @@ module.exports = {
 2.然后将`node_modules/@ant-design/icons-react-native`下面的`fonts`文件夹复制到`./src/assets/fonts`
 
 3.之后运行`npx run react-native link`
+
+
+
+## 屏幕适配方案
+
+```js
+const Dimensions = require('Dimensions');
+const window = Dimensions.get('window');//获取的尺寸不包括状态栏和底部虚拟菜单栏高度，screen 包括
+// https://segmentfault.com/a/1190000039805723
+
+const isInit = false;
+
+class SizeFit{
+	static initialize(standardSize = 750,standardRem = 16){
+		if(isInit) return;
+		isInit = true;
+		this.windowWidth = window.width;
+		this.windowHeight = window.height;
+		this.rpx = this.windowWidth / standardSize;
+		this.px = this.rpx * 2;
+		this.rem = standardRem;
+	}
+	static setRpx(number){
+		if(!isInit) SizeFit.initialize();
+		return number * this.rpx;
+	}
+	static setPx(number){
+		if(!isInit) SizeFit.initialize();
+		return number * this.px;
+	}
+	static setVW(persent){
+		if(!isInit) SizeFit.initialize();
+		return  persent / 100 * this.windowWidth;
+	}
+	static setVH(percent){
+		if(!isInit) SizeFit.initialize();
+		return  persent / 100 * this.windowHeight;
+	}
+	static setRem(size){
+		if(!isInit) SizeFit.initialize();
+		return  size * this.rem;
+	}
+}
+
+/**
+ * 扩展Number 的属性
+ * 使用的时候用 22..rpx
+ * 记得使用StyleSheet.create()创建样式，
+ * 避免直接在render函数中直接使用，
+ * 因为每次更新都执行计算会消耗性能
+ */
+(function extensionNumber(){
+	Object.defineProperties(Number.prototype,{
+		"rpx":{
+			get(){
+				return SizeFit.setRpx(this).toFixed(0);
+			}
+		},
+		"px":{
+			get(){
+				return SizeFit.setPx(this).toFixed(0);
+			}
+		},
+		"vw":{
+			get(){
+				return SizeFit.setVW(this).toFixed(0);
+			}
+		},
+		"vh":{
+			get(){
+				return SizeFit.setVH(this).toFixed(0);
+			}
+		},
+		"rem":{
+			get(){
+				return SizeFit.setRem(this).toFixed(0);
+			}
+		},
+	})
+})()
+
+export default SizeFit;
+```
+
+
 
 
 

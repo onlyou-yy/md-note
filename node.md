@@ -668,3 +668,17 @@ req.end();
 除了使用`http.request()`进行发送请求之外，还可以使用`http.get(url,fn)`来发送请求。`querystring`可以用来解析请求中的查询参数，使用 http 模块来发送请求的方式是比较复杂的，这里建议使用`request`或者`axios`库进行请求的发送。既然可以个发送请求了，那么就可以配合 **无头浏览器（puppeteer）**或者`cheerio`库（可以像jq操作dom那样操作html文本） 来进行爬虫开发。
 
 [js - 爬虫的实现](https://blog.csdn.net/qq_43612151/article/details/107861017)
+
+
+
+## bug
+
+### 使用npm命令时报错误Error: EACCES: permission denied，如何解决？
+
+https://zhuanlan.zhihu.com/p/250812475
+
+https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally
+
+### Mac彻底卸载node
+
+https://blog.csdn.net/huangpb123/article/details/120248002
