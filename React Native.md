@@ -249,6 +249,8 @@ jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"j
 
 > 如果只写`jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];`可能会导致debugger服务无法打开
 
+**特别注意的是在以release模式打包到真机的话需要重新运行一下命令生成`main.jsboundle`和资源，这样新修改的代码才会被打包就去。**因为在debug模式的时候是使用`/index.js`来作为入口的，release模式下是用`main.jsboundle`最为入口的
+
 https://www.codenong.com/49505446/
 
 
@@ -402,6 +404,14 @@ View 组件相当于是 div 标签，就是一个普通的容器，不过不可�
 
 Text 组件相当于是一个 span 标签，不过里面的布局不是按flexbox进行布局的，而是文本排列布局。这意味着`<Text>`内部的元素不再是一个个矩形，而可能会在行末进行折叠。
 
+### TextInput
+
+文本输入组件，相当于是一个`textarea`标签，可以输入单行或者多行文本。
+
+在使用`TextInput`组件的时候可能会遇到一种常见的问题就是，聚焦的时候弹出软键盘可能会把输入框挡住，这时候可以使用`<KeyboardAvoidingView>`将不想被遮住的内容包裹住，它的作用就是在弹出软键盘的时候会将内容的位置做出调整。
+
+还有一个问题就是，当只有一个`TextInput`的时候，聚焦后点击其他地方不会失去焦点导致软键盘收不起来，这时候可以使用`<ScrollView keyboardShouldPersistTaps='never' >`来包裹内容，之后在点击其他的组件的时候`TextInput`就会失去焦点
+
 ### Image与ImageBackground
 
 两个组件都是用来加载图片的，不过Image加载的是普通图片，ImageBackground用来加载背景图片，不过Image标签中不能插入内容，而ImageBackground则是相当于一个带背景的容器。通过设置`source`来确定图片，`source`接收的是一个对象值
@@ -475,7 +485,7 @@ Button组件是一个简单的跨平台的按钮组件，它是`TouchableOpacity
 
 
 
-## 网落请求
+## 网络请求
 
 在软件开发里面不存在跨域的问题（跨域主要是因为浏览ajax引擎的同源策略导致的，而在应用中不存在ajax引擎所以不会有跨越问题）。在react-native中网络请求不再是使用xhr了，而是使用[fetch](https://developer.mozilla.org/zh-CN/docs/Web/API/Fetch_API/Using_Fetch)来发送网络请求了。不过仍然可以使用第三方的网络请求框架如[frisbee](https://github.com/niftylettuce/frisbee)或是[axios](https://github.com/mzabriskie/axios)等。
 
@@ -1409,13 +1419,13 @@ npm i --save-dev @babel/plugin-proposal-class-properties @babel/plugin-proposal-
 
 ```js
 class Store{
-    constructor(){
-        makeAutoObservable(this);
-    }
-    name = 'jack';
+  constructor(){
+    makeAutoObservable(this);
+  }
+  name = 'jack';
 	changeName(val){
-        this.name = val;
-    }
+    this.name = val;
+  }
 }
 export default new Store();
 ```
@@ -1466,6 +1476,7 @@ class SizeFit{
 		this.rpx = this.windowWidth / standardSize;
 		this.px = this.rpx * 2;
 		this.rem = standardRem;
+		this.textScale = 1;
 	}
 	static setRpx(number){
 		if(!isInit) SizeFit.initialize();
@@ -1475,52 +1486,69 @@ class SizeFit{
 		if(!isInit) SizeFit.initialize();
 		return number * this.px;
 	}
-	static setVW(persent){
+	static setVW(percent){
 		if(!isInit) SizeFit.initialize();
-		return  persent / 100 * this.windowWidth;
+		return  percent / 100 * this.windowWidth;
 	}
 	static setVH(percent){
 		if(!isInit) SizeFit.initialize();
-		return  persent / 100 * this.windowHeight;
+		return  percent / 100 * this.windowHeight;
 	}
 	static setRem(size){
 		if(!isInit) SizeFit.initialize();
 		return  size * this.rem;
 	}
+	static setTextSize(size){
+		if(!isInit) SizeFit.initialize();
+		return  this.setRpx(size) * this.textScale;
+	}
 }
 
 /**
  * 扩展Number 的属性
- * 使用的时候用 22..rpx
- * 记得使用StyleSheet.create()创建样式，
+ * 使用的时候用 22..rpx,22.6.rpx,(22).rpx，
+ * 尽量不要使用负数，使用负数可能回导致数据超长(过大)或者不是正确值
+ * 记得使用StyleSheet.create()创建样式
  * 避免直接在render函数中直接使用，
  * 因为每次更新都执行计算会消耗性能
+ * 
+ * 真机上可能出现的问题：
+ * 尽量不要使用负数，使用负数可能回导致数据超长(过大)或者不是正确值
+ * 
+ * 属性值尽量不要使用表达式，如果要使用，最好是写一个变量来定义值
+ * width:100..vh - 10..rpx --> let w = 100..vh - 10..rpx;width:w;
+ * 不过真机上也可能会出现问题
  */
 (function extensionNumber(){
 	Object.defineProperties(Number.prototype,{
 		"rpx":{
 			get(){
-				return SizeFit.setRpx(this).toFixed(0);
+				return +SizeFit.setRpx(this).toFixed(0);
 			}
 		},
 		"px":{
 			get(){
-				return SizeFit.setPx(this).toFixed(0);
+				return +SizeFit.setPx(this).toFixed(0);
 			}
 		},
 		"vw":{
 			get(){
-				return SizeFit.setVW(this).toFixed(0);
+				return +SizeFit.setVW(this).toFixed(0);
 			}
 		},
 		"vh":{
 			get(){
-				return SizeFit.setVH(this).toFixed(0);
+				return +SizeFit.setVH(this).toFixed(0);
 			}
 		},
 		"rem":{
 			get(){
-				return SizeFit.setRem(this).toFixed(0);
+				return +SizeFit.setRem(this).toFixed(0);
+			}
+		},
+		"trpx":{
+			get(){
+				return +SizeFit.setTextSize(this).toFixed(0);
 			}
 		},
 	})

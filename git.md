@@ -500,6 +500,12 @@ git push origin :refs/tags/<tagname>
 
 ### 远程仓库管理
 
+啦取远程仓库的信息，可以获取到分支索引等信息，可以用来刷新本地库中的远程仓库信息
+
+```shel
+git fetch
+```
+
 添加远程仓库，并起别名为origin
 
 ```shell
