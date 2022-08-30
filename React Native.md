@@ -288,6 +288,10 @@ static BOOL RCTParseUnused(const char **input)
 }
 ```
 
+https://my.oschina.net/jack088/blog/4333197
+
+https://github.com/qiuxiang/react-native-amap-geolocation/tree/v1.0.0/docs
+
 
 
 **关于`_initializeModules:(NSArray<id<RCTBridgeModule>> *)modules`问题**

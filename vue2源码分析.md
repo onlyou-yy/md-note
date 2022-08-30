@@ -160,3 +160,64 @@ watcher 和 dep 是一个多对多的关系，一个dep对应多个watcher，一
 就是内部利用一个发布订阅模式，将用户写的钩子维护成一个数组，后续一次调用callHook，主要靠的是 mergeOptions 方法将根的 options 和子组件的 options 合并在一起
 
 `instance/index.js -> _init() -> mergeOptions()`
+
+
+
+## 关于Vue生命周期有都用来做什么
+
+vue 中生命周期函数一共有11个，在`instance/index.js -> _init() -> mergeOptions()`合并了选项之后，就会有生命周期函数，之后在某些执行时机就会通过`callHook`调用对应的生命周期函数，比如在`instance/index.js -> _init()`中就有
+
+```js
+initLifecycle(vm) //这里初始化组件之间的父子关系 $parent $children
+initEvents(vm) //这里初始化 $on $emit $off
+initRender(vm) //声明一些变量和方法 $slot $createElement $nextTick
+callHook(vm, 'beforeCreate')
+initInjections(vm) //定义 inject方法
+initState(vm) //初始化响应式数据
+initProvide(vm) //定义 provide方法
+callHook(vm, 'created')
+```
+
+**什么时候发请求获取数据比较合适？**
+
+一般来说是在`mounted`中发送请求，但是生命周期函数都是同步执行的，所以其实放在`created`中也是可以的。这里有一个很常见的误解，就是一位在created发送请求，到执行mounted的时候就以为请求完成了，其实是错误的，因为请求是异步操作，而生命周期是同步执行的，所以请求结果一定是在mounted之后返回。
+
++ `beforeCreate` 这里没有响应式数据，能够访问到的数据非常少，而且也用得很少，所以在Vue3中已经启用了
++ `created` 能拿到的是响应式的属性（不涉及到dom渲染）这个api可以用在服务端渲染中使用
++ `beforeMount` 没有实际价值
++ `mounted` mounted中可以获取$el
++ `beforeUpdate` 更新前
++ `updated` 更新前后
++ `activated`  `<keep-alive>`组件特有的生命周期，在激活时执行
++ `deactivated`  `<keep-alive>`组件特有的生命周期，在离开时执行
++ `beforeDestroy` 手动调用移除回触发
++ `destroyed` 销毁后触发
++ `errorCaptured` 错误捕获
+
+
+
+## 关于 `Vue.mixin`的使用场景和原理
+
+我们可以通过`Vue.mixin`来实现逻辑的复用，但是容易导致数据来源不明确，难以排除bug，也可以会导致命名冲突，高级组件，vue3采用compositionAPI来解决。
+
+`core/global-api/mixin.js`
+
+mixin 的核心就是合并属性（内部采用了策略模式进行合并）全局mixin，局部mixin，针对不用的属性有不用的合并策略
+
+
+
+## 组件的 data 为什么必须是一个函数
+
+原因在于针对根实例而言，`new Vue`，组件是通过一个构造函数多次创建实例，如果是同一个对象的话那么数据会被相互影响。每个组件的数据都是独立的，那每次都要调用data函数创建一个新的对象。
+
+`core/global-api/extend.js`
+
+
+
+## 关于`$nextTick`的实现
+
+nextTick 内部采用了异步任务进行了包装（多个nextTick调用会被合并成一次，内部会合并回调）最后在异步任务中批处理，主要的应用场景就是异步更新（默认调度的时候就会添加一个nextTick任务），用户为了获取最终的渲染结果需要在内部执行之后在执行用户定义的函数，这时候用户需要将对应的逻辑放到nextTick中。
+
+在数据发生变动的时候，会调用`core/observer/watcher.js -> update() -> queueWatcher()`方法，这个方法也会把更新任务放到`nextTick`等待执行，之后会运行各个生命周期函数，将里面用户自己定义的nextTick添加到队列中所以先执行了渲染的 nextTick 然后再执行用户自己定义的nextTick，所以可以拿到最新的DOM。**同时也要注意，nextTick 要定义在数据更新之后**。
+
+`core/util/next-tick.js` 
