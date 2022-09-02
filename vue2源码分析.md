@@ -221,3 +221,153 @@ nextTick 内部采用了异步任务进行了包装（多个nextTick调用会被
 在数据发生变动的时候，会调用`core/observer/watcher.js -> update() -> queueWatcher()`方法，这个方法也会把更新任务放到`nextTick`等待执行，之后会运行各个生命周期函数，将里面用户自己定义的nextTick添加到队列中所以先执行了渲染的 nextTick 然后再执行用户自己定义的nextTick，所以可以拿到最新的DOM。**同时也要注意，nextTick 要定义在数据更新之后**。
 
 `core/util/next-tick.js` 
+
+
+
+## Vue组件间传值的方式及区别
+
+props 父传递数据给儿子，属性的原理就是把解析后的props，验证后就会将属性定义再当前的实例上 `vm._props`（这个对象上的属性都是通过`defineReactive`来定义的（都是响应式数据）组件在渲染的过程中会去vm上取值 _props 属性会被代理到vm上）
+
+`core/instance/state.js -> initState() -> initProps()`
+
+emit 儿子出发组件更新，在创建虚拟节点的时候将所有的事件绑定到 listeners，通过 `$on` 方法绑定事件，`$emit`方法来触发事件（发布订阅的模式）
+
+eventBus 原理就是发布订阅模式`$bus = new Vue()`简单的通信可以采用这种方式
+
+`$parent $children`就是在创造子组件的时候会将父组件的实例传入。在组件本身初始化的时候会构建组件间的父子关系， `$parent`获取父组件的实例，`$children`可以获取所有子组件的实例
+
+`core/instance/lifecycle.js -> initLifecycle()`
+
+ref 可以获取dom元素和组件实例（虚拟dom没有处理ref，这里无法拿到实例 也无法获取组件）创建dom的时候如何处理 ref 的？会将用户的所有的dom操作及属性都维护到一个cbs（create update insert destroy）属性中。依次调用cbs中create方法，这里就包含ref相关的操作，会操作ref并赋值
+
+`core/vdom/modules/ref.js -> registerRef()`
+
+provide 在父组件中将属性暴露出来，inject 在后代组件中通过 inject 注入熟悉，在父组件中提供数据，在子组件中递归向上查找
+
+`core/instance/inject.js`
+
+`$attr` 所有的组件上的属性，不含盖props，`$listeners`组件上所有事件，通过`v-bind="$attrs"`可以给组件绑定说有的属性，`v-on="$listeners"`可以绑定所有的事件
+
+`core/instance/render.js`
+
+`Vue.observalble`可以创建一个全局的响应式数据，返回的对象可以直接用于渲染函数和计算属性内，并且会在发生变更时触发相应的更新。也可以作为最小化的跨组件状态存储器
+
+vuex
+
+
+
+## v-for 和 v-if 的优先级
+
+可以在[这里](https://v2.template-explorer.vuejs.org/#%3Cdiv%20id%3D%22app%22%3E%7B%7B%20msg%20%7D%7D%3C%2Fdiv%3E)查看模版生成的渲染函数
+
+```jsx
+<div>
+	<span v-if="d in 3" v-if="flag">{d}</span>
+</div>
+-------------------------
+function render() {
+  with(this) {
+    return _c('div', _l((3), function (d) {
+      return (flag) ? _c('span', [_v("{d}")]) : _e()
+    }), 0)
+  }
+}
+```
+
+可以看出 v-for 的优先级比 v-if 的优先级高。所以在每次循环的时候都会做判断，所以`v-if`和`v-for`不要一起使用。如果`v-if`和`v-for`使用的数据是没有关联的可以将`v-if`移动到外层的`template`上；如果使用的数据有关联可以使用计算属性对`v-for`的数据先做处理，过滤出需要显示的数据。
+
+`compiler/codegen/index.js -> genElement()`
+
+
+
+## v-if 和 v-show 的区别
+
+`v-if` 控制是否渲染，如果为`false`那么在一开始的时候就不会去渲染出来，在页面上也找不到这个元素；`v-show`控制的是样式，通过控制`display`来控制是否显示，如果是`false`就是设置`display:none;`，如果重新设置为`true`就会设置`display`为原来的属性。
+
+为什么不用`visbility:hidden;`或`opacity:0`？因为他们两个都会占位，而且`opacity`还是响应事件。
+
+`v-if`在编译的时候会变成三元表达式，`v-show`会变成一个指令
+
+`platform/web/runtime/directives/show.js -> bind()`
+
+
+
+## `v-if`,`v-for`,`v-model`的实现原理
+
+`v-if` 会被编译成三元运算符 
+
+`compiler/codegen/index.js -> genElement() -> genIf()`
+
+`v-for` 会被编译成`_l`循环
+
+`compiler/codegen/index.js -> genElement() -> genFor()` ，`core/instance/render-helpers/index.js -> renderList()`。
+
+`v-model` 放在表单元素上是实现双向绑定，放在组件上就不一样。对于`input`上`type`的值不一样生成的渲染函数也不一样。
+
+`compiler/codegen/index.js ->  genDirectives() -> gen()`
+
+`platforms/web/compiler/directives/model.js -> model()`
+
+而且`v-model`对中文输入是做了处理的，会等到输入完成之后才更新页面。
+
+`platforms/web/runtime/directives/model.js -> directive -> inserted() -> onCompositionStart() ,onCompositionEnd()`
+
+这里指令的作用就是处理中文输入完毕之后手动触发更新。
+
+我们知道`v-modal`其实是`@input :vaule`的语法糖，当`v-modal`绑定到组件上的时候也会生成一个指令，我们可以在组件中可以通过`modal:{prop,event}`来自定义原来的`input`事件和`value`。
+
+`core/vdom/create-component.js -> transformModel()`
+
+
+
+## `.sync`修饰符的作用，用法及实现原理
+
+有时后可能需要给组件绑定多个响应式数据，但是在同一个组件下不能使用多次`v-modal`所以就出现了`<com :data.sync="xx">`本质上就是一个语法糖，表示`<com :data="xx" @update:data="xx = $event">`。
+
+
+
+## Vue.use 是干什么的？原理是什么？
+
+这里的use方法目的就是将 vue 的构造函数传递给插件中，让所有的插件依赖的Vue是同一个版本，如果传入的插件是一个函数就默认调用，如果传入的是一个对象就调用他里面的`install`方法。并且重复的插件不会被重复安装
+
+`core/global-api/use.js`
+
+
+
+## 组件中name的作用
+
+在 Vue 中有name属性的组件可以被递归调用（在写模版语法的时候我们可以通过name属性来递归调用自己，但是主要使用`v-if`来中断递归）
+
+在声明组件的时候 `Sub.options.components[name] = Sub`
+
+可以用来标识组件，通过 name 来找到对应的组件，自己封装跨级通信。
+
+可以用在devtool中标识组件。
+
+`core/global-api/extend.js`
+
+
+
+## Vue中插槽 slot 是如何实现的？什么时候使用它？
+
+在Vue2中有三种插槽，普通插槽、具名插槽、作用域插槽。要了解插槽的实现，首先要知道它是怎么使用的，编译出来是什么样子的。在Vue中模版的编译模版使用的是`vue-template-compiler`来实现。
+
+**对于普通插槽**
+
+```js
+const templateCompiler = require("vue-template-compiler");
+let result = templateCompiler.compiler(`
+<my><div>{{msg}}</div></my>
+`);
+```
+
+编译得到的结果中有渲染函数`_c('my',[_c('div',[_v(_s(msg))])])`，编译出来的函数会立即执行，所以`_v(_s(msg))`就会去当起的环境去取值，也就是当前使用`my`组件的环境的`data`，而`_c`表示的是函数`core/vdom/create-component.js -> createComponent() `在这里会给节点创建一个虚拟节点这个这个节点会传入一个`componentOptions`，里面包含了子节点和自己节点的信息（组件的孩子叫插槽）。
+
+之后就可以创建组件的真实节点，`core/instance/init.js -> _init() -> initInternalComponent()`，在这里会将`componentOptions.children`（插槽）保存到`vm.$options._renderChildren`中，之后在渲染的时候就会去`core/instance/render.js -> resolveSlots()`初始化解析出当前组件相应的插槽并挂载到`vm.$slots`
+
+
+
+
+
+
+
