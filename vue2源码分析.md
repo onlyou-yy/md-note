@@ -363,7 +363,109 @@ let result = templateCompiler.compiler(`
 
 编译得到的结果中有渲染函数`_c('my',[_c('div',[_v(_s(msg))])])`，编译出来的函数会立即执行，所以`_v(_s(msg))`就会去当起的环境去取值，也就是当前使用`my`组件的环境的`data`，而`_c`表示的是函数`core/vdom/create-component.js -> createComponent() `在这里会给节点创建一个虚拟节点这个这个节点会传入一个`componentOptions`，里面包含了子节点和自己节点的信息（组件的孩子叫插槽）。
 
-之后就可以创建组件的真实节点，`core/instance/init.js -> _init() -> initInternalComponent()`，在这里会将`componentOptions.children`（插槽）保存到`vm.$options._renderChildren`中，之后在渲染的时候就会去`core/instance/render.js -> resolveSlots()`初始化解析出当前组件相应的插槽并挂载到`vm.$slots`
+之后就可以创建组件的真实节点，`core/instance/init.js -> _init() -> initInternalComponent()`，在这里会将`componentOptions.children`（插槽）保存到`vm.$options._renderChildren`中，之后在渲染的时候就会去`core/instance/render.js -> resolveSlots()`初始化解析出当前组件相应的插槽并挂载到`vm.$slots`（`{default:[儿子虚拟节点],}`）
+
+在等到要插槽的内容之后，还需要知道这个内容是插到组件的哪个位置上，比如说组件`my`是这样的`<div class="my"><slot></slot></div>`，这里只定义了一个默认的插槽，通过`vue-template-compiler`编译之后可以得到渲染函数`_c('div',{staticClass:'my'},[_t("default")],2)`。组件在渲染真实节点的时候会采用组件的模板，`_t("default")`（如果`<slot>`没有指定名字就会是`default`）这个函数就是渲染插槽的函数 `core\instance\render-helpers\render-slot.js -> renderSlot()`，在子组件渲染的视乎会通过 `_t`在`vm.$slots`中找到刚才的映射关系来进行替换
+
+> 其实在`renderSlot()`这里并不是在`vm.$slots`中查找，而是在`vm.$scopeSlots`中查找，这是因为在`core\instance\render.js -> _render() -> vm.$scopedSlots = normalizeScopedSlots()`会将`vm.$slots`转移到`vm.$scopeSlots`，不过`vm.$slots`和`vm.$scopeSlots`的值目前来说是一样的。
+
+**对于具名插槽**
+
+我们知道没有命名的插槽会被放到`vm.$slots`的`default`中，那么对于命名插槽就会为每个名字单独定义个一个key，形成`{default:[],a:[],b:[],}`。之后在渲染的时候就会根据在`<slot name="a">`中的`name`去到`vm.$slots`中查找。
+
+**对于作用域插槽**
+
+普通插槽、具名插槽在渲染插槽选择的作用域是父组件的，作用域插槽在渲染插槽选择的作用域是子组件的。
+
+```jsx
+<!--使用my组件-->
+<my>
+	<div slot-scope="{msg}">{{msg}}</div>
+</my>
+```
+
+编译出来的是
+
+```js
+_c('my', {
+  scopedSlots: _u([{
+    key: "default",
+    fn: function ({
+      msg
+    }) {
+      return _c('div', {}, [_v(_s(msg))])
+    }
+  }])
+})
+```
+
+可以看出子节点全部被放入到属性`scopedSlots`中并没有立即执行，其中`_u`表示的是`core\instance\render-helpers\resolve-scoped-slots.js -> resolveScopedSlots()`这个函数的作用是将`key`和`fn`形成一个映射关系`{default:fn}`，最后在`core\instance\render.js -> _render() -> vm.$scopedSlots = normalizeScopedSlots()`会把`{scopedSlots}`也合并到`vm.$scopeSlots`.
+
+> `vm.$slots`的`key`对应是虚拟节点数组，`vm.$scopeSlots`的`key`对应的是函数
+
+```jsx
+<!--my组件-->
+<div class="my"><slot :msg="msg"></slot></div>
+```
+
+编译出来是
+
+```js
+_c('div', {
+  staticClass: "my"
+}, [_t("default", null, {
+  "msg": msg
+})], 2)
+```
+
+在这里和普通插槽不一样的是`_t`，在这个函数中将当前组件中的`msg`作为参数传递了出去，接下来的流程还是一样的，根据`_t('default')`中的`default`在`vm.$scopeSlots`中匹配对应的内容，不同的是此时的内容是一个函数，需要执行，执行的时候会将`{"msg":msg}`作为参数传入函数中执行。
+
+
+
+## keep-alive 平时在哪里使用？原理是？
+
+`<keep-alive>`一般在路由中使用，还可以在`<component :is="">`中作为缓存使用
+
+```jsx
+<keep-alive>
+	<component :is="com"></component>
+</keep-alive>
+```
+
+`<keep-alive>`是Vue中自带的组件，可以在`core\components\keep-alive.js`看到它的定义，其中`abstract: true`表示这个组件是一个抽象组件，不能在`$children $parent`找到，在`keep-alive.js`中会在`render()`方法中获取组件插槽的组件，在这里会获取到插槽组件的虚拟节点信息，并将组件缓存到`cache`中，将组件的`key`保存到`keys`中（实际上第一次渲染组件之后`mounted`中才会被加入到缓存中），并且给`vnode`添加`data.keepAlive`，`componentInstence`来表示组件已经被缓存了，当再次使用到被缓存的组件时就会在`src\core\vdom\create-component.js -> componentVNodeHooks.init()`中走第一种情况调用`componentVNodeHooks.prepatch()`，而不重新创建，在`prepatch()`中已经是走组件的初始化流程了，而是直接更新组件`updateChildComponent()`也就是说组件的`created mounted`的都不触发，不过当插入组件被重新插入的时候调用的`componentVNodeHooks.insert() -> activateChildComponent()`的时候会触发`activated`的hook，当调用`componentVNodeHooks.destroy() -> deactivateChildComponent()`的时候会触发`deactivated`的hook。
+
+`keep-alive`的原理是默认缓存加载过的组件对应的实例，内部采用了LRU算法，下次组件切换加载的时候会找到对应缓存的节点进行初始化，但是会采用上次缓存的`$el`来触发（不同再将虚拟节点转化成真实DOM），更新和销毁的时候会触发activated和deactivated。
+
+
+
+## 如何理解自定义指令
+
+自定义指令就是用户定义好对应的钩子，当元素在不同的状态时会调用对应的钩子（所有的钩子会被合并到cbs对应的方法上，到时候会依次调用）
+
+`src\core\vdom\patch.js -> createPatchFunction()`，`src\core\vdom\modules\directives.js -> updateDirectives()`
+
+
+
+## vue事件修饰符有哪些？其原理是什么？
+
+有`prevent stop native trim passive once capture`等，实现的原理主要是靠模板编译原理，在编译`<div @click.prevent="pre"></div>`成渲染函数的时候会将我们的事件进行相应功能的重构
+
+```js
+_c('div', {
+  on: {
+    "click": function ($event) {
+      $event.preventDefault();
+      return pre.apply(null, arguments)
+    }
+  }
+})
+```
+
+`src\compiler\codegen\events.js -> modifierCode,keyCodes,keyNames`
+
+但是有一些修饰符是需要在绑定事件之后才能确定的，如`once,passive,capture`，这些修饰符修饰的事件会被增加标识形成一个新的事件
+
+`src\compiler\helpers.js -> addHandler()`，`src\core\vdom\helpers\update-listeners.js`
 
 
 

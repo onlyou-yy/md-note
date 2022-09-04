@@ -121,6 +121,51 @@ new Vue({
 	- 有时我们需要知道`action`什么时候结束，在结束的时候做一些操作，这是可以在`actions`使用`promise`并放回，之后使用`then`绑定回调事件
 - `modules`：命名空间，如果项目比较大的话会使用到。里面就是一个个小的vuex实例。具体使用还是看[官网](https://vuex.vuejs.org/zh/guide/modules.html)比较好，哪里有详细的解释
 
+如果有项目中有很多的状态模块需要管理，可根据状态模块的目录结构自动生成相应的状态模块对象，如有
+
+```
+src/store/modules
+ - home
+   - actions.js
+   - mutations.js
+   - state.js
+ - about
+   - actions.js
+ - index.js
+```
+
+在 index.js 中
+
+```js
+//require.context 是webpack自带的，可以获取到目录下的所有文件路径
+const files = require.context('.',true,/\.js$/);
+
+const modules = {};
+files.keys().forEach(key => {
+  const path = key.replace(/\.\/|\.js/,'');//移除掉 ./ 和 .js
+  if(path == 'index') return;//如果是自己就不做处理
+  let [namespace,type] = path.split('/');//home/actions
+  if(!modules[namespace]){
+    modules[namespace] = {
+      namespace:true//都开启命名空间
+    }
+  }
+   modules[namespace][type] = files(key).default;//获取文件导出的结果
+})
+export default modules;
+```
+
+```js
+import modules from './modules'
+new Vuex.Store({
+  modules:{
+    ...modules
+  }
+})
+```
+
+同样的在取值的时候可以使用`const {mapState,mapMutations} = createNamespacedHelpers('home')`拿到对应的辅助函数的对象，而不必写`mapState('home/name')`
+
 
 
 ## vuex 中的响应式数据
