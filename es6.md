@@ -904,7 +904,7 @@ let newMethod = function (Parent, ...rest) {
 
 
 
-## **symbol和generator**
+## **symbol**
 
 **Symbol**
 
@@ -943,6 +943,40 @@ console.log(syml3==syml4);//true;
 4. symbol是一种单独的数据类型，`typeof syml1`的值就是symbol
 
 5. 如果symbol作为key，用for in是循环不出来的，因为他是私有的，也不能被使用`Object.getOwnPropertyNames(obj)`方法找到，但是可以使用`Object.getOwnPropertySymbols(obj)`和`Reflect.ownKeys(obj)`来获取。
+
+**常用内置 symbol**
+
+- `Symbol.hasInstance`方法，会被`instanceof`运算符调用。构造器对象用来识别一个对象是否是其实例。
+- `Symbol.isConcatSpreadable`布尔值，表示当在一个对象上调用`Array.prototype.concat`时，这个对象的数组元素是否可展开。
+
+- `Symbol.iterator`方法，被`for-of`语句调用。返回对象的默认迭代器。
+
+- `Symbol.match`方法，被`String.prototype.match`调用。正则表达式用来匹配字符串。
+
+- `Symbol.replace`方法，被`String.prototype.replace`调用。正则表达式用来替换字符串中匹配的子串。
+
+- `Symbol.search`方法，被`String.prototype.search`调用。正则表达式返回被匹配部分在字符串中的索引。
+
+- `Symbol.species`函数值，为一个构造函数。用来创建派生对象。
+
+- `Symbol.split`方法，被`String.prototype.split`调用。正则表达式来用分割字符串。
+
+- `Symbol.toPrimitive`方法，被`ToPrimitive`抽象操作调用。把对象转换为相应的原始值。
+
+- `Symbol.toStringTag`方法，被内置方法`Object.prototype.toString`调用。返回创建对象时默认的字符串描述。
+- `Symbol.unscopables`对象，它自己拥有的属性会被`with`作用域排除在外。
+
+在js中定义一些内置的 Symbol 值已经被实现部分功能，我们可以自己通过重写来重写定义或者自己定义一些方法，比如重新定义一些方法
+
+```js
+class Array1 {
+  static [Symbol.hasInstance](instance) {
+    return Array.isArray(instance);
+  }
+}
+
+console.log([] instanceof Array1);//true
+```
 
   ​    
 
@@ -988,19 +1022,73 @@ let username=g1.next().value;
 g1.next(username).value;
 ```
 
-关于异步，解决方案有
+其实 generator 可以理解成是一个返回 遍历器对象（interator） 的函数，任何数据结构只要部署了Iterator接口，就可以完成遍历操作
 
-​	（1）回调函数
+**iterator的结构：** 它有**next**方法，该方法返回一个包含**value**和**done**两个属性的对象（我们假设叫result）。**value**是迭代的值，后者是表明迭代是否完成的标志。true表示迭代完成，false表示没有。iterator内部有指向迭代位置的指针，每次调用**next**，自动移动指针并返回相应的result。
 
-​	（2）事件监听
+原生具备iterator接口的数据结构如下：
 
-​	（3）发布/订阅
+- Array
+- Map
+- Set
+- String
+- TypedArray
+- 函数里的arguments对象
+- NodeList对象
 
-​	（4）Promise
+使用Symbol.iterator接口生成iterator迭代器来遍历数组的过程为
 
-[链接1](https://www.cnblogs.com/chengxs/p/6497575.html)	[链接2](https://www.cnblogs.com/chris-oil/p/8733249.html)	[链接3](https://www.cnblogs.com/libo0125ok/p/8038073.html)
+```js
+let arr = ['a','b','c'];
 
+let iter = arr[Symbol.iterator]();
 
+iter.next() // { value: 'a', done: false }
+iter.next() // { value: 'b', done: false }
+iter.next() // { value: 'c', done: false }
+iter.next() // { value: undefined, done: true }
+```
+
+**for ... of的循环内部实现机制其实就是iterator，它首先调用被遍历集合对象的 Symbol.iterator 方法，该方法返回一个迭代器对象，迭代器对象是可以拥有.next()方法的任何对象，然后，在 for ... of 的每次循环中，都将调用该迭代器对象上的 .next 方法。然后使用for i of打印出来的i也就是调用.next方法后得到的对象上的value属性。**
+
+对于原生不具备iterator接口的数据结构，比如Object，我们可以采用自定义的方式来创建一个遍历器。
+
+比如，我们可以自定义一个iterator来遍历对象：
+
+```javascript
+let obj = {a: "hello", b: "world"};
+// 自定义迭代器
+function createIterator(items) {
+    let keyArr = Object.keys(items);
+    let i = 0;
+    return {
+        next: function () {
+            let done = (i >= keyArr.length);
+            let value = !done ? items[keyArr[i++]] : undefined;
+            return {
+                value: value,
+                done: done,
+            };
+        }
+    };
+}
+
+let iterator = createIterator(obj);
+console.log(iterator.next()); // "{ value: 'hello', done: false }"
+console.log(iterator.next());  // "{ value: 'world', done: false }"
+console.log(iterator.next());  // "{ value: undefined, done: true }"
+```
+
+> 关于异步，解决方案有
+>
+>  	1. 回调函数
+>  	2. 事件监听
+>  	3. 发布/订阅
+>  	4. Promise
+>  	5. generator
+>  	6. Async/await
+>
+> [链接1](https://www.cnblogs.com/chengxs/p/6497575.html)	[链接2](https://www.cnblogs.com/chris-oil/p/8733249.html)	[链接3](https://www.cnblogs.com/libo0125ok/p/8038073.html)    [链接4](https://juejin.cn/post/7082753409060716574)
 
 ## **async    await**
 
@@ -1150,7 +1238,7 @@ asy().then(res=>{
 
 **注意**：
 
-​		async函数中的代码相等于是Promise的构造函数`new Promise()`因此async里面的代码是同步执行的。await 表达式会暂停当前 [`async function`](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Statements/async_function) 的执行，等待 Promise 处理完成。若 Promise 正常处理(fulfilled)，其回调的resolve函数参数作为 await 表达式的值，继续执行 [`async function`](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Statements/async_function)。若 Promise 处理异常(rejected)，await 表达式会把 Promise 的异常原因抛出。另外，如果 await 操作符后的表达式的值不是一个 Promise，则返回该值本身。如果该值不是一个 Promise，await 会把该值转换为已正常处理的Promise，然后等待其处理结果。
+​		async函数中的代码相等于是Promise的构造函数`new Promise()`因此async里面的代码是同步执行的。await 表达式会暂停当前 [`async function`](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Statements/async_function) 的执行，等待 Promise 处理完成。若 Promise 正常处理(fulfilled)，其回调的resolve函数参数作为 await 表达式的值，继续执行 [`async function`](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Statements/async_function)。若 Promise 处理异常(rejected)，await 表达式会把 Promise 的异常原因抛出。另外，如果 await 操作符后的表达式的值是一个 Promise，则返回该值本身。如果该值不是一个 Promise，await 会把该值转换为已正常处理的Promise，然后等待其处理结果。
 
 同 Generator 函数一样，async 函数返回一个 Promise 对象，可以使用 then 方法添加回调函数。当函数执行的时候，一旦遇到 await 就会先返回，等到触发的异步操作完成，再接着执行函数体内后面的语句。
 
@@ -1393,6 +1481,7 @@ Math.cbrt(27);//计算立方根 输出3e
       在正则表达式中`/\d/gmis`，其中g：全局匹配模式，m：多行匹配模式，i：忽略大小写模式，s：dotAll模式
 
    
+
 
 
 

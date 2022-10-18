@@ -1,64 +1,3 @@
-**光标移动**
-
-```
-h←
-j↓
-k↑
-l→
-```
-
-+ w跳到下一个单词开头
-+ e跳到本单词或下一个单词结尾
-+ e跳到本单词或上一个单词开头
-+ ge跳到上一个单词结尾
-+ 0跳到行首
-+ ^跳到从行首开始第一个非空字符
-+ $跳到行尾
-+ g跳到第一行
-+ G跳到最后一行
-+ f{char}跳到下一个指定字符位置
-+ F{char}跳到上一个指定字符位置
-+ t{char}跳到下一个指定字符的后一个位置
-+ T{char}跳到上一个指定字符的后一个位置
-+ ;重复上一次查找
-+ ,反向查找上次查找动作
-+ Iw / aw 选中单词
-+ i( / a( / ib / ab
-+ i{ / a{ / iB / aB
-+ i" / a"
-+ i' / a'
-+ i` / a
-+ i< / a<
-+ i[ / a[
-+ it / at 标签
-+ is / as 句子
-+ ip / ap 段落操作符
-+ 可视模式可以帮助快速选中
-+ d(delete) 删除 dd 删除一行
-+ c(change) 修改(删除并进入插入模式)
-+ y(yank) 复制 yy复制一行
-+ v(visual) 选中并进入可视模式
-+ p 粘贴
-+ u 撤销动作+操作符
-+ ciw 选中单词删除并进入插入模式
-+ yiw 选中并复制单词
-+ diw 选中并删除单词
-+ ci< 选中被<>包围的单词并修改
-+ ndd/cc/yy 向下删除/修改/复制n行,包括当前行
-+ d/c/yf{char} 删除/修改/复制到向后的char字符
-+ d/c/y^/$ 删除/修改/复制到开头/结尾切换大小写
-+ ~ 将光标下的字母改变大小写
-+ 3~ 将光标位置开始的3个字母改变大小写
-+ g~ 改变当前行字母的大小写
-+ gUU 将当前行的字母改成大写
-+ guu 将当前行的字母改成小写
-+ gUaw(gUiw) 将光标下的单词改成大写
-+ guaw(guiw) 将光标下的单词改成小写
-
-
-
-
-
 ### **vim是什么？**
 
 vim是Linux环境下一款功能强大、高度可定制的文本编辑工具，类似于Windows下面的source insight、sublime、notepad。VI是visual interface的缩写，即可视化接口。vim 即 vi IMproved，在 vi 的基础上做了很多改进，如：增加了多级撤销、多窗口操作、崩溃后也可以恢复、增加了稳定性、关键字自动补全、上下文自动补全等功能。
@@ -163,7 +102,7 @@ u:  撤销修改
 
 ### **文本删除操作**
 
-```c
+```
 字符删除
 x:  删除当前光标所在处的字符
 X:  删除当前光标左边的字符
@@ -187,8 +126,6 @@ dG:  删除从光标到文本结尾
 行合并
 J:  删除一个分行符，将当前行与下一行合并
 ```
-
-
 
 ### **文本复制、剪切与粘贴**
 
@@ -320,3 +257,205 @@ Ctrl+r:  将原来的插销重做一遍
 ![img](/Users/gcb/Desktop/ljf_new/file/md-note/vscode的vim操作/v2-f796a4d852827d7d2883b9a6ed3f7a49_720w.gif)
 
 ![image-20220621114318087](vscode的vim操作/image-20220621114318087.png)
+
+
+
+### 在vscode中使用
+
+需要先安装`vim`插件
+
+![image-20221011112945738](/Users/gcb/Desktop/ljf_new/file/md-note/vscode的vim操作/image-20221011112945738-5458988.png)
+
+然后在运行命令
+
+```shell
+$ defaults write com.microsoft.VSCode ApplePressAndHoldEnabled -bool false              # For VS Code
+$ defaults write com.microsoft.VSCodeInsiders ApplePressAndHoldEnabled -bool false      # For VS Code Insider
+$ defaults write com.visualstudio.code.oss ApplePressAndHoldEnabled -bool false         # For VS Codium
+$ defaults write com.microsoft.VSCodeExploration ApplePressAndHoldEnabled -bool false   # For VS Codium Exploration users
+```
+
+之后为了方便操作可以配置一些快捷键，在`keybindings.json`添加
+
+```json
+[
+  {
+    "key": "ctrl+;",//切换到 文件区
+    "command": "workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled"
+  },
+  {
+    "key": "ctrl+'",//切换到 编辑区
+    "command": "workbench.action.focusFirstEditorGroup"
+  },
+  // ctrl + ` 是切换到终端区
+  {
+    "key": "a",//在文件区 按 a 可以快捷创建文件
+    "command": "explorer.newFile",
+    "when": "filesExplorerFocus && !inputFocus"
+  },
+  {
+    "key": "shift+a",//在文件区 按 A 可以快捷创建文件夹
+    "command": "explorer.newFolder",
+    "when": "filesExplorerFocus && !inputFocus"
+  },
+  {
+    "key": "r",//在文件区 按 r 可以快捷重命名文件
+    "command": "renameFile",
+    "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
+  },
+  {
+    "key": "d",//在文件区 按 r 可以快捷删除文件
+    "command": "deleteFile",
+    "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceReadonly && !inputFocus"
+  }
+]
+```
+
+然后再编辑器的在`settings.json`中添加如下配置
+
+```json
+{
+  "vim.easymotion": true,
+  "vim.incsearch": true,
+  "vim.useSystemClipboard": true,
+  "vim.useCtrlKeys": true,
+  "vim.hlsearch": true,
+  "vim.insertModeKeyBindings": [
+    {//插入模式下 按 jj 快速返回 normal 模式
+      "before": ["j", "j"],
+      "after": ["<Esc>"]
+    }
+  ],
+  "vim.normalModeKeyBindingsNonRecursive": [
+    { //normal模式下 按 空格+d 快速删除行
+      "before": ["<leader>", "d"],
+      "after": ["d", "d"]
+    },
+    {
+      "before": ["<C-n>"],
+      "commands": [":nohl"]
+    },
+    { 
+      "before": ["K"],
+      "commands": ["lineBreakInsert"],
+      "silent": true
+    },
+    { //normal模式下 按 H 快速回到文段行首
+      "before" : ["H"],
+      "after" : ["^"]
+    },
+    { //normal模式下 按 L 快速回到文段行末
+      "before" : ["L"],
+      "after" : ["g","_"]
+    },
+    { //normal模式下 按 空格+nf 快速创建文件
+      "before" : ["<leader>","n","f"],
+      "commands" : ["explorer.newFile"]
+    },
+    { //normal模式下 按 空格+nd 快速创建文件夹
+      "before" : ["<leader>","n","d"],
+      "commands" : ["explorer.newFolder"]
+    },
+    { //normal模式下 按 空格+fd 快速格式化文件
+      "before" : ["<leader>","f","d"],
+      "commands" : ["editor.action.formatDocument"]
+    },
+    { //normal模式下 按 空格+rn 快速重命名当前文件
+      "before" : ["<leader>","r","n"],
+      "commands" : ["editor.action.rename"]
+    },
+    { //normal模式下 切换到下一个tab
+      "before" : ["t","l"],
+      "after" : [":tabn"]
+    },
+    { //normal模式下 切换到上一个tab
+      "before" : ["t","h"],
+      "after" : [":tabp"]
+    },
+    {
+      "before" : ["tab"],
+      "after" : ["a"],
+      "commands":["tab"]
+    }
+  ],
+  "vim.operatorPendingModeKeyBindings": [
+    { //按 H 快速回到文段行首
+      "before" : ["H"],
+      "after" : ["^"]
+    },
+    { //按 L 快速回到文段行末
+      "before" : ["L"],
+      "after" : ["g","_"]
+    }
+  ]
+  "vim.leader": "<space>",
+  "vim.handleKeys": {
+    "<C-a>": false,// 取消 ctrl + a 的映射
+    "<C-f>": false// 取消 ctrl + f 的映射
+  }
+}
+```
+
+**行号**
+
++ 设置绝对行号：normal 模式下`set nu`
++ 设置相对行号：normal 模式下`set rnu`
++ 隐藏行号：normal 模式下`set nonu`
+
+**查看函数定义**
+
+查看函数定义，`gh`
+
+跳转到函数定义，`gd`
+
+打开光标所在位置的文件，`gf`
+
+**标签页跳转**
+
+下一个tab，`gt`、`:tabn`
+
+上一个tab，`gT`、`:tabp`
+
+配置键位映射之后可以按 `tl、th`进行切换
+
+**字符范围操作**
+
+对于 y,d,c,v 这几个操作符可以配合 i（inner）或者 a（around）这些范围符进行使用，具体语法
+
+```
+y|d|c|v + 范围（i,a）+ 要匹配的字符
+```
+
+```
+yiw 复制当前字符
+yaw 复制当前字符
+yit 复制当前标签的内容，不包含当前标签
+yat 复制当前标签的内容，包含当前标签
+yi" 复制"" 中间的内容，不包含 ""
+yi' 复制'' 中间的内容，不包含 ''
+```
+
+i,a 匹配的字符只要是成对的都可以被匹配上，如`{},<>,(),[]`等，其他 d,c,v 同理。
+
+**包含**
+
+可以用 s 操作符来选择要包含的内容
+
+```
+d + s + 包裹字符：删除包裹字符
+c + s + 包裹字符 + 替换包裹字符：替换包裹字符
+y + s + 被包裹内容 + 包裹字符：用字符包裹内容
+```
+
+```
+"test" -> ds" => test
+"test" -> cs"' => 'test'
+"test" -> ysiw<div> => <div>test</div>
+<div>test</div> -> dst => test
+```
+
+
+
+
+
