@@ -469,6 +469,16 @@ _c('div', {
 
 
 
+## 组件的渲染原理
+
+在解析完模版字符串之后生成虚拟DOM时，会先判断当前标签是不是一个原生的html标签，如果是就生成正常的虚拟DOM节点，如果不是就创建组件的虚拟DOM节点，此时先在当前组件实例选项中的`components`查找组件的定义数据，通过组件的数据调用 Vue.extend 方法生成Vue的子类，之后再给节点的数据data的对象上定义钩子hook.init 方法，这个方法主要的作用就是实例或组件并调用挂在方法。在生成虚拟dom结束以后，该开始生成真实的dom了，先判断虚拟DOM的data有没有hook.init方法，如果有就说明是组件可以直接调用hook.init将组件实例化并挂载。
+
+https://blog.csdn.net/hahaqixu/article/details/115054002
+
+
+
+
+
 
 
 

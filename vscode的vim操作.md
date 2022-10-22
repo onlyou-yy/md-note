@@ -367,11 +367,11 @@ $ defaults write com.microsoft.VSCodeExploration ApplePressAndHoldEnabled -bool 
     },
     { //normal模式下 切换到下一个tab
       "before" : ["t","l"],
-      "after" : [":tabn"]
+      "commands" : [":tabn"]
     },
     { //normal模式下 切换到上一个tab
       "before" : ["t","h"],
-      "after" : [":tabp"]
+      "commands" : [":tabp"]
     },
     {
       "before" : ["tab"],
