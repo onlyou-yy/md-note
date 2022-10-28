@@ -463,6 +463,12 @@ fetch 方法用于在渲染页面前填充应用的状态树（store）数据，
 </script>
 ```
 
+> **asyncData 和 fetch**
+>
+> + asyncData只能用于页面组件，不能用于自定义组件，它可以返回一个对象，该对象中的值会覆盖data中对应的属性值。
+> + fetch 可以在任何组件中使用，无论是页面组件还是自定义组件（Nuxt的2.12版本及之后，fetch的用法跟之前的版本完全不一样，而如果你在fetch中接受了一个context对象，那么它将被视为旧版的fetch，旧版的fetch中不能使用this.xxx来响应式的修改数据，但是新版可以）
+> + 这2个生命周期都是在服务端中运行
+
 ### validate参数校验
 
 nuxt 提供了一个路由参数验证的函数 `validate(routeParams)`，接收路由参数对象，在 pages/news/_id.vue
@@ -479,7 +485,9 @@ export default {
 
 ## 关于生命周期
 
-Vue 的生命周期中只有`beforeCreate`，`created`会在服务端和客户端运行，其他的生命周期都只会在客户端运行。
+Vue 的生命周期中只有`beforeCreate`，`created`会在服务端和客户端运行，其他的生命周期都只会在客户端运行。所以我们平常在Vue的`mounted`中的请求将不会被执行。
+
+在服务端执行完成Vue的整个流程生成对应的html文件之后，相应的js部分代码也会被生成并加入到html中，所以之后在客户端显示html页面的时候Vue中的生命周期等函数也会被执行
 
 ## 配置环境变量
 
@@ -555,3 +563,5 @@ https://blog.csdn.net/Tomwildboar/article/details/102745299
 ```
 
 [Vue现有项目改造为Nuxt项目](https://segmentfault.com/a/1190000019909396)
+
+https://juejin.cn/post/6844904067584507911
