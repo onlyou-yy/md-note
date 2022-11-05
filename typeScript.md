@@ -912,6 +912,60 @@ class SomePoint2 implements AnotherPoint {
 
 
 
+## 映射类型
+
+```typescript
+interface Prop{
+  id:string
+  children:string[]
+}
+
+type obj1 = {[key:string]:number}
+let objIns1:obj1 = {'a':1}
+type obj2 = {[key in keyof Prop]:number}
+let objIns2:obj2 = {id:0,children:1}
+
+type keysType = keyof Prop;// id | children
+type valueType = Prop[keyof Prop];//string | string[]
+
+```
+
+
+
+## `Object、object、{}`的区别
+
++ object 类型是：TypeScript 2.2 引入的新类型，它用于表示非原始类型。
+
++ 
+  Object 类型：它是所有 Object 类的实例的类型。它由以下两个接口来定义：
+
+  它由以下两个接口来定义：
+
+  - Object 接口定义了 Object.prototype 原型对象上的属性；
+  - ObjectConstructor 接口定义了 Object 类的属性。
+
++ {} 类型：它描述了一个没有成员的对象。当你试图访问这样一个对象的任意属性时，TypeScript 会产生一个编译时错误。
+
+
+
+## interface 和 type 的区别
+
+interface 和 type 很像，很多场景，两者都能使用。但也有细微的差别：
+
+**不同点：**
+
+- 扩展语法： interface使用extends，type使用‘&’
+- 同名合并：interface 支持，type 不支持。
+- 描述类型：对象、函数两者都适用，但是 type 可以用于基础类型、联合类型、元祖。
+- 计算属性：type 支持计算属性，生成映射类型,；interface 不支持。
+
+**相同点：**
+
+- 两者都可以用来描述对象或函数的类型
+- 两者都可以实现继承
+
+总的来说，公共的用 interface 实现，不能用 interface 实现的再用 type 实现。主要是一个项目最好保持一致。
+
 
 
 ## 泛型
@@ -952,7 +1006,7 @@ getData<string,number>('age',123);
 getData('age',123);//这样如果不写的话，那么就会自动匹配到第一个使用到的类型，也就是说在这里T就是string，U就是number，getData(123,'age');那么T=>number,U=>string;
 ```
 
-泛型也是可以继承的，这种继承是一种类型的继承
+泛型也是可以继承的，这种继承是一种类型的继承，用来提供**约束功能**
 
 ```typescript
 interface ValueWithLength{
@@ -1146,6 +1200,40 @@ db.add(u);
 db.delete(u,1);
 db.update(12);
 db.select(13);
+```
+
+**泛型工具类型**
+
+泛型有常用是四种工具，分别是`Partial`，`Readonly`，`Pick`，`Record`
+
+```typescript
+interface Prop {
+  id:string
+  children:number[]
+  attr?:object
+}
+
+//Partial 可以根据提供的接口生成一个属性全部可选的新类型
+type PartialProp = Partial<Props>
+/**等价于
+interface Prop {
+  id?:string
+  children?:number[]
+}
+*/
+
+//Readonly 可以根据提供的接口生成一个属性全部仅读的新类型
+type ReadonlyProp = Readonly<Props>
+let prop:ReadonlyProp = {id:"ss",children:[]}
+prop.id = "3";//报错
+
+//Pick 可以根据提供的接口和属性生成一个新类型
+type PickProp = Pick<Props,'id'|'children'>
+
+
+//Record 构建一个对象类型，属性键为Keys，属性类型为Type
+type RecordProp = Record<'a'|'b',string[]>
+let obj:RecordProp = {a:['1'],b:['ff']}
 ```
 
 

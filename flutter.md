@@ -3593,6 +3593,95 @@ final int result = await platform.invokeMethod("getBatteryInfo");
 
 
 
+## 常用第三方库
+
+```
+get: ^4.3.6
+dio: ^4.0.0
+# 权限
+permission_handler: ^8.1.2
+# app信息
+package_info: ^2.0.2
+# 本地存储
+shared_preferences: ^2.0.8
+# 刷新加载
+pull_to_refresh: ^2.0.0
+# toast 提示
+flutter_easyloading: ^3.0.3
+# 底部弹出框
+modal_bottom_sheet: ^2.0.0
+# 输入框
+pinput: ^1.2.0
+# 适配屏幕
+flutter_screenutil: ^5.0.0+2
+# 网络图片
+cached_network_image: ^3.1.0
+# 媒体选择
+wechat_assets_picker: ^6.0.4
+wechat_camera_picker: ^2.4.1
+# 滑块
+carousel_slider: ^4.0.0
+# svg
+flutter_svg: ^0.22.0
+# 瀑布流
+waterfall_flow: ^3.0.1
+# 加密
+crypto: ^3.0.1
+# OSS
+aliyun_oss_flutter: ^1.0.5
+# 视频图片压缩
+video_compress: ^3.1.0
+flutter_image_compress: ^1.1.0
+# 图片预览
+photo_view: ^0.12.0
+# 视频播放
+chewie: ^1.2.2
+video_player: ^2.2.5
+# 选择
+# flutter_cupertino_datetime_picker: ^2.0.1
+flutter_picker: ^2.0.2
+# 时间转换
+intl: ^0.17.0
+# 定位
+geolocator: ^7.6.2
+# 地图
+google_maps_flutter: ^2.0.11
+google_maps_cluster_manager: ^3.0.0+1
+# 缓存
+flutter_cache_manager: ^3.1.2
+# webkit
+webview_flutter: ^2.0.12
+# 打开url
+url_launcher: ^6.0.12
+# 升级
+r_upgrade: ^0.3.5
+version: ^2.0.0
+# app 打开 uri
+uni_links: ^0.5.1
+# IM
+tencent_im_sdk_plugin: ^3.5.0
+# 腾讯推送
+tpns_flutter_plugin:
+  git:
+    url: https://gitee.com/ducafecat/TPNS-Flutter-Plugin
+# google sign
+google_sign_in: ^5.1.1
+# apple sign
+sign_in_with_apple: ^3.2.0
+# facebook sign
+flutter_facebook_auth: ^3.5.2
+# sentry
+sentry_flutter: ^6.0.1
+# 头部背景
+# draggable_home: ^1.0.2
+# 第三方登录按钮
+auth_buttons: ^1.0.1+4
+# 倒计时
+timer_count_down: ^2.2.0
+```
+
+
+
 ## 参考
 
 [codewhy 老师的flutter系列文章](https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg5MDAzNzkwNA==&action=getalbum&album_id=1566028536430247937&scene=173&from_msgid=2247483705&from_itemidx=1&count=3&nolastread=1#wechat_redirect)
@@ -3604,6 +3693,8 @@ final int result = await platform.invokeMethod("getBatteryInfo");
 [quicktype](https://app.quicktype.io/)
 
 [flutter 页面 生命周期，APP应用的生命周期](https://blog.csdn.net/litter_lj/article/details/99690614)
+
+[猫哥的wiki文档](https://wiki.ducafecat.tech/flutter/%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1-%E5%9F%BA%E7%A1%80%E7%89%B9%E6%80%A7/1-%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84.html)
 
 **组件目录**
 
