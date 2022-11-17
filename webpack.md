@@ -1301,6 +1301,10 @@ module.exports = {
 
 ## webpack 优化点
 
+### 打包时间分析
+
+可以使用 `speed-measure-webpack-plugin`插件来分析各个阶段消耗的时间
+
 ### 热更新
 
 代码修改后实时更新带页面上。但是也可以使用watch或者webpack-dev-server实现。
@@ -1389,6 +1393,10 @@ devtool 有很多种模式，其中比较常用的是`source-map cheap-module-so
 	+ hash：输出文件名使用`filename:[name].[hash:8].[ext]`，这样每次webpack构建是会产生唯一的hash值，但是问题是每次打包hash都是不同的（即使没有改变文件内容），这样缓存就失效了。
 	+ chunkhash：根据chunk生成的hash值。如果打包来源于同一个chunk，那么hash值就是一样的，但是这样又会有一个问题，就是在入口引入了 css 和 js，引入的js和css都变了，但是入口没有变hash也是不会变的，所以等不到最新的内容。
 	+ contenthash：根据文件内容生成hash，不同文件hash值一定不一样。
+
+还有可以使用`cache-loader`进行缓存处理，虽然第一次会比较慢，但是之后的就会比较快了
+
+
 
 ### tree shaking：去除无用代码
 
@@ -1564,7 +1572,7 @@ module.exports={
 }
 ```
 
-但是开启多线程打包，会比较消耗性能，所以不是必要尽量不要使用吧。
+但是开启多线程打包，会比较消耗性能，所以不是必要尽量不要使用吧。可以分析查看那个模块比较耗时，就在那个模块使用
 
 
 

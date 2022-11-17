@@ -38,9 +38,9 @@ Nuxtjs 是 vuejs 的一个服务端渲染（SSR：server side render）框架，
 
 Nuxt 其实就相当于是一个用Vue + NodeJS 服务编写的中台服务器，用Vue来编写页面，并启用一个服务器，当有请求访问页面的时候再将页面在中台中创建并生成好想对应的渲染代码（html+css+js，也就是一个页面），返回给前端。
 
-![image-20220808143603251](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/Nuxtjs/image-20220808143603251.png)
+![image-20220808143603251](Nuxtjs/image-20220808143603251.png)
 
-![image-20220808182005880](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/Nuxtjs/image-20220808182005880.png)
+![image-20220808182005880](Nuxtjs/image-20220808182005880.png)
 
 ## 创建项目
 
@@ -177,6 +177,8 @@ export default {
   }
 }
 ```
+
+**需要注意的是，在修改配置文件之后需要先进行打包`npm run build`，之后在`npm run dev`才会生效果**
 
 > 在github上查找nuxt相关的库（模块）的时候，如果按`@nuxtjs/axios`进行搜索的话是搜索不到，正确的搜索应该是`axios-module`，`proxy-module`.
 >
