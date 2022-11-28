@@ -450,28 +450,30 @@ block式
 
 ## xib 和 storyBoard
 
-xib 和 storyBoard 一样都是用来描述软件界面的文件，不同的是 xib 是一个比较轻量级的view描述文件，适合用来写组件。而 storyBoard  是一个比较重的页面描述文件，适合用来做页面，以及页面的跳转关系。
+创建自定义组件的方式有两种，一种是通过代码直接创建，一种是通过 xib 可视化创建
 
-xib 也可以进行可视化的开发，在加载 xib 的时候，系统会自动生成对应的代码来创建组件类。
+比如我们要创建一个头像组件`Avatar`
 
-### 通过xib 创建组件
+![image-20221128155504937](/Users/gcb/Desktop/ljf_new/file/md-note/IOS开发/image-20221128155504937.png)
 
-假设我们需要定义一个 头像`AvatarView`组件（模板 | 控件），因为要区分自己的类和系统的类，避免重名，我们使用前缀进行规范，
+### 准备工作
 
-所以我们创建一个新的 xib 文本，可以在xcode
+创建一个专门用来存储数据的类，这样就可以有提示，并且明确知道数据的结构
 
-创建`MYAvatar.h`和`MYAvatar.m`
+创建`MYAvatarModel.h`和`MYAvatarModel.m`
 
 ```objc
 // MYAvatar.h
+#import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-@interface MYAvatar : NSObject{
-  @property(nonatomic,copy)NSString *name;
-  @property(nonatomic,copy)NSString *icon;
-}
+NS_ASSUME_NONNULL_BEGIN
+@interface MYAvatarModel : NSObject
+@property(nonatomic,copy) NSString *name;
+@property(nonatomic,copy) NSString *icon;
 -(instancetype)initWithDict:(NSDictionary *)dict;
 +(instancetype)avatarWithDict:(NSDictionary *)dict;
 @end
+NS_ASSUME_NONNULL_END
 ```
 
 ```objc
@@ -490,6 +492,105 @@ xib 也可以进行可视化的开发，在加载 xib 的时候，系统会自�
 }
 @end
 ```
+
+通过字典数组创建model
+
+```objc
+NSDictionary *data = @{@"name":@"jack",@"icon":@"avatar"};
+MYAvatarModel *model = [MYAvatarModel avatarWithDict:data];
+```
+
+
+
+### 通过代码直接创建
+
+这种方式需要我们直接通过代码来创建各种小的控件，然后添加到一个容器 UIView 中
+
+```objc
+UIView *container = [UIView new];
+UIImage *image = [UIImage new];
+UILabel *label = [UIImage new];
+[container addSubview:image];
+[container addSubview:label];
+```
+
+只会我们还要为各个容器设置位置大小，各种属性等等，是相当麻烦的。
+
+### 通过xib 创建组件
+
+xib 和 storyBoard 一样都是用来描述软件界面的文件，不同的是 xib 是一个比较轻量级的view描述文件，适合用来写组件。而 storyBoard  是一个比较重的页面描述文件，适合用来做页面，以及页面的跳转关系。
+
+xib 也可以进行可视化的开发，在加载 xib 的时候，系统会自动生成对应的代码来创建组件。
+
+因为要区分自己的类和系统的类，避免重名，我们使用前缀进行规范，
+
+所以我们创建一个新的 xib 文本，可以在xcode进行创建
+
+![image-20221128161117771](/Users/gcb/Desktop/ljf_new/file/md-note/IOS开发/image-20221128161117771.png)
+
+创建之后我们就可以通过可视化的形式创建组件
+
+![image-20221128161714123](/Users/gcb/Desktop/ljf_new/file/md-note/IOS开发/image-20221128161714123.png)
+
+> 刚拖拽出来的组件可以无法修改大小可以在 设置size 为 freedom
+>
+> ![image-20221128162537998](/Users/gcb/Desktop/ljf_new/file/md-note/IOS开发/image-20221128162537998.png)
+
+![image-20221128171652868](/Users/gcb/Desktop/ljf_new/file/md-note/IOS开发/image-20221128171652868.png)
+
+定义类文件与xib相关联，默认是与根容器的类进行关联的，因为我们的组件容器是一个 UIView，所以默认关联的类是 UIView，所以我们自定义的类必须要要继承 UIView，我们定义同名的类`MYAvatarView.h  MYAvatarView.m `，并进行关联
+
+![image-20221128172653513](/Users/gcb/Desktop/ljf_new/file/md-note/IOS开发/image-20221128172653513.png)
+
+之后就可进行拖线关联了，并实现这个类
+
+```objc
+// MYAvatarView.h
+#import <UIKit/UIKit.h>
+@class MYAvatarModel;
+NS_ASSUME_NONNULL_BEGIN
+
+@interface MYAvatarView : UIView
+@property(nonatomic,strong) MYAvatarModel *model;
+@end
+
+NS_ASSUME_NONNULL_END
+```
+
+```objc
+// MYAvatarView.m
+#import "MYAvatarView.h"
+#import "MYAvatarModel.h"
+
+@interface MYAvatarView ()
+@property (weak, nonatomic) IBOutlet UIImageView *icon;
+@property (weak, nonatomic) IBOutlet UILabel *name;
+@end
+
+@implementation MYAvatarView
+ 
+- (void)setModel:(MYAvatarModel *)model{
+    _model = model;
+    self.icon.image = model.icon;
+    self.name.text = model.icon;
+}
+
+@end
+```
+
+通过xib创建每个组件之后就需要通过动态加载xib文件创建里面的view，首先需要获取到根目录，之后在应用程序根目录下搜索对应的xib(打包出来的是nib)文件
+
+```objc
+NSBoundle *rootBundle = [NSBundle mainBundle];
+// 在一个xib文件中可以定义多个组件，所以这里loadNibNamed返回的是一个数组，所以我们要拿到唯一的一个才是我们定义的 view
+// 因为我们的根容器是一个 UIView 所以需要用一个 UIView 的指针来接受
+// 但是我们的xib与 MYAvatarView 进行关联，所以实际返回的是 MYAvatarView
+MYAvatarView *appView = [[rootBundle loadNibNamed:@"MYAvatarView" onwner:nil options:nil] lastObject];
+
+appView.model = model;
+```
+
+
 
 
 
