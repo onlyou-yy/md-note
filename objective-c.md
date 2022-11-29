@@ -177,7 +177,7 @@ int *p1 = NULL; //p1指针不指向内存中的任何1块空间.
 ```
 **OC的类指针用nil**
 ```objc
-Person *p1 = nil; p1指针不指向任何对象.
+Person *p1 = nil; //p1指针不指向任何对象.
 ```
 
 **注意**
@@ -228,6 +228,76 @@ Person *p1 = nil; p1指针不指向任何对象.
 + 方法只有声明 没有实现
 	+ 如果方法只有声明 没有实现  编译器会给1个警告  不会报错.
 	+ 如果指针指向的对象 有方法的声明 而没有方法的实现 那么这个时候通过指针来调用这个方法，在运行的时候  就会报错（`unrecognized selector sent to instance 0x100420510` 只要你看到了这个错误.说明要么对象中根本就没有这个方法. 要么只有方法的声明而没有方法的实现）
+
+### 多参数和省类参数
+
+在定义方法和函数的时候，一般也需要指定有多少个参数，并且定义了的参数必须要传递。比如
+
+```objc
+void testLog(NSString format,NSObject data){
+  NSString *log = [NSString stringWithFormat:format,data];
+  NSLog(log);
+}
+```
+
+在Objective-C中，我们会遇到很多像NSLog这样的函数，其中参数的个数不确定，由程序员自由控制，在初始化数组，字典等方面应用广泛，要自定这种函数需要先了解几个概念
+
++ `va_list`,C语言中定义的一个指针，用于指向当前的参数。
++ `va_start(ap,param)` 这个宏是初始化参数列表，其中第一个参数是va_list对象，第二个参数是参数列表的第一个参数
++ `va_arg(ap, type)` 一个用于取出参数的宏，这个宏的第一个参数是va_list对象，第二个参数是要取出的参数类型。
++ `va_end(ap)` 这个宏用于关闭取参列表
+
+**多参函数的取参原理**
+
+在编写我们自己的多参函数之前，明白函数的取参原理是十分重要的，首先，函数的参数是被放入我们内存的栈段的，而且放入的顺序是从后往前放入，比如如果一个函数参数如下
+
+```objc
+void func(int a,int b,int c,int d)
+```
+
+那么传递参数的时候参数d先入栈，接着是c、b、a。如此这样，在取参的时候，根据堆栈的取值原则，则取值顺序为a、b、c、d。所以在原理上，只要我们知道第一个参数的地址和每个参数的类型，我们就可以将参数都取出来。而上面介绍的几个宏，就是帮助我们做这些的
+
+**声明与实现省略参数的多参函数**
+
+```objc
+//省略参数的写法
+//"..."这个符号就是我们用来实现省略参数函数的符号
+- (void)myLog:(NSString *)str,...{
+  
+  //创建一个列表指针对象
+  va_list list;
+  
+	////进行列表的初始化，str为省略前的第一个参数，及...之前的那个参数
+  va_start(list, str);
+
+  NSString * temStr = str;
+
+	//如果不是nil，则继续取值
+  while (temStr!=nil) {
+
+    NSLog(@"%@",temStr);
+
+		//返回取到的值，并且让指针指向下一个参数的地址
+    temStr = va_arg(list, NSString*);
+  }
+	//关闭列表指针
+  va_end(list);
+}
+```
+
+注意，调用时，我们必须在参数的最后加上nil这个判断结束的条件
+
+```objc
+[self myLog:@"312",@"321",nil];
+```
+
+这里的nil是我们在调用函数时手动加上的，可是系统的许多函数在我们调用时，系统直接帮我们加上了参数结尾的那个nil
+
+```objc
+- (void)myLog:(NSString *)str,... NS_REQUIRES_NIL_TERMINATION{
+  //....
+}
+```
 
 
 
@@ -2611,6 +2681,9 @@ for(NSString * str in arr)
  {
    NSLog(@"%@",obj);
  }];
+//-------------------------------------------
+//让数组中的每个方法都调用指定的 方法
+[arr makeObjectsPerformSelector:@selector(方法名)];
 ```
 
 
@@ -2800,6 +2873,7 @@ for (id item in dict) {
 [dict enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
   NSLog(@"%@ = %@",key,obj);
 }];
+//-----------------------------------
 ```
 
 ### NSMutableDictionary

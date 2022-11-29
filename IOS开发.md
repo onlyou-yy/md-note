@@ -209,7 +209,7 @@ frame.size.width;
 frame.size.height;
 ```
 
-`enter`获取view的中心点位置
+`center`获取view的中心点位置
 
 ```objc
 CGPoint center = self.button.center;
@@ -217,7 +217,7 @@ center.x;
 center.y;
 ```
 
-`bounds`获取view大小
+`bounds`获取view大小，也有坐标x ，y不过都为0
 
 ```objc
 CGRect bounds = self.button.bounds;
@@ -229,6 +229,12 @@ bounds.height;
 
 ```objc
 button.tag = 100;
+```
+
+`userInteractionEnabled`设置View是否可以进行交互
+
+```objc
+self.button.userInteractionEnabled = NO
 ```
 
 
@@ -263,11 +269,18 @@ UIButton *button = (UIButton *)[self.view viewWithTag:100];
 
 // 如果要传递参数可以将参数绑定或者设置在 view 上，因为在绑定的方法中会将当前view传入
 button.tag = 100;
-[button addTarget:self action:@selector(handleClick:) forControlEvent:UIControlEventTouchUpInside]
+[button addTarget:self action:@selector(handleClick:) forControlEvent:UIControlEventTouchUpInside];
+//---------------------------------------------
 -(void)handleClick:(id)sender{//sender 就是button
   int tag = sender.tag;
   NSLog(@"click handle tag",tag);
 }
+```
+
+`bringSubviewToFront` 将子view放到最顶层
+
+```objc
+[self.view bringSubviewToFront:self.button];
 ```
 
 
@@ -459,7 +472,7 @@ block式
 
 比如我们要创建一个头像组件`Avatar`
 
-![image-20221128155504937](/IOS开发/image-20221128155504937.png)
+![image-20221128155504937](IOS开发/image-20221128155504937.png)
 
 ### 准备工作
 
@@ -531,21 +544,21 @@ xib 也可以进行可视化的开发，在加载 xib 的时候，系统会自�
 
 所以我们创建一个新的 xib 文本，可以在xcode进行创建
 
-![image-20221128161117771](/IOS开发/image-20221128161117771.png)
+![image-20221128161117771](IOS开发/image-20221128161117771.png)
 
 创建之后我们就可以通过可视化的形式创建组件
 
-![image-20221128161714123](/IOS开发/image-20221128161714123.png)
+![image-20221128161714123](IOS开发/image-20221128161714123.png)
 
 > 刚拖拽出来的组件可以无法修改大小可以在 设置size 为 freedom
 >
-> ![image-20221128162537998](/IOS开发/image-20221128162537998.png)
+> ![image-20221128162537998](IOS开发/image-20221128162537998.png)
 
-![image-20221128171652868](/IOS开发/image-20221128171652868.png)
+![image-20221128171652868](IOS开发/image-20221128171652868.png)
 
 定义类文件与xib相关联，默认是与根容器的类进行关联的，因为我们的组件容器是一个 UIView，所以默认关联的类是 UIView，所以我们自定义的类必须要要继承 UIView，我们定义同名的类`MYAvatarView.h  MYAvatarView.m `，并进行关联
 
-![image-20221128172653513](/IOS开发/image-20221128172653513.png)
+![image-20221128172653513](IOS开发/image-20221128172653513.png)
 
 之后就可进行拖线关联了，并实现这个类
 
@@ -597,7 +610,24 @@ appView.model = model;
 
 
 
+## 项目目录管理
+
+如果项目有很多文件的话，我们可以建立一个专门的组来分组管理我们的项目，一般的分组方式是 MVC，就是按照M（数据），V（view视图），C（控制器controller）
+
+![image-20221129105501634](IOS开发/image-20221129105501634.png)
+
+`New Group`，`New Group without Folder`不回真的创建文件夹，而是一个逻辑文件夹，仅用来分组。
+
+
+
 ## 常用的 UIView
+
++ `UIView` 空白View，一百用作容器
++ `UILabel` 文本显示
++ `UIImageView` 图片容器
++ `UIButton` 按钮，用途很大，需要直接通过点击交互的
+
+
 
 
 
@@ -617,7 +647,7 @@ self.label.layer.makeToBounds = YES;
 
 
 
-### 问题
+## 问题
 
 **通过代码无法控制图片的缩放？**
 
@@ -626,6 +656,26 @@ self.label.layer.makeToBounds = YES;
 **xib 下的 UIView 下面默认有个 safe area ？**
 
 可以通过 Use Safe Area Layout Guide 去除掉
+
+![image-20221129101848827](IOS开发/image-20221129101848827.png)
+
+### 绑定事件
+
+对于一些有交互性的View，比如UIButton，UITextField可以通过`addTarget`进行绑定
+
+```objc
+[button addTarget:self action:@selector(handleClick) forControlEvent:UIControlEventTouchUpInside]
+```
+
+而对于UIImageView、UILabel等没有交互性的View就需要通过`addGestureRecognizer`来添加事件
+
+```objc
+imageView.userInteractionEnabled = YES;
+[imageView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleClick:)]];
+
+// -------------------------
+- (void)handleClick:(UITapGestureRecognizer *)param{}
+```
 
 
 
@@ -642,6 +692,8 @@ https://www.jianshu.com/p/66dff5221f4b
 
 
 ## 文档
+
+[ChinaKingKong博客](https://www.cnblogs.com/ChinaKingKong/tag/)
 
 [中文简要文档](https://developer.apple.com/cn/documentation/)
 
