@@ -3210,6 +3210,8 @@ NSLog(@"%lf",d);
 
 这两个都是定时器，用来定时执行一个任务，不同的是 NSTimer 用于时间间隔比较大（大于1s）的定时任务，而 CADisplayLink 用于时间间隔比较小（小于 1s）的定时任务
 
+#### NSTimer 
+
 创建 NSTimer 的两种方式
 
 ```objc
@@ -3224,6 +3226,58 @@ NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
 
 // 2 这种方法会自动启动
 [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(test1) userInfo:nil repeats:YES];
+```
+
+在使用完之后可以调用将timer释放
+
+```objc
+[timer invalidate];
+timer = nil;
+```
+
+需要注意的是，定时器一旦被释放就不能再使用的了，如果要用只能重新创建一个
+
+#### ADisplayLink
+
+`ADisplayLink`是一个能让我们以和屏幕刷新率相同的频率将内容画到屏幕上的定时器。我们在应用中创建一个新的 `CADisplayLink` 对象，把它添加到一个`runloop`中，并给它提供一个 `target` 和`selector` 在屏幕刷新的时候调用。
+
+`duration`属性提供了每帧之间的时间，也就是屏幕每次刷新之间的的时间。我们可以使用这个时间来计算出下一帧要显示的UI的数值。但是 `duration`只是个大概的时间，如果CPU忙于其它计算，就没法保证以相同的频率执行屏幕的绘制操作，这样会跳过几次调用回调方法的机会。
+`frameInterval`属性是可读可写的`NSInteger`型值，标识间隔多少帧调用一次`selector` 方法，默认值是1，即每帧都调用一次。如果每帧都调用一次的话，对于**iOS**设备来说那刷新频率就是60HZ也就是每秒60次，如果将 `frameInterval` 设为2 那么就会两帧调用一次，也就是变成了每秒刷新30次。
+我们通过`pause`属性开控制`CADisplayLink`的运行。当我们想结束一个`CADisplayLink`的时候，应该调用`-(void)invalidate`
+从`runloop`中删除并删除之前绑定的 `target`跟`selector`
+另外`CADisplayLink` 不能被继承。
+
+#### **`CADisplayLink` 与 `NSTimer` 有什么不同**
+
+**iOS**设备的屏幕刷新频率是固定的，`CADisplayLink`在正常情况下会在每次刷新结束都被调用，精确度相当高。
+`NSTimer`的精确度就显得低了点，比如`NSTimer`的触发时间到的时候，`runloop`如果在阻塞状态，触发时间就会推迟到下一个`runloop`周期。并且 `NSTimer`新增了`tolerance`属性，让用户可以设置可以容忍的触发的时间的延迟范围。
+`CADisplayLink`使用场合相对专一，适合做UI的不停重绘，比如自定义动画引擎或者视频播放的渲染。`NSTimer`的使用范围要广泛的多，各种需要单次或者循环定时处理的任务都可以使用。在UI相关的动画或者显示内容使用 `CADisplayLink`比起用`NSTimer`的好处就是我们不需要在格外关心屏幕的刷新频率了，因为它本身就是跟屏幕刷新同步的。
+
+```objc
+self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(updateTextColor)];
+self.displayLink.paused = YES;
+[self.displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+-(void)updateTextColor{}
+- (void)startAnimation{
+  self.beginTime = CACurrentMediaTime();
+  self.displayLink.paused = NO;
+}
+- (void)stopAnimation{
+ self.displayLink.paused = YES;
+ [self.displayLink invalidate];
+ self.displayLink = nil;
+}
+```
+
+
+
+#### 优先级问题
+
+在OC中默认是使用一个线程去处理UIView 和 计时器的，而且处理UIView 的优先级要比计时器的高，所以当我们在把不断的操作UIView 的时候，计时器其实是处于暂停状态。要解决这个问题需要在 消息循环中 将计时器的优先级设置成和UIView的一样
+
+```objc
+NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
+[runLoop addTimer:timer forMode:NSRunLoopCommonModes];
 ```
 
 
