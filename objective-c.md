@@ -3206,6 +3206,30 @@ NSLog(@"%lf",d);
 
 
 
+### NSTimer 和 CADisplayLink
+
+这两个都是定时器，用来定时执行一个任务，不同的是 NSTimer 用于时间间隔比较大（大于1s）的定时任务，而 CADisplayLink 用于时间间隔比较小（小于 1s）的定时任务
+
+创建 NSTimer 的两种方式
+
+```objc
+// 1 这种方法创建之后需要添加到 消息循环 中或者调用 fire 才能启动
+NSTimer *timer = [NSTimer timerWithTimeInterval:1.0 target:self selector:@selector(test1) userInfo:nil repeats:YES];
+//添加到 消息循环 中启动
+NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
+[runLoop addTimer:timer forMode:NSRunLoopCommonModes];
+//调用 fire 启动,每调用一次都会执行一次
+[timer fire];
+[timer fire];
+
+// 2 这种方法会自动启动
+[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(test1) userInfo:nil repeats:YES];
+```
+
+
+
+
+
 ## copy
 
 **无论在MRC还是ARC下,如果属性的类型是NSString类型的. @property参数使用copy.**，

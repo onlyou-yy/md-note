@@ -620,12 +620,130 @@ appView.model = model;
 
 
 
+## Delegate（代理）的介绍
+
+概念：Delegate(代理）即一个类通过协议声明一些协议方法，但不实现这些方法，通过指定其他类对象去实现这些方法的过程叫代理;通过代理可以实现不同的类之间的值的传递
+
+代理实现的实例代码，创建一个B视图控制器 在B的.h文件中声明协议以及协议方法 例如：
+
+```objc
+//声明B的协议,如果遵从B的协议则可以获得信息
+@protocol ShowMessageDelegate <NSObject>
+//提供信息(协议方法)
+- (void) showMessage:(NSString *)msg;
+@end
+
+@interface BViewController : UIViewController <UITextFieldDelegate>
+//创建代理成员变量
+@property (nonatomic, assign) id<ShowMessageDelegate> delegate;
+@end
+```
+
+B视图控制器的.m文件中的代码实现 如下：
+
+```objc
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor lightGrayColor];
+
+    UITextField *tf = [[UITextField alloc] init];
+    tf.frame = CGRectMake(20, 150, self.view.frame.size.width - 20 * 2, 40);
+    tf.backgroundColor = [UIColor blackColor];
+    tf.textColor = [UIColor whiteColor];
+    tf.delegate = self;
+    [self.view addSubview:tf];
+}
+
+//通过此方法将B视图控制器中文本框输入的值传递到该视图控制器的代理对象所在的视图
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    //self.delegate  是遵从该视图对象协议的其他对象的实例对象
+    //respondsToSelector 判断是否是实现了showMessage: 方法 如果实现了,则返回yes
+    if ([self.delegate respondsToSelector:@selector(showMessage:)]) {
+        [self.delegate showMessage:textField.text];
+    }
+
+    return YES;
+}
+```
+
+创建一个A视图控制器去成为B视图控制的代理 实现代码 A视图控制器.h文件中的实现
+
+```objc
+#import "BViewController.h"
+@interface AViewController : UIViewController <ShowMessageDelegate>//遵守B视图控制器声明的协议
+@end
+```
+
+A视图控制器.m文件中的实现代码
+
+```objc
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //设置视图的背景色
+    self.view.backgroundColor = [UIColor whiteColor];
+
+    //页面跳转按钮
+    UIButton *btn = [[UIButton alloc] init];
+    btn.frame = CGRectMake(0, self.view.frame.size.height - 44, self.view.frame.size.width, 44);
+    btn.backgroundColor = [UIColor blackColor];
+    [btn setTitle:@“下一页” forState:UIControlStateNormal];
+    [btn addTarget:self action:@selector(pushToNextVC) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:btn];
+
+    //UILabel 用于展示B视图控制器传递过来的值
+    UILabel *lab = [[UILabel alloc] init];
+    lab.frame = CGRectMake(20, 100, self.view.frame.size.width - 2 * 20, 40);
+    lab.backgroundColor = [UIColor blackColor];
+    lab.textColor = [UIColor whiteColor];
+    lab.font = [UIFont systemFontOfSize:20];
+    lab.tag = 1000;
+    [self.view addSubview:lab];
+
+}
+
+#pragma mark-下一页跳转方法
+- (void)pushToNextVC
+{
+    BViewController *bVC = [[BViewController alloc] init];
+    //指定当前视图控制器对象为B视图控制器的代理对象
+    bVC.delegate = self;
+    [self.navigationController pushViewController:bVC animated:YES];
+}
+
+#pragma mark-实现B视图控制器的协议方法
+- (void)showMessage:(NSString *)msg
+{
+    UILabel *lab = (UILabel *)[self.view viewWithTag:1000];
+    lab.text = msg;
+}
+```
+
+在一些view的生命周期中会向外发送一些消息（调用方法），如果外部的的view需要监听这一消息就需要提供一个代理对象给它进行调用。其实代理对象就是一个拥有特定方法的实例对象，要保证这个对象有指定的方法就需要其对应的类遵守一个协议，这样就能保证view在发生事件的时候能够在 代理对象 中找到这个方法。
+
+
+
 ## 常用的 UIView
 
 + `UIView` 空白View，一百用作容器
 + `UILabel` 文本显示
 + `UIImageView` 图片容器
 + `UIButton` 按钮，用途很大，需要直接通过点击交互的
++ `UITextField`文本输入框
++ `UIScrollView`滚动容器，可以实现滚动效果，也可以实现缩放，
+  + `contentSize`要注意的是必须要通过`contentSize`设置内容的实际大小，才能滚动，这个大小可以只设置 width 或者 height 中的一个，并不会影响子容器的现实，如果只设置了 width 就会横向滚动，如果只设置了 height 就会纵向滚动，如果同时设置width height就是两边都可以滚动
+  + `scrollEnabled`设置是否可以滚动
+  + `contentOffset`内容偏移，可以手动控制滚动，通过setter方法进行设置的时候还是可以设置开启动画
+  + `showHorizontalScrollIndicator ｜ showVerticalScrollIndicator`是否显示滚动条
+  + `contentInset`设置内容的内边距
+  + `bounces`是否开启弹簧效果
+  + `delegate`代理对象，用来接受事件调用（代理对象必须要遵守相应的协议如，`UIScrollViewDelegate`）
+  + `pageEnabled`分页滚动，是根据UIScrollView的宽度进行分页的
+
++ `UIPageControl`分页指示器
+  + `numberOfPages`总页数
+  + `currentPage`当前页
+
 
 
 
