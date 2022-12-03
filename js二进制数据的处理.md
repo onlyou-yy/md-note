@@ -177,15 +177,15 @@ ui8.slice(1);//从1子节处开发截取
 
 比如这是一个 ArrayBuffer
 
-![image-20220302160135282](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/js二进制数据的处理/image-20220302160135282.png)
+![image-20220302160135282](js二进制数据的处理/image-20220302160135282.png)
 
 那个 Uint8Array 就是这样的映射
 
-![image-20220302160214700](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/js二进制数据的处理/image-20220302160214700.png)
+![image-20220302160214700](js二进制数据的处理/image-20220302160214700.png)
 
 Uint16Array 就是这样的
 
-![image-20220302160252340](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/js二进制数据的处理/image-20220302160252340.png)
+![image-20220302160252340](js二进制数据的处理/image-20220302160252340.png)
 
 
 
@@ -281,7 +281,7 @@ const littleEndian = (function() {
 
 ## ArrayBuffer、TypedArray、DataView之间的关系
 
-![image-20220302161029907](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/js二进制数据的处理/image-20220302161029907.png)
+![image-20220302161029907](js二进制数据的处理/image-20220302161029907.png)
 
 
 

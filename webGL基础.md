@@ -24,7 +24,7 @@ webGL 的工作流程其实也就是渲染的流程。在这里称之为渲染�
 
 顶点着色器和片元着色器是可编程的功能单元，拥有更大的自主性，还有光栅器、深度测试等不可编程的功能单元。CPU会通过WebGL API和GPU通信，传递着色器程序和数据，GPU执行的着色器程序可以通过useProgram方法切换，传递数据就是把CPU主存中的数据传送到GPU的显存中。
 
-![image-20220419164603534](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/webGL基础/image-20220419164603534.png)
+![image-20220419164603534](webGL基础/image-20220419164603534.png)
 
 ### 顶点着色器
 
@@ -40,13 +40,13 @@ webGL 的工作流程其实也就是渲染的流程。在这里称之为渲染�
 
 顶点变换后的操作是图元装配(primitive assembly)，硬件上具体是怎么回事不用思考，从程序的角度来看，就是绘制函数drawArrays()或drawElements()第一个参数绘制模式mode控制顶点如何装配为图元， gl.LINES的定义的是把两个顶点装配成一个线条图元，gl.TRIANGLES定义的是三个顶点装配为一个三角面图元，gl.POINTS定义的是一个点域图元。
 
-![image-20220419170403185](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/webGL基础/image-20220419170403185.png)
+![image-20220419170403185](webGL基础/image-20220419170403185.png)
 
 ### 光栅化
 
 片元着色器和顶点着色器一样是GPU渲染管线上一个可以执行着色器程序的功能单元，顶点着色器处理的是逐顶点处理顶点数据，片元着色器是逐片元处理片元数据。通过给内置变量gl_FragColor赋值可以给每一个片元进行着色， 值可以是一个确定的RGBA值，可以是一个和片元位置相关的值，也可以是插值后的顶点颜色。除了给片元进行着色之外，通过关键字discard还可以实现哪些片元可以被丢弃，被丢弃的片元不会出现在帧缓冲区，自然不会显示在canvas画布上。
 
-![image-20220419170531267](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/webGL基础/image-20220419170531267.png)
+![image-20220419170531267](webGL基础/image-20220419170531267.png)
 
 
 
@@ -191,3 +191,14 @@ gl.useProgram(program);
 gl.drawArrays(gl.TRIANGLES, 0, 3);
 ```
 
+
+
+## webGL简易流程
+
+
+
+
+
+## 文章
+
+[WebGL零基础快速入门](http://www.webgl3d.cn/WebGL/)
