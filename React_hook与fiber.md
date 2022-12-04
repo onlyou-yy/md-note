@@ -63,6 +63,68 @@ function performUnitOfWork(){
 
 `MessageChannel`API允许我们创建一个新的消息通道，并通过它的两个 `MessagePort` 属性发送数据，`MessageChannel`创建了一个通信管道，这个管道有两个端口，每个端口都可以通过`postMessage`发送数据，而另一个端口通过绑定`onmessage`事件就可以接受到来自另一个端口的数据，同时MessageChannel 是一个宏任务。
 
+```js
+var channel = new MessageChannel();
+```
+
+获取实例的两个端口，注意的是，两个端口都是只读的
+
+```js
+channel.port1
+channel.port2
+```
+
+简单来说，`MessageChannel`创建了一个通信的管道，这个管道有两个端口，每个端口都可以通过`postMessage`发送数据，而一个端口只要绑定了`onmessage`回调方法，就可以接收从另一个端口传过来的数据。
+
+一个简单的例子：
+
+```jsx
+var channel = new MessageChannel();
+var port1 = channel.port1;
+var port2 = channel.port2;
+port1.onmessage = function(event) {
+  console.log("port1收到来自port2的数据：" + event.data);
+}
+port2.onmessage = function(event) {
+  console.log("port2收到来自port1的数据：" + event.data);
+}
+
+port1.postMessage("发送给port2");
+port2.postMessage("发送给port1");
+```
+
+常用于 **web worker兄弟线程通信**， **iframe兄弟通信**
+
+```js
+//web worker兄弟线程通信
+let worker1 = new Worker('./worker1.js');
+let worker2 = new Worker('./worker2.js');
+let ms = new MessageChannel();
+
+// 把 port1 分配给 worker1
+worker1.postMessage('main', [ms.port1]);
+// 把 port2 分配给 worker2
+worker2.postMessage('main', [ms.port2]);
+
+//------------------------------------------
+//iframe兄弟通信
+var {port1,port2} = new MessageChannel();
+var iframe1 = document.getElementById('iframe1');
+iframe1.contentWindow.postMessage('main','*',[port1]);
+var iframe2 = document.getElementById('iframe2');
+iframe2.contentWindow.postMessage('main','*',[port2]);
+//-----------------iframe
+window.addEventListener('message',function(event){
+  let messageDom = document.getElementById('message');
+  messageDom.innerHTML = "收到"  + event.origin + "消息：" + event.data;
+  let port = event.ports[0];
+  port.onmessage = function(e){
+    messageDom.innerHTML += '<br/>收到' + e.origin + '消息: ' + e.data;
+  }
+  port.postMessage('from iframe1');
+}, false);
+```
+
 
 
 ## 链表
@@ -135,7 +197,7 @@ Fiber 架构是在React 16的时候才被提出的，在这之前 React 执行�
 
 React 目前的做法是使用链表，每个虚拟DOM节点内部表示为一个Fiber
 
-![image-20221109110223915](/Users/gcb/Desktop/ljf_new/file/md-note/React_hook与fiber/image-20221109110223915.png)
+![image-20221109110223915](React_hook与fiber/image-20221109110223915.png)
 
 Fiber 的结构应该是这样的
 

@@ -1,132 +1,3 @@
-## 常用核心API
-
-### buffer
-
-对象用于表示固定长度的字节序列。 许多 Node.js API 都支持 `Buffer`。在数据操作，文件读写的时候比较常用。buffer 实际上也是一个 Uint8Array
-
-### dgram
-
-提供了 UDP 数据包 socket 的实现，用于创建UDP服务
-
-### events
-
-大多数 Node.js 核心 API 构建于惯用的异步事件驱动架构，其中某些类型的对象（又称触发器，Emitter）会触发命名事件来调用函数（又称监听器，Listener）
-
-当 `EventEmitter` 对象触发一个事件时，所有绑定在该事件上的函数都会被同步地调用。 被调用的监听器返回的任何值都将会被忽略并丢弃。
-
-可以简单理解为就是一个发布订阅模式的实现。
-
-### fs
-
-文件操作系统。与文件和文件夹相关的处理都是由这个模块是实现的。
-
-## http、https、http2
-
-### **http**
-
-Node.js 的 HTTP API 都是非常底层的。 它仅进行流处理和消息解析。 它将消息解析为消息头和消息主体，但不会解析具体的消息头或消息主体，而且默认使用的是`http 1.1`版本。
-
-```js
-var http = require('http');
-var url = require('url');
-
-http.createServer(function (req, res) {
-  res.writeHead(200, {'Content-Type': 'text/html'});
-  var q = url.parse(req.url, true).query;
-  var txt = q.year + " " + q.month;
-  res.end(txt);
-}).listen(8080);
-```
-
-
-
-### **https**
-
-`HTTP` 协议中没有加密机制,但可以通 过和 `SSL`(Secure Socket Layer, **安全套接层** )或 `TLS`(Transport Layer Security, **安全层传输协议**)的组合使用,加密 `HTTP` 的通信内容。属于通信加密，即在整个通信线路中加密。
-
-```
-HTTP + 加密 + 认证 + 完整性保护 = HTTPS（HTTP Secure ）
-```
-
-```js
-const https = require('https');
-const fs = require('fs');
-
-const options = {
-  key: fs.readFileSync('test/fixtures/keys/agent2-key.pem'),
-  cert: fs.readFileSync('test/fixtures/keys/agent2-cert.pem')
-};
-
-https.createServer(options, (req, res) => {
-  res.writeHead(200);
-  res.end('你好，世界\n');
-}).listen(8000);
-```
-
-`HTTPS` 采用**共享密钥加密**（对称）和**公开密钥加密**（非对称）两者并用的**混合**加密机制。若密钥能够实现安全交换,那么有可能会考虑仅使用公开密钥加密来通信。但是公开密钥加密与共享密钥加密相比,其处理速度要慢。
-
-> 所以应充分利用两者各自的优势, 将多种方法组合起来用于通信。 在**交换密钥**阶段使用**公开密钥加密**方式,之后的建立通信**交换报文**阶段 则使用**共享密钥加密**方式。
-
-
-![img](https://pic3.zhimg.com/80/v2-9af3ae935bd8bf85261d3469a72f1a62_720w.webp)
-
-
-
-`HTTPS`握手过程的简单描述如下：
-
-![img](https://pic3.zhimg.com/80/v2-a546b518ccc741e8705f1e00afe4a33a_720w.webp)
-
-1. 浏览器将自己支持的一套加密规则发送给网站。
-   `服务器获得浏览器公钥`
-2. 网站从中选出一组加密算法与HASH算法，并将自己的身份信息以证书的形式发回给浏览器。证书里面包含了网站地址，加密公钥，以及证书的颁发机构等信息。 `浏览器获得服务器公钥`
-3. 获得网站证书之后浏览器要做以下工作：
-   (a). 验证证书的合法性（颁发证书的机构是否合法，证书中包含的网站地址是否与正在访问的地址一致等），如果证书受信任，则浏览器栏里面会显示一个小锁头，否则会给出证书不受信的提示。
-   (b). 如果证书受信任，或者是用户接受了不受信的证书，浏览器会生成一串随机数的密码（接下来通信的密钥），并用证书中提供的公钥加密（共享密钥加密）。
-   (c) 使用约定好的HASH计算握手消息，并使用生成的随机数对消息进行加密，最后将之前生成的所有信息发送给网站。 `浏览器验证 -> 随机密码 服务器的公钥加密 -> 通信的密钥 通信的密钥 -> 服务器`
-4. 网站接收浏览器发来的数据之后要做以下的操作：
-   (a). 使用自己的私钥将信息解密取出密码，使用密码解密浏览器发来的握手消息，并验证HASH是否与浏览器发来的一致。
-   (b). 使用密码加密一段握手消息，发送给浏览器。
-   `服务器用自己的私钥解出随机密码 -> 用密码解密握手消息（共享密钥通信）-> 验证HASH与浏览器是否一致（验证浏览器）`
-   HTTPS的不足
-5. 加密解密过程复杂，导致访问速度慢
-6. 加密需要认向证机构付费
-7. 整个页面的请求都要使用HTTPS
-
-### **http2**
-
-http2 核心 API 提供了专门针对支持 HTTP/2 协议的特性而设计的底层接口。可以以 http 为基底也可以以 https 为基底，一般默认情况下都是以 https 为基底（增加ssl数据加密验证），http2 采用**二进制格式传输数据**，而非 HTTP 1.x 的文本格式，二进制协议解析起来更高效，并且使用**头部压缩**（客户端为服务端都维护一份映射表，之后仅发送数据字段标识符即可）减小请求头体积。采用**多路复用**，代替原来的序列和阻塞机制。所有就是请求的都是通过一个 TCP连接并发完成（解决http的队头阻塞问题）。同时支持**服务器推送**
-
-```js
-const http2 = require('http2');
-const fs = require('fs');
-
-const server = http2.createSecureServer({
-  key: fs.readFileSync('密钥.pem'),
-  cert: fs.readFileSync('证书.pem')
-});
-server.on('error', (err) => console.error(err));
-
-server.on('stream', (stream, headers) => {
-  // 流是一个双工流。
-  stream.respond({
-    'content-type': 'text/html; charset=utf-8',
-    ':status': 200
-  });
-  stream.end('<h1>你好世界</h1>');
-});
-
-server.listen(8443);
-```
-
-生成此示例的证书和密钥，可以运行：
-
-```shell
-openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' \
-  -keyout 密钥.pem -out 证书.pem
-```
-
-
-
 ## 网络传输模型
 
 ### 7层模型
@@ -285,6 +156,9 @@ server.on("connection",socket=>{
   socket.on("data",data=>{
     console.log("来自客户端的信息",data.toString())
   })
+  socket.on("end",()=>{
+    console.log("用户断开连接")
+  })
 })
 
 server.listen(4000,()=>{
@@ -380,7 +254,7 @@ socket.on("listening",()=>{
 
 client.on("message",(msg,remoteInfo)=>{
   console.log('来自发送方的数据',msg);
-  console.log('来自发送方的信息',remoteInfo.address,remoteInof.port);
+  console.log('发送方的信息',remoteInfo.address,remoteInof.port);
 })
 
 client.on('error',err=>{
@@ -392,7 +266,304 @@ client.bind(6000);
 
 端口绑定可以不写,之后系统会自动分配一个，不过需要注意的是，如果绑定了端口调用`send()`方法发送信息就必须在`listening`信息中发送，如果不绑定端口就不用。
 
+> 其实在UDP 中并不区分服务端和客户端，因为仅进行数据的发送和接收，无论是谁都可以进行这两个操作，而且并不需要知道有没有人接收。所以在UDP中两个端的代码其实是一样的。
 
+### 实现单播
+
+单播指的就是给一个特定的用户端发送数据，这个需要知道目标的主机地址和端口号。比如要发送信息给上面端口号为 6000 的服务
+
+```js
+let dgram = require("dgram");
+let client = dgram.createSocket("udp4");
+
+//因为我们没有绑定端口，所以不用再 listening 事件中发送数据
+client.send("hellow",6000,"localhost");
+```
+
+之后在 6000 端口的机器中的`message`事件中就可以拿来数据来源的信息，并且可以通过`remoteInfo`来给它回信息
+
+```js
+socket.on("message",(msg,remoteInfo)=>{
+  console.log('来自发送方的数据',msg);
+  //回信息
+  socket.send('how are you?',remoteInfo.port,remoteInfo.address)
+})
+```
+
+### 实现广播
+
+广播可以给同一局域网内的所有机器发送消息，其中的地址分为 **直接地址** 和 **受限地址**
+
+> **直接广播地址**包含一个有效的网络号和一个全“1”的主机号，如你说的202.163.30.255，255就是一个主机号，202则是C类的IP地址，C类IP地址就是我们常接触到的。 受限广播地址是32位全1的IP地址（255.255.255.255）
+>
+> **受限的广播地址**是255.255.255.255。该地址用于主机配置过程中IP数据报的目的地址，此时，主机可能还不知道它所在网络的网络掩码，甚至连它的IP地址也不知道。在任何情况下，路由器都不转发目的地址为受限的广播地址的数据报，这样的数据报仅出现在本地网络中。
+>
+> **受限广播**可以用在计算机不知道自己IP地址的时候，比如向DHCP服务器索要地址时、PPPOE拨号时等.
+>
+> **直接广播**可用于本地网络，也可以跨网段广播，比如主机192.168.1.1/30可以发送广播包到192.168.1.7，使主机192.168.1.5/30也可以接收到该数据包，前提是之间的路由器要开启定向广播功能.
+
+```js
+socket.on("listening",()=>{
+ 	const address = client.address()
+  console.log(`socket running ${address.address}:${address.port}`);
+  
+  socket.setBroadcast(true);
+  setInterval(function(){
+    socket.send('hello',4000,'255.255.255.255');
+    //socket.send('hello',4000,'192.168.10.132');
+  },2000)
+})
+```
+
+这样局域网内服务端口是4000的机器都会受到消息
+
+### 实现组播
+
+组播并不像单播，有一个明确的目的主机和IP地址，也不像广播，局域网内的所有主机都是目的主机，广播IP地址也明确（主机标识全部置为1）。组播不同，它并不知道要把信息发给谁，因为谁都可能随时加入组播组，谁都可能随时离开，不可能用某一个主机的IP地址作为组播地址
+
+组播不可能以某一个主机的IP作为自己的目的IP，但是以太网报文在封装时必须要填入目的IP，怎么办？
+
+组播IP不能以某个主机的IP作为自己的目的IP，换句话说，组播IP不需要考虑主机标识，哪个类型的IP地址没有主机标识，D类
+
+![1670137386042](nodejs网络通信/1670137386042.png)
+
+由于224.0.0.0/24用于本地链路，239.0.0.0/8为私有组播地址，所以实际可用的组播地址为225.0.0.0/8 - 238.0.0.0/8
+
+> + 224.0.0.0～224.0.0.255为预留的组播地址（永久组地址），地址224.0.0.0保留不做分配，其它地址供路由协议使用
+> + 224.0.1.0～224.0.1.255是公用组播地址，可以用于Internet
+> + 224.0.2.0～238.255.255.255为用户可用的组播地址（临时组地址），全网范围内有效
+> + 239.0.0.0～239.255.255.255为本地管理组播地址，仅在特定的本地范围内有效
+
+```js
+socket.on("listening",()=>{
+ 	const address = client.address()
+  console.log(`socket running ${address.address}:${address.port}`);
+  
+  socket.setBroadcast(true);
+  setInterval(function(){
+    //组播组地址 224.0.1.100
+    socket.send('hello',4000,'224.0.1.100');
+  },2000)
+})
+```
+
+客户端需要加入组播组才能接收到数据
+
+```js
+client.on("listening",()=>{
+  client.addMembership('224.0.1.100');
+})
+```
+
+
+
+## http、https、http2
+
+TCP 和 UDP 都是网络传输层的协议，仅负责数据的发送和接收，并不关系传递的是什么，但是如果要构建高效的网络应用，就应该从传输层着手，但是对应经典的B/S模型使用TCP和UDP进行通信显然是很麻烦的。
+
+所以对于经典的 B/S 模型，推出了 http、https、http2 协议。
+
+### **http**
+
+Node.js 的 HTTP API 都是非常底层的。 它仅进行流处理和消息解析。 它将消息解析为消息头和消息主体，但不会解析具体的消息头或消息主体，而且默认使用的是`http 1.1`版本。
+
+实例事件和方法
+
++ `close`服务关闭时触发
++ `request`收到请求信息时触发
++ `server.close()`关闭服务
++ `server.listening`获取服务状态
+
+请求对象
+
++ `req.method` 请求方法
++ `req.url` 请求地址
++ `req.headers` 请求头
++ `req.httpVersion` 协议版本
+
+响应对象
+
++ `res.end()` 结束响应
++ `req.setHeader(name,val)` 设置响应头
++ `req.removeHeader(name,val)` 移除响应头
++ `req.statusCode` 设置响应状态吗
++ `req.statusMessage` 设置响应状态码短语
++ `req.write()` 写入响应数据
++ `req.writeHead()` 写入响应头
+
+```js
+var http = require('http');
+
+http.createServer(function (req, res) {
+  let url = req.url
+  res.writeHead(200, {'Content-Type': 'text/html'});
+  if(url == "/"){
+    res.end("hello world");
+  }else if(url == "/a"){
+    res.end("you get a");
+  }else{
+    res.statusCode = 404
+    res.end("not found");
+  }
+  res.end(txt);
+}).listen(8080);
+```
+
+
+
+
+
+### **https**
+
+`HTTP` 协议中没有加密机制,但可以通 过和 `SSL`(Secure Socket Layer, **安全套接层** )或 `TLS`(Transport Layer Security, **安全层传输协议**)的组合使用,加密 `HTTP` 的通信内容。属于通信加密，即在整个通信线路中加密。
+
+```
+HTTP + 加密 + 认证 + 完整性保护 = HTTPS（HTTP Secure ）
+```
+
+```js
+const https = require('https');
+const fs = require('fs');
+
+const options = {
+  key: fs.readFileSync('test/fixtures/keys/agent2-key.pem'),
+  cert: fs.readFileSync('test/fixtures/keys/agent2-cert.pem')
+};
+
+https.createServer(options, (req, res) => {
+  res.writeHead(200);
+  res.end('你好，世界\n');
+}).listen(8000);
+```
+
+`HTTPS` 采用**共享密钥加密**（对称）和**公开密钥加密**（非对称）两者并用的**混合**加密机制。若密钥能够实现安全交换,那么有可能会考虑仅使用公开密钥加密来通信。但是公开密钥加密与共享密钥加密相比,其处理速度要慢。
+
+> 所以应充分利用两者各自的优势, 将多种方法组合起来用于通信。 在**交换密钥**阶段使用**公开密钥加密**方式,之后的建立通信**交换报文**阶段 则使用**共享密钥加密**方式。
+
+![img](https://pic3.zhimg.com/80/v2-9af3ae935bd8bf85261d3469a72f1a62_720w.webp)
+
+
+
+`HTTPS`握手过程的简单描述如下：
+
+![img](https://pic3.zhimg.com/80/v2-a546b518ccc741e8705f1e00afe4a33a_720w.webp)
+
+1. 浏览器将自己支持的一套加密规则发送给网站。
+	`服务器获得浏览器公钥`
+2. 网站从中选出一组加密算法与HASH算法，并将自己的身份信息以证书的形式发回给浏览器。证书里面包含了网站地址，加密公钥，以及证书的颁发机构等信息。 `浏览器获得服务器公钥`
+3. 获得网站证书之后浏览器要做以下工作：
+	(a). 验证证书的合法性（颁发证书的机构是否合法，证书中包含的网站地址是否与正在访问的地址一致等），如果证书受信任，则浏览器栏里面会显示一个小锁头，否则会给出证书不受信的提示。
+	(b). 如果证书受信任，或者是用户接受了不受信的证书，浏览器会生成一串随机数的密码（接下来通信的密钥），并用证书中提供的公钥加密（共享密钥加密）。
+	(c) 使用约定好的HASH计算握手消息，并使用生成的随机数对消息进行加密，最后将之前生成的所有信息发送给网站。 `浏览器验证 -> 随机密码 服务器的公钥加密 -> 通信的密钥 通信的密钥 -> 服务器`
+4. 网站接收浏览器发来的数据之后要做以下的操作：
+	(a). 使用自己的私钥将信息解密取出密码，使用密码解密浏览器发来的握手消息，并验证HASH是否与浏览器发来的一致。
+	(b). 使用密码加密一段握手消息，发送给浏览器。
+	`服务器用自己的私钥解出随机密码 -> 用密码解密握手消息（共享密钥通信）-> 验证HASH与浏览器是否一致（验证浏览器）`
+	HTTPS的不足
+5. 加密解密过程复杂，导致访问速度慢
+6. 加密需要认向证机构付费
+7. 整个页面的请求都要使用HTTPS
+
+### **http2**
+
+http2 核心 API 提供了专门针对支持 HTTP/2 协议的特性而设计的底层接口。可以以 http 为基底也可以以 https 为基底，一般默认情况下都是以 https 为基底（增加ssl数据加密验证），http2 采用**二进制格式传输数据**，而非 HTTP 1.x 的文本格式，二进制协议解析起来更高效，并且使用**头部压缩**（客户端为服务端都维护一份映射表，之后仅发送数据字段标识符即可）减小请求头体积。采用**多路复用**，代替原来的序列和阻塞机制。所有就是请求的都是通过一个 TCP连接并发完成（解决http的队头阻塞问题）。同时支持**服务器推送**
+
+```js
+const http2 = require('http2');
+const fs = require('fs');
+
+const server = http2.createSecureServer({
+  key: fs.readFileSync('密钥.pem'),
+  cert: fs.readFileSync('证书.pem')
+});
+server.on('error', (err) => console.error(err));
+
+server.on('stream', (stream, headers) => {
+  // 流是一个双工流。
+  stream.respond({
+    'content-type': 'text/html; charset=utf-8',
+    ':status': 200
+  });
+  stream.end('<h1>你好世界</h1>');
+});
+
+server.listen(8443);
+```
+
+生成此示例的证书和密钥，可以运行：
+
+```shell
+openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' \
+  -keyout 密钥.pem -out 证书.pem
+```
+
+
+
+## 事件循环和多线程
+
+### 事件循环
+
+#### 浏览器中的事件循环
+
+js 是单线程的，单线程就意味着所有任务需要排队，如果因为任务Cpu计算量大还好，但是/O操作Cpu是闲着的。所以为s就设计成了一门异步的语言，不会做无畏的等待。任务可以分成两种，一种是同步任务另一种是异步任务
+
+> **任务队列**
+>
+> 1. 所有同步任务都在主线程上执行，形成一个执行栈（execution context stack) 。
+> 2. 主线程之外，还存在一个"任务队列”(task queue)。只要异步任务有了运行结果，就在”任务队列“之
+> 	中放置一个事件。
+> 3. 一旦“执行栈"中的所有同步任务执行完毕，系统就会读取"任务队列"，看看里面有哪些事件。那些对应的异步任务，于是结束等待状态，进入执行栈，开始执行。
+> 4. 主线程不断重复上面的第三步。
+
+主线程不断从任务队列中读取事件，这个过程是循环不断的，所以整个的这种运行机制又称为**事件循环**
+
+任务又分为宏任务和微任务
+
+**宏任务**：script（整体代码），setTimeout，setInterval，setImmediate，I/O，UI rendering
+
+**微任务**：process.nextTick，Promise，Object.observe，mutationObserver
+
+他们的执行顺序是
+
+1. 宏任务进入主线程，执行过程中会收集微任务加入微任务队列。
+2. 宏任务执行完成之后，立马执行微任务中的任务。微任务执行过程中将再次收集宏任务，并加入宏任务队
+  列。
+3. 反复执行1，2步骤
+
+![1670145812875](nodejs网络通信/1670145812875.png)
+
+
+
+#### nodejs中的时间循环
+
+![1670147114543](nodejs网络通信/1670147114543.png)
+
+上面的6个阶段为一个事件循环
+
++ **timers(定时器)**：此阶段执行那些由 setTimeout(） 和 setInterval(）调度的回调函数。
++ **I/O callbacks(I/O回调)**：此阶段会执行几乎所有的回调函数,除了 **close callbacks**(关闭回调) 和 那些由
+	**timers** 与 setImmediate(）调度的回调.
+	+ setimmediate约等于 setTimeout(cb,0)
++ idle(空转),prepare：此阶段只在内部使用
++ **poll(轮询)**：检索新的I/O事件;在恰当的时候Node会阻塞在这个阶段
++ check(检查)：setImmediate(）设置的回调会在此阶段被调用
++ close callbacks(关闭事件的回调):诸如 socket.on('close'，…）此类的回调在此阶段被调用
+
+在事件循环的每次运行之间,Node.js会检查它是否在等待异步1/O或定时器,如果没有的话就会自动关闭.
+
+> 如果event loop进入了poll阶段，且没有到期的定时器回调时，将会发生下面情况：
+>
+> + 如果poll queue不为空，event loop将同步的执行queue里的callback,直至queue为空，或执行的
+> 	callback到达系统上限;
+> + 如果poll queue为空，将会发生下面情况：
+> 	+ 如果代码已经被setImmediate()设定了callback,event loop将结束poll阶段进入check阶段，并执行
+> 		check阶段的queue (check阶段的queue是setimmediate设定的)
+> 	+ 如果代码没有设定setimmediate(callback),event loop将阻塞在该阶段等待callbacks加入poll
+> 		queue,一旦到达就立即执行
+> 
+> 如果event loop进入了poll阶段，且有到期的定时器回调时
+> 
+> + 如果poll queue进入空状态时(即poll 阶段为空闲状态)， event loop将检查timers,如果有1个或多个timers时间时间已经到达，event loop将按循环顺序进入timers 阶段，并执行timer queue.
 
 ## 文档
 
