@@ -2556,9 +2556,9 @@ export default createStore(reducers,composeWithDevTools(
 
 1. 一类特别的函数：只要是同样的输入（实参），必定会得到同样的输出，如`demo(1)==1`;
 2. 必须遵守以下的约束
-	- 不得改写参数数据
-	- 不会产生任何副作用，例如网络请求，输入和输出设备
-	- 不能调用Date.now()或者Math.random()等不纯的方法
+  - 不得改写参数数据
+  - 不会产生任何副作用，例如网络请求，输入和输出设备
+  - 不能调用Date.now()或者Math.random()等不纯的方法
 3. redux和reducer函数必须是一个纯函数
 
 # 总结及扩展
@@ -2851,3 +2851,106 @@ componentDidCatch(error, info) {
 		兄弟组件：消息订阅-发布、集中式管理
 		祖孙组件(跨级组件)：消息订阅-发布、集中式管理、conText(开发用的少，封装插件用的多)
 
+
+
+# React 优化思路
+
+## React 为什么需要优化？
+
+因为react中当某个组件状态发生变化的时候，会对整个组件树进行比遍历比较并进行更新，这样我们那些状态没有发生变化组件也会被遍历检查，这样就浪费了性能。
+
+## 如何进行优化
+
+### 将 变的部分 和 不变的部分 分离
+
+在 react 中边的部分有`state props context`，所以我们只需要将与这些属性相关的节点封装成一个组件，而静态或者说不变的节点也封装成一个组件这样就达到了分离的作用
+
+```jsx
+function App(){
+  let [value,setValue] = useState("");
+  return <div>
+  	<input value={value} onchange={(e)=>{setValue(e.target.value)}}></input>
+    <p>value is {value}</p>
+   	<ExpensiveCpn />
+  </div>
+}
+
+function ExpensiveCpn(){
+  let now = Date.now();
+	while(Date.now() - now < 1000){}
+  return <p>耗时组件</p>
+}
+```
+
+当我们在输入框中输入东西的时候，`ExpensiveCpns`虽然没有任何变化，但是还是会执行，根据 **将 变的部分 和不变的部分分离**来进行处理
+
+```jsx
+function App(){
+  let [value,setValue] = useState("");
+  return <div>
+  	<Input />
+   	<ExpensiveCpn />
+  </div>
+}
+
+function Input(){
+  let [value,setValue] = useState("");
+  return <div>
+  	<input value={value} onchange={(e)=>{setValue(e.target.value)}}></input>
+    <p>value is {value}</p>
+  </div>
+}
+```
+
+这样当我们再次在输入框中输入信息的时候，`ExpensiveCpns`就不会再被执行了
+
+还有一种情况是当耗时组件是被包裹在依赖state 的节点中的情况
+
+```jsx
+function App(){
+  let [value,setValue] = useState("");
+  return <div title={"input:" + value}>
+  	<input value={value} onchange={(e)=>{setValue(e.target.value)}}></input>
+    <p>value is {value}</p>
+   	<ExpensiveCpn />
+  </div>
+}
+```
+
+那么可以利用插槽来解决
+
+```jsx
+function App(){
+  return <InputWrap>
+    <ExpensiveCpn />
+  </InputWrap>
+}
+
+function InputWrap({childre}){
+  let [value,setValue] = useState("");
+  return <div title={"input:" + value}>
+  	<input value={value} onchange={(e)=>{setValue(e.target.value)}}></input>
+    <p>value is {value}</p>
+    {childre}
+  </div>
+}
+```
+
+当父组件可以满足 **将变的部分和不变的部分分离** 的情况下 子组件才可能命中性能优化
+
+### shouldComponentUpdate
+
+可以让组件是否进行更新
+
+```jsx
+shouldComponentUpdate(nextProps){
+  if(nextProps.list.title === this.props.list.title) {
+    return false;//不更新
+  }
+  return true;//更新
+}
+```
+
+这个方法可以让我们进行进行化的更新控制，但是比较麻烦，可以使用 `PureComponent`（类组件）或者`React.memo`(函数组件)，这个组件会自动帮我们进行 props 的第一层属性的判断 `nextProps.list === this.props.list` 的判断
+
+[21 个 React 性能优化技巧](https://www.infoq.cn/article/kve8xtrs-upphptq5luz)
