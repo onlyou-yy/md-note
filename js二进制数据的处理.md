@@ -473,7 +473,7 @@ fetch("https://picsum.photos/200/200")
 });
 ```
 
-我们通过 fetch API 从 网上 下载阿宝哥的头像，当请求成功后，把响应对象（Response）转换为 Blob 对象，然后使用 `URL.createObjectURL` 方法，创建 Object URL 并把它赋给 `img` 元素的 `src` 属性，从而实现图片的显示。
+我们通过 fetch API 从 网上 下载头像，当请求成功后，把响应对象（Response）转换为 Blob 对象，然后使用 `URL.createObjectURL` 方法，创建 Object URL 并把它赋给 `img` 元素的 `src` 属性，从而实现图片的显示。
 
 这些操作的当时一般都比较难使用，所以一般都是使用现成的包，如[`blob-util `](https://www.npmjs.com/package/blob-util)
 
