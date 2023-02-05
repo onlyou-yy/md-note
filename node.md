@@ -173,59 +173,6 @@ function(exports,require,module,__filename,__dirname){}
 > + `delete require.cache[k]`删除模块缓存（k：模块名或者模块的绝对路径）
 > + `require.ensure([],(require)=>{require("a")}})`webpack中独有的方法，在回调函数中使用`require`导入的模块将被独立打包，用于异步导入模块（也就是当使用模块的时候才会在head中插入script标签请求对应的模块文件）
 
-## package.json
-
-在node中可以通过`npm init`初始化一个package.json文件，CommonJS 的包规范允许我们将一组相关的模块组合在一起，形成一组完整的工机具，CommonJS 的包规范由包结构（用于组织包中的各种文件）和包描述文件（描述包的相关信息以供外部读取分析，[package.json](http://nodejs.cn/learn/the-package-json-guide)）两部分组成。
-
-在node环境中如果想访问某个package.json中的字段数据的话可以在`process.env.npm_package_字段名`中访问到(如果值是对象就要在最后加`_`)，比如访问的是`main`字段就可以是`process.env.npm_package_main`，如果是scripts就是`process.env.npm_package_scripts_`，如果是scripts下的dev就可以是`process.env.npm_package_scripts_dev`
-
-如果要在package.json中访问其中的字段的话可以使用`%npm_package_main%`来访问（如果是mac的话使用`$npm_package_main`）
-
-
-
-## NPM 基础
-
-`npm` 是 Node.js 标准的软件包管理器。详情看[这里](http://nodejs.cn/learn/an-introduction-to-the-npm-package-manager)
-
-**常用命令**
-
-```shell
-npm -V #查看版本
-npm #查看帮助
-npm search 包名  #搜索包
-npm remove 包名  #删除包
-npm install 包名 #安装下载包
-npm uninstall 包名 #卸载包
-npm config set registry # 设置镜像源
-```
-
-**修改镜像源**
-
-可以使用 npm 命令安装一个 cnpm 并设置其镜像源为 淘宝的源，之后就可以使用 `cnpm i 包名`进行安装
-
-```shell
-npm install -g cnpm --registry=http://registry.npm.taobao.org
-```
-
-或者使用 镜像源管理器（nrm） 直接修改
-
-```shell
-nrm use taobao
-```
-
-需要注意的是，node 搜索包的顺序，在引入模块的时候，如果使用的是 模块名 引入模块时会 首先在当前目录的 node_modules 中寻找是否含有该模块（根据模块中的package.json的main导入，如果没有就没有导入的是index.js），如果有则直接使用，如果没有则会去上一级的 node_modules 中寻找，如果有则直接使用，如果没有则会再去上一级目录中的  node_modules 中寻找，直到找到为止，如果找到磁盘的根目录里还是没有就会报错。
-
-
-
-**npm 安装git 上的包**
-
-```shell
-## https 协议安装
-npm i git+https://git@github.com:test.git
-## ssh 协议安装
-npm i git+ssh://git@github.com:test.git
-```
-
 
 
 ## Buffer 缓冲区

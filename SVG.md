@@ -220,7 +220,7 @@ xmlns="http://www.w3.org/2000/svg">
 
 + `stroke-width="10"`控制线的宽度
 + `stroke-linecap="round|butt|square"`控制线两端的形状 round 圆形，butt 方形（默认），square 增加方形``
-+ ``stroke-dasharray="10,15,10,5"`设置线为虚线，没两值为一组，分别表示 `每段虚线长,虚线的间距`
++ `stroke-dasharray="10,15,10,5"`设置线为虚线，没两值为一组，分别表示 `每段虚线长,虚线的间距`
 + `stroke-linejoin="miter|round|bevel"`描边转角的表现方式 miter（默认）方形，round 圆形，bevel 增加方形
 + `stroke-dashoffset="100"`虚线起点相对于路径起点的偏移量。
 

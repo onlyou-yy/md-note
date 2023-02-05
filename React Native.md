@@ -489,6 +489,78 @@ Button组件是一个简单的跨平台的按钮组件，它是`TouchableOpacity
 
 
 
+## 获取组件位置和大小
+
+### 获取设备屏幕的宽高
+
+```js
+import {Dimensions} from 'react-native';
+var {height, width} = Dimensions.get('window');
+```
+
+### 获取元素的大小和位置信息
+
+onLayout事件属性
+
+```jsx
+<View onLayout={this._onLayout}><View>
+```
+
+```js
+_onLayout = (e) => {
+	let {x,y,width,height} = e.nativeEvent.layout
+}
+// or
+import {NativeModules} from 'react-native'
+_onLayout = (e) => {
+  	e.persist();
+	 NativeModules.UIManager.measure(e.target, (x, y, width, height, pageX, pageY)=>{
+     	// todo
+	})
+}
+```
+
+x和y表示左上角的顶点坐标相对于父节点的左上角（0，0），pageX, pageY相对于屏幕的左上角（0，0）
+
+### 元素自带measure方法
+
+```jsx
+<View ref={(ref) => this.chatView = ref}></View>
+```
+
+在componentDidMount方法里添加一个定时器，定时器里再进行测量，否则拿到的数据为0
+
+```js
+setTimeOut(() => {
+  this.refs.chatView.measure((x,y,width,height,pageX, pageY) => {
+    //todo
+  })
+});
+```
+
+### 使用UIManager measure方法
+
+```js
+import {
+   UIManager,
+   findNodeHandle
+} from 'react-native'
+
+handleClick = () => {
+	UIManager.measure(findNodeHandle(this.buttonRef),(x,y,width,height,pageX,pageY)=>{
+		// todo
+ })
+}
+```
+
+```jsx
+<TouchableButton ref={(ref)=>this.buttonRef=ref} onPress={this.handleClick}/>
+```
+
+
+
+
+
 ## 网络请求
 
 在软件开发里面不存在跨域的问题（跨域主要是因为浏览ajax引擎的同源策略导致的，而在应用中不存在ajax引擎所以不会有跨越问题）。在react-native中网络请求不再是使用xhr了，而是使用[fetch](https://developer.mozilla.org/zh-CN/docs/Web/API/Fetch_API/Using_Fetch)来发送网络请求了。不过仍然可以使用第三方的网络请求框架如[frisbee](https://github.com/niftylettuce/frisbee)或是[axios](https://github.com/mzabriskie/axios)等。
@@ -727,6 +799,7 @@ export default App;
 + `navigation.push('Home') | navigation.push({name:'Home'})`跳转到Home页面，即使已经在Home页面了，也会进行跳转，并且将路由加入到路由栈中
 + `navigation.goBack()`返回上一路由
 + `navigation.popToTop()`回到栈顶路由
++ `navigation.replace()`替换当前路由为新路由
 + 还有其他的一些[API](https://reactnavigation.org/docs/navigation-prop)
 
 ```react
@@ -1464,6 +1537,151 @@ module.exports = {
 
 ## 屏幕适配方案
 
+React Native 中使用的尺寸单位是dp(一种基于屏幕密度的抽象单位。在每英寸160点的显示器上，1dp = 1px),而设计师使用的是px, 这两种尺寸如何换算呢？官方提供了PixelRatio
+
+```js
+import {PixelRatio} from 'react-native';
+const dp2px = dp=>PixelRatio.getPixelSizeForLayoutSize(dp);
+const px2dp = px=>PixelRatio.roundToNearestPixel(px);
+```
+
+设计师给你一个尺寸，比如100px*200px的View，按照下面的方式可实现设计还原：
+
+```jsx
+<View style={{width:px2dp(100),height:px2dp(200),backgroundColor:"red"}}></View>
+```
+
+在React Native 中 PixelRatio.get() 是获取屏幕密度的.
+
+```js
+80  dpi 上 PixelRatio.get()=0.5 1dp=0.5px
+160 dpi 上 PixelRatio.get()=1 1dp=1px (基准)
+320 dpi 上 PixelRatio.get()=2 1dp=2px
+```
+
+从上面的规律分析得出 react native 中 `1px=1dp/屏幕密度` 而`屏幕密度=PixelRatio.get()`所以 `1px=1dp/PixelRatio.get()`
+
+其实在正常情况下，`{width:100}`在不同屏幕上表现其实是一样的，只不过一般情况下UI设计师给到我们的UI并不是标准的尺寸（1dp = 1px 为标准情况，即UI尺寸为 375 x 667，PixelRatio.get() = 1），但是一般情况下移动端都是按照 IPhone 6 的尺寸进行设计的，所以尺寸就成了 750 x 1334，所以在给 React native 元素设置尺寸的时候就需要进行转化，比如真机使用的是 375 x 667，而设计稿为 750 x 1334 ，在设计稿中测得尺寸为 100px，那么我们应该写的尺寸应该 是 50dp
+
+### 转化设计稿大小
+
+将设计稿尺寸转成与开发使用机尺寸大小一样，这样就可以直接使用测量出来的尺寸。但是这样比较麻烦，因为每张设计图都需要进行转化，并且转化出来的图片可能会失真。
+
+### 根节点缩放
+
+将组件的根节点进行缩放，之后就能正常的按照设计稿进行尺寸设置，有两种模式
+
+**fixedWidth 模式**是保持原始宽高比缩放应用程序内容，缩放后应用程序内容在水平和垂直方向都填满播放器窗口，但只保持应用程序内容的原始宽度不变，高度可能会改变,简言之**宽度固定，高度自适应**。
+
+**fixedHeight 模式**是保持原始宽高比缩放应用程序内容，缩放后应用程序内容在水平和垂直方向都填满播放器窗口，但只保持应用程序内容的原始高度不变，宽度可能会改变,简言之**高度固定，宽度自适应**。
+
+```jsx
+import React, {Component, PropTypes} from 'react';
+import {
+    Dimensions,
+    PixelRatio,
+    Platform,
+    StatusBar,
+    View
+} from 'react-native';
+
+let props = {};
+export default class Resolution {
+    static get(useFixWidth = true){
+        return useFixWidth?{...props.fw}:{...props.fh}
+    }
+
+    static setDesignSize(dwidth=750,dheight=1336,dim="window"){
+        let designSize = {width:dwidth,height:dheight};
+
+        let navHeight = Platform.OS === 'android' ? StatusBar.currentHeight : 64;
+        let pxRatio = PixelRatio.get(dim);
+        let {width,height} = Dimensions.get(dim);
+        if(dim != "screen")height-=navHeight;
+        let w = PixelRatio.getPixelSizeForLayoutSize(width);
+        let h = PixelRatio.getPixelSizeForLayoutSize(height);
+
+        let fw_design_scale = designSize.width/w;
+        fw_width = designSize.width;
+        fw_height = h*fw_design_scale;
+        fw_scale = 1/pxRatio/fw_design_scale;
+
+        let fh_design_scale = designSize.height/h;
+        fh_width = w*fh_design_scale;
+        fh_height = designSize.height;
+        fh_scale = 1/pxRatio/fh_design_scale;
+
+        props.fw = {width:fw_width,height:fw_height,scale:fw_scale,navHeight};
+        props.fh = {width:fh_width,height:fh_height,scale:fh_scale,navHeight};
+    }
+
+    static FixWidthView = (p) => {
+        let {width,height,scale,navHeight} = props.fw;
+        return (
+            <View {...p} style={{
+              marginTop:navHeight,
+              width:width,
+              height:height,
+              backgroundColor: 'transparent',
+              transform:[{translateX:-width*.5},
+                         {translateY:-height*.5},
+                         {scale:scale},
+                         {translateX:width*.5},
+                         {translateY:height*.5}]
+            }}>
+            </View>
+        );
+    };
+
+    static FixHeightView = (p) => {
+        let {width,height,scale,navHeight} = props.fh;
+        return (
+            <View {...p} style={{
+              marginTop:navHeight,
+              width:width,
+              height:height,
+              backgroundColor: 'transparent',
+              transform:[{translateX:-width*.5},
+                         {translateY:-height*.5},
+                         {scale:scale},
+                         {translateX:width*.5},
+                         {translateY:height*.5}]
+            }}>
+                {p.children}
+            </View>
+        );
+    };
+};
+//init
+Resolution.setDesignSize();
+```
+
+使用
+
+```jsx
+<Resolution.FixWidthView style={styles.container}>
+  <Image source={require("./assets/bg_day.jpg")} style={{position:"absolute"}}/>
+  <Text style={styles.welcome}>
+    Welcome to React Native!
+  </Text>
+  <Text style={styles.instructions}>
+    To get started, edit index.ios.js
+  </Text>
+  <Text style={styles.instructions}>
+    Press Cmd+R to reload,{'\n'}
+    Cmd+D or shake for dev menu
+  </Text>
+</Resolution.FixWidthView>
+```
+
+
+
+### 使用rpx进行适配
+
+rpx 就是在横向上将屏幕分成 750 份，也就是在物理像素 375 x 667 的设备上 `1rpx = 375 / 750 * 1px = 0.5px`
+
+为了方便编写尺寸我们可以扩展一下啊 js 中的 Number 类。
+
 ```js
 const Dimensions = require('Dimensions');
 const window = Dimensions.get('window');//获取的尺寸不包括状态栏和底部虚拟菜单栏高度，screen 包括
@@ -1480,7 +1698,7 @@ class SizeFit{
 		this.rpx = this.windowWidth / standardSize;
 		this.px = this.rpx * 2;
 		this.rem = standardRem;
-		this.textScale = 1;
+		this.textScale = 1;//window.fontScale 是系统的字体缩放系数
 	}
 	static setRpx(number){
 		if(!isInit) SizeFit.initialize();
