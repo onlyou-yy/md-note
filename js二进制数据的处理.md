@@ -479,6 +479,56 @@ fetch("https://picsum.photos/200/200")
 
 
 
+## 下载字节流文件
+
+手动下载文件的时候一般来说，使用axios会一般会这样实现
+
+```js
+axios.get("https://picsum/photo/100/100").then(res=>{
+  let blob = new Blob([res.data]);
+  let blobURL = URL.createObjectURL(blob);
+  let filename = "1.png";
+  let a = document.createElement("a");
+  a.download = filename;
+  a.href blobURL;
+  a.click();
+  URL.revokeObjectURL(blobURL);
+})
+```
+
+由于后段返回的是字节流数据，返回的`res`数据是将是一堆乱码，因为在默认情况下浏览器会将数据当作是文本进行解析，随意最终经过浏览器处理之后接收到的数据就是一堆乱码，当后端返回的是一个文件数据的时候，正常来说我们应该要接收到一个`Blob`对象或者 二进制对象 才对。
+
+![image-20230217173310845](js二进制数据的处理/image-20230217173310845.png)
+
+那么可以通过设置`resposeType="blob"`或者`resposeType="ArrayBuffer"`来告诉浏览器当前请求的响应数据应该解析`Blob`或者`ArrayBuffer`
+
+```js
+axios({
+  method:"get",
+  url:"https://picsum/photo/100/100",
+  resposeType:"blob",// xhr 可以直接 xhr.responseType="blob"
+}).then(res=>{
+  let blob = new Blob([res.data]);
+  let blobURL = URL.createObjectURL(blob);
+  let filename = "1.png";
+  let a = document.createElement("a");
+  a.download = filename;
+  a.href blobURL;
+  a.click();
+  URL.revokeObjectURL(blobURL);
+})
+```
+
+**需要注意**：`resposeType`并不是设置在请求头的，同时`axios.get(url,null,{resposeType:'blob'})`也可能会不起作用，所以比较保险的操作是直接使用`axios({responseType:"blob"})`或者在请求拦截里面设置`config.responseType="blob"`，又或者在响应拦截里面设置`options.responseType="blob"`
+
+还有需要注意的地方，返回的`Blob`对象的type是由响应头的`Content-type`决定的，所以尽量确保`Content-Type`正确，还有就是如果要从响应头获取文件名，可以在`Content-Disposition`中解析获得，如果在响应头中获取不到这个字段，可以让后端设置一下`response.setHeader("Access-Control-Expose-Headers", "Content-Disposition")`；
+
+```js
+const filename = response.headers['content-disposition'].split(';')[1].split('=')[1];
+```
+
+
+
 ## 应用
 
 ### 图片压缩与上传
@@ -572,6 +622,8 @@ async function chunkedUpload() {
 [NodeJs 全栈创建多文件断点续传](https://juejin.cn/post/7015935144007729189)
 
 [前端大文件上传如何做到刷新续传？](https://www.zhihu.com/question/383701827)
+
+
 
 
 
