@@ -264,7 +264,7 @@ Ctrl+r:  将原来的插销重做一遍
 
 需要先安装`vim`插件
 
-![image-20221011112945738](/Users/gcb/Desktop/ljf_new/file/md-note/vscode的vim操作/image-20221011112945738-5458988.png)
+![image-20221011112945738](vscode的vim操作/image-20221011112945738-5458988.png)
 
 然后在运行命令
 

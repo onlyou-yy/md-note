@@ -284,9 +284,9 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
       console.log(item)
     },window)
     ```
-
+    
     （2）arr.map()
-
+    
     ```javascript
     //在不使用return返回的时候是和forEach一样的，这个函数会返回一个新的数组并且不用return返回的是undefined
     let arr=[1,2,3]
@@ -295,9 +295,9 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     },window)
     console.log(arr2);//[2,3,4]
     ```
-
+    
     （3）arr.filter()
-   
+       
     ```javascript
     //筛选出符合条件的数据，返回一个新数组，当回调函数返回的是true就留下
     let arr=[1,2,3]
@@ -306,9 +306,9 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     },window)
     console.log(arr2);//[2,3]
     ```
-   
+       
     （4）arr.some()
-   
+       
     ```javascript
     //在数组中找到满足条件的第一个值，找到了就返回true，并停止循环，其实与arr.includes(元素)差不多
     let arr=[1,2,3]
@@ -317,9 +317,9 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     },window)
     console.log(arr2);//true
     ```
-   
+       
     （5）arr.every()
-   
+       
     ```javascript
     //当数组中的元素全部满足条件时返回true，否则返回false
     let arr=[1,2,3]
@@ -328,13 +328,13 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     },window)
     console.log(arr2);//false
     ```
-   
+       
     （6）arr.find():找到并返回第一个符合条件的元素，没有就返回undefined
-   
+       
     （7）arr.findIndex():找到并返回第一个符合条件的元素的索引，没有就返回-1
-   
+       
     （8）arr.reduce()
-   
+       
     ```javascript
     //从左往右计算,同样接收两个参数，回调和初始值，但是回调的参数有四个
     //prev：上一个计算结果，默认为第一个元素
@@ -347,9 +347,9 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     })
     console.log(k);//6
     ```
-   
+       
     （9）arr.reduceRight()
-   
+       
     ```javascript
     //从右往左计算
     let arr=[2,2,3];
@@ -358,9 +358,9 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     })
     console.log(k);//6
     ```
-   
+       
     （10）for…of
-   
+       
     ```javascript
     //用于遍历带有接口（）的可遍历对象，一般为数组
     let a=[1,2,3];
@@ -380,9 +380,9 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     console.log(k);//[0,1] [1,2] [2,3]
     }
     ```
-   
+       
     （11）arr.flat(n);
-   
+       
     ```javascript
     //将多维数组拉平,n为要怕平的层数，n为infinity是拉平全部
     let arr=[1,[2,3],[4,[5,[6]]]];
@@ -390,9 +390,9 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     console.log(arr.flat(2))//[1, 2, 3, 4, 5, [6]]
     console.log(arr.flat(Infinity))//[1, 2, 3, 4, 5, 6]
     ```
-   
+       
     (13) flatMap
-   
+       
     ```js
     //和map方法相似，但是如果返回的是数组就会进行自动拉平操作
     let arr = ["hello world","jack and rocy"];
@@ -401,16 +401,17 @@ str.padEnd(长度，内容);//往后填充，这里的长度代表的是填充�
     })
     console.log(res);//["hello","world","jack","and","rocy"]
     ```
-   
+       
     （12）arr.fill();
-   
+       
     ```javascript
     //对数组进行填充arr.fill(内容，开始位置，接收位置);
     let arr=Array(10);
     console.log(arr.fill('k',3,5))//[empty × 3, "k", "k", empty × 5]
     ```
-   
-    
+
+
+​    
 
 ## **对象简洁语法**
 
@@ -994,11 +995,129 @@ class Array1 {
 console.log([] instanceof Array1);//true
 ```
 
-  ​    
+## iterator 迭代器
+
+使用户在容器对象例如链表或者数组上遍历的对象，使用该接口无需关心对象的内部实现细节
+
+在JavaScript中，迭代器就是一个具体的对象，这个对象需要符合迭代器协议
+
++ 迭代器协议定义了产生一系列值的标准
++ 在JavaScript中这个标准就是一个特定的next方法；
+
+next 方法有以下要求
+
++ 一个无参数或者一个参数的函数，返回一个应当拥有以下两个属性的对象
+	+ `done:boolean` 如果有下一个值则为 false，没有就为false
+	+ `value:any`  返回的值
+
+自定义一个迭代器
+
+```js
+const names = ['jack','neo','rocy'];
+function createArrayIterator(names){
+  let index = 0;
+  return {
+    next:function(){
+      if(index < arr.length){
+        return {done:false,value:arr[index++]}
+      }else{
+        return {done:true,value:undefined}
+      }
+    }
+  }
+}
+const namesIterator = createArrayIterator(names)
+console.log(namesIterator.next());
+console.log(namesIterator.next());
+```
+
+**可迭代对象**
+
+必须实现一个特定的方法`[Symbol.iterator]`，并且这个方法需要返回一个迭代器
+
+```js
+const infos = {
+  friends:['jack','neo','rocy'],
+  [Symbol.iterator](){
+    let index = 0;
+    return {
+      next:()=>{
+        if(index < this.friends.length){
+          return {done:false,value:this.friends[index++]}
+        }else{
+          return {done:true,value:undefined}
+        }
+      }
+    }
+  }
+}
+const namesIterator = infos[Symbol.iterator]()
+console.log(namesIterator.next());
+for(let item of infos){
+  console.log(item)
+}
+```
+
+如果想要用 `for..of` 来遍历对象可以这样写
+
+```js
+const infos = {
+  name:"july",
+  age:"30",
+  friends:['jack','neo','rocy'],
+  [Symbol.iterator](){
+    let index = 0;
+    const entries = Object.entries(this);
+    return {
+      next:()=>{
+        if(index < entries.length){
+          return {done:false,value:entries[index++]}
+        }else{
+          return {done:true,value:undefined}
+        }
+      }
+     	//迭代器中断时触发，如 break，return，throw等
+      return:()=>{
+        console.log("中断了");
+        return {done:true}
+      }
+    }
+  }
+}
+
+for(let item of infos){
+  console.log(item)
+  break
+}
+```
+
+> for ... of的循环内部实现机制其实就是iterator，它首先调用被遍历集合对象的 Symbol.iterator 方法，该方法返回一个迭代器对象，迭代器对象是可以拥有.next()方法的任何对象，然后，在 for ... of 的每次循环中，都将调用该迭代器对象上的 .next 方法。然后使用for i of打印出来的i也就是调用.next方法后得到的对象上的value属性。
+
+原生具备iterator接口的数据结构如下：
+
+- Array
+- Map
+- Set
+- String
+- TypedArray
+- 函数里的arguments对象
+- NodeList对象
+
+**应用**
+
+![1676712464487](es6/1676712464487.png)
+
+
 
 ## **generator（生成器）**
 
-为了解决异步深度嵌套的问题，一般会配合Promise使用
+生成器是ES6中新增的一种函数控制、使用的方案，它可以让我们更加灵活的控制函数什么时候继续执行、暂停执行等
+
+生成器函数也是一个函数，但是和普通的函数有一些区别：
+
++ 首先，生成器函数需要在function的后面加一个符号：
++ 其次，生成器函数可以通过yield关键字来控制函数的执行流程：
++ 最后，生成器函数的返回值是一个Generator（生成器）
 
 ```javascript
 //定义function * generator(){yield 内容}，yield相当于return
@@ -1013,17 +1132,26 @@ console.log(g.next());//{value: 'welcome', done: false}
 console.log(g.next());//{value: 'to', done: false}
 console.log(g.next());//{value: 'this', done: true}
 //继续执行next将会返回{value: undefined, done: true}，而且之后的next都会返回这个，因为g中的语句已经全部被执行完毕了状态不再改变
+```
 
-//以下可以将g看做是数组，元素就是yield后面的内容
-//也可以使用for of去遍历，但是return的不会出现
-for(let val of g){
-    console.log(val)//'welcome' 'to'
+`next`方法也可以传入参数，并且也有中断的方法`return throw`
+
+```js
+function* genTest(){
+  console.log("names:");
+  const names = "";
+  const name1 = yield names;//调用next传入的 jack 被 name1 接收
+  const name2 = yield name1;//调用next传入的 rocy 被 name2 接收
+  const name3 = yield name2;//调用throw传入的 错误对象将会报错
+  const name4 = yield name3;//调用return将会停止迭代
+  const name4 = yield name4;
 }
-//也可以使用解构赋值或者扩展运算符获取
-let [a,b]=g;
-console.log(a,b);//'welcome' 'to'
-console.log(...g)//'welcome' 'to'
-console.log(Array.from(g))//['welcome','to']
+const gen = genTest();
+console.log(gen.next('jack'));//{value: '', done: false}
+console.log(gen.next('rocy'));//{value: 'jack', done: false}
+console.log(gen.throw(new Error("err")));
+console.log(gen.return());
+console.log(gen.next());
 ```
 
 配合axios发送请求
@@ -1038,62 +1166,48 @@ let username=g1.next().value;
 g1.next(username).value;
 ```
 
-其实 generator 可以理解成是一个返回 遍历器对象（interator） 的函数，任何数据结构只要部署了Iterator接口，就可以完成遍历操作
+其实 generator 可以理解成是一个返回 遍历器对象（iterator） 的函数，任何数据结构只要部署了Iterator接口，就可以完成遍历操作
 
-**iterator的结构：** 它有**next**方法，该方法返回一个包含**value**和**done**两个属性的对象（我们假设叫result）。**value**是迭代的值，后者是表明迭代是否完成的标志。true表示迭代完成，false表示没有。iterator内部有指向迭代位置的指针，每次调用**next**，自动移动指针并返回相应的result。
+`yield* 可迭代对象`
 
-原生具备iterator接口的数据结构如下：
-
-- Array
-- Map
-- Set
-- String
-- TypedArray
-- 函数里的arguments对象
-- NodeList对象
-
-使用Symbol.iterator接口生成iterator迭代器来遍历数组的过程为
+使用`yield*` 可以快速生成迭代器对象
 
 ```js
-let arr = ['a','b','c'];
-
-let iter = arr[Symbol.iterator]();
-
-iter.next() // { value: 'a', done: false }
-iter.next() // { value: 'b', done: false }
-iter.next() // { value: 'c', done: false }
-iter.next() // { value: undefined, done: true }
-```
-
-**for ... of的循环内部实现机制其实就是iterator，它首先调用被遍历集合对象的 Symbol.iterator 方法，该方法返回一个迭代器对象，迭代器对象是可以拥有.next()方法的任何对象，然后，在 for ... of 的每次循环中，都将调用该迭代器对象上的 .next 方法。然后使用for i of打印出来的i也就是调用.next方法后得到的对象上的value属性。**
-
-对于原生不具备iterator接口的数据结构，比如Object，我们可以采用自定义的方式来创建一个遍历器。
-
-比如，我们可以自定义一个iterator来遍历对象：
-
-```javascript
-let obj = {a: "hello", b: "world"};
-// 自定义迭代器
-function createIterator(items) {
-    let keyArr = Object.keys(items);
-    let i = 0;
-    return {
-        next: function () {
-            let done = (i >= keyArr.length);
-            let value = !done ? items[keyArr[i++]] : undefined;
-            return {
-                value: value,
-                done: done,
-            };
-        }
-    };
+function* genNames(arr){
+  for(let i = 0;i < arr.length;i++){
+    yield arr[i];
+  }
 }
-
-let iterator = createIterator(obj);
-console.log(iterator.next()); // "{ value: 'hello', done: false }"
-console.log(iterator.next());  // "{ value: 'world', done: false }"
-console.log(iterator.next());  // "{ value: undefined, done: true }"
 ```
+
+可以直接通过`yield*` 改成
+
+```js
+function* genNames(arr){
+  yield* arr
+}
+```
+
+也可以用在对象的生成器方法中
+
+```js
+class Person{
+  constructor(){
+    this.friends = friends;
+  }
+  *[Symbol.iterator](){
+    yield* this.friends;
+  }
+}
+let p = new Person(['jack','neo','rocy']);
+for(let item of p){
+  console.log(item);
+}
+```
+
+
+
+
 
 > 关于异步，解决方案有
 >
@@ -1105,6 +1219,8 @@ console.log(iterator.next());  // "{ value: undefined, done: true }"
 >  	6. Async/await
 >
 > [链接1](https://www.cnblogs.com/chengxs/p/6497575.html)	[链接2](https://www.cnblogs.com/chris-oil/p/8733249.html)	[链接3](https://www.cnblogs.com/libo0125ok/p/8038073.html)    [链接4](https://juejin.cn/post/7082753409060716574)
+
+
 
 ## **async    await**
 
