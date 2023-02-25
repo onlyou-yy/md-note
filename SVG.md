@@ -61,6 +61,148 @@ codebase="http://www.adobe.com/svg/viewer/install/" />
 
 
 
+## 在 SVG 中写html
+
+**`<foreignObject>`** 元素允许包含来自不同的 XML 命名空间的元素。在浏览器的上下文中，很可能是 XHTML / HTML。
+
+也就是说我们其实可以将一些HTML代码写入到 svg 中进行显示
+
+```html
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    polygon { fill: black }
+
+    div {
+      color: white;
+      font:18px serif;
+      height: 100%;
+      overflow: auto;
+    }
+  </style>
+
+  <polygon points="5,5 195,10 185,185 10,195" />
+
+  <foreignObject x="20" y="20" width="160" height="160">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <img class="showImg" src="https://picsum.photos/seed/picsum/200/300" width="100" height="100">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+      Sed mollis mollis mi ut ultricies. Nullam magna ipsum,
+      porta vel dui convallis, rutrum imperdiet eros. Aliquam
+      erat volutpat.
+    </div>
+  </foreignObject>
+</svg>
+```
+
+
+
+## 将 SVG 转换成图片
+
+可以将 SVG 代码转换成字符串内容，然后再将这个字符串转成 base64 之后下载下来
+
+```js
+const SVGString = `
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<path id="my_path" d="M 20,20 C 40,40 80,40 100,20" fill="transparent" />
+<text>
+  <textPath xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#my_path">
+    This text follows a curve.
+  </textPath>
+</text>
+</svg>
+`
+const base64Url = 'data:image/svg+xml;base64,' + btoa(SVGString);
+let a = document.createElement('a')
+a.download = `text.png`
+a.href = base64Url
+a.click()
+```
+
+不过需要注意，`btoa`函数是将字符串转换成`ACSII`码，不过是不支持中文字符的，而且也不支持`image`和`img`
+
+可以使用`XMLSerializer`对象的`serializeToString(node)`方法来构建一个代表 DOM树的 XML 字符串。之后再将这个字符串转换成 base64 字符串，之后使用`Image`对象来加载图像，之后将图像绘制在canvas上再保存为图片
+
+> 无论是`Image`对象还是`<img>`元素都是无法直接显示转化后的 base64 地址的图片的，也不能直接下载，需要通过canvas进行解析处理
+
+```js
+/**
+* 将svg导出成图片
+* @param node svg节点 => document.querySelector('svg')
+* @param name 生成的图片名称
+* @param width 生成的图片宽度
+* @param height 生成的图片高度
+* @param type 生成的图片类型
+*/
+function covertSVG2Image(node, name, width, height, type = 'png'){
+  let serializer = new XMLSerializer()
+  let htmlString = serializer.serializeToString(node);
+  let source = '<?xml version="1.0" standalone="no"?>\r\n' + htmlString
+  let image = new Image()
+  image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(source)
+  let canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  let context = canvas.getContext('2d')
+  context.fillStyle = '#fff'
+  context.fillRect(0, 0, 10000, 10000)
+  image.onload = function () {
+    context.drawImage(image, 0, 0)
+    let a = document.createElement('a')
+    a.download = `${name}.${type}`
+    a.href = canvas.toDataURL(`image/${type}`)
+    a.click()
+  }
+}
+```
+
+还有一个问题就是当，svg 中有图片元素时，svg 生成的图片文件并不能显示这些图片，因为图片的链接仅仅是一个文本字符串，所以图片文件是不能根据这个链接来显示图片的。
+
+可以将图片链接转换成 dataURL 之后再存储为图片文件。 
+
+```html
+<svg viewBox="0 0 200 200">
+  <style>
+    .showImg{
+      border-radius:50%;
+    }
+  </style>
+  <foreignObject x="20" y="20" width="160" height="160">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <img class="showImg" src="https://picsum.photos/seed/picsum/200/300" width="100" height="100">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+      Sed mollis mollis mi ut ultricies. Nullam magna ipsum,
+      porta vel dui convallis, rutrum imperdiet eros. Aliquam
+      erat volutpat.
+    </div>
+  </foreignObject>
+ <image class="showImage" xlink:href="https://picsum.photos/seed/picsum/200/300" x="0" y="0" height="40" width="40" />
+</svg>
+```
+
+> **style 样式也需要写到 SVG 中**，不然很可能会丢失样式导致显示不对
+
+```js
+fetch('https://picsum.photos/seed/picsum/200/300?'+ Date.now())
+  .then(response => response.blob())
+  .then(data => {
+  let fileReader = new FileReader();
+  fileReader.onloadend = function(){
+    let imgs = document.querySelectorAll(".showImg")
+    let image = document.querySelector(".showImage")
+    for(let img of imgs){
+      img.src =fileReader.result;
+    }
+    image.setAttribute("xlink:href",fileReader.result)
+  	covertSVG2Image(document.querySelector("svg"),"fff",300,300,"jpg")
+  }
+  fileReader.readAsDataURL(data)
+});
+```
+
+
+
+
+
 ## 绘制图形
 
 svg 中的形状标签有 `矩形 <rect>,圆形 <circle>,椭圆 <ellipse>,线 <line>,折线 <polyline>,多边形 <polygon>,路径 <path>`

@@ -625,6 +625,14 @@ async function chunkedUpload() {
 
 
 
+## 推荐工具
+
++ `html2canvas`：实现截图，dom生成图片的功能
++ `gif.js`：合成gif动图
++ `jszip.js`：生成和解析压缩包
++ `file-saver`：保存文件
++ `exceljs`：生成和解析excel文件
+
 
 
 ## 参考：

@@ -212,7 +212,7 @@ let timeId = setInterval(()=>{
 
 ## Canvas动画
 
-因为Canvas 像素话的特点，图像在被绘制到画布上之后就不能被操作了，所以想要实现Canvas的动画的话，就需要按照`清屏->更新->渲染`的步骤重复改变画布上的内容才行。这样的话就可以选择使用循环、setTimeout，setInterval、equestAnimationFrame(fn) （fn接收一个参数，是执行的时间）方法实现重复渲染更新了。
+因为Canvas 像素话的特点，图像在被绘制到画布上之后就不能被操作了，所以想要实现Canvas的动画的话，就需要按照`清屏->更新->渲染`的步骤重复改变画布上的内容才行。这样的话就可以选择使用循环、setTimeout，setInterval、requestAnimationFrame(fn) （fn接收一个参数，是执行的时间）方法实现重复渲染更新了。
 
 > #### requestAnimationFrame(fn) 比起 setTimeout、setInterval的优势主要有两点：
 >
@@ -295,6 +295,104 @@ img.src = DataURL;
 
 
 在实际个开发过程中其实是很少会自己写原生的 canvas 来实现效果，除了前端压缩已以及做简单水印可以自己写之外一般都会使用 canvas 的库来实现，web前端使用到 canvas 地方一般都是图表，而做图表的库可以使用`echarts.js`，如果要使用 canvas 做图像开发的话可以选择`Knova`或者[Fabric.js](http://jspang.com/detailed?id=20)
+
+
+
+## 将HTML绘制到Canvas
+
+HTML 页面虽然不能直接绘制到 Canvas 上，但是SVG可以转成图片并绘制到canvas上，而且 SVG 是可以通过`foreignObject`来内嵌 html 代码，所以我们只需要在 SVG 上内嵌自己的HTML 代码，之后再将SVG 转化成图片之后绘制到Canvas上即可
+
+```html
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    img{
+      border-radius:50%;
+    }
+  </style>
+  <foreignObject x="20" y="20" width="160" height="160">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <img class="showImg" src="https://picsum.photos/seed/picsum/200/300" width="100" height="100">
+      时代峰峻哦啊睡觉哦发送的地方怕送发票开店铺上的佛啊睡觉哦的佛阿斯顿发
+      Lorem ipsum dolor sit amet consectetur adipisicing elit. Neque cum exercitationem quia provident molestias, omnis perspiciatis rerum ducimus. Sint ab ullam cupiditate molestias? Consequatur itaque soluta perferendis sapiente aspernatur ad.
+    </div>
+  </foreignObject>
+</svg>
+```
+
+> 需要注意 图片链接协议转化成 DataURL
+
+```js
+fetch('https://picsum.photos/seed/picsum/200/300?'+ Date.now())
+  .then(response => response.blob())
+  .then(data => {
+  let fileReader = new FileReader();
+  fileReader.onloadend = function(){
+    let imgs = document.querySelectorAll(".showImg")
+    for(let img of imgs){
+      img.src =fileReader.result;
+    }
+    covertSVG2Image(document.querySelector("svg"),"fff",300,300,"jpg")
+  }
+  fileReader.readAsDataURL(data)
+});
+function covertSVG2Image(node, name, width, height, type = 'png'){
+  let serializer = new XMLSerializer()
+  let htmlString = serializer.serializeToString(node);
+  let source = '<?xml version="1.0" standalone="no"?>\r\n' + htmlString
+  let image = new Image()
+  image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(source)
+  let canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  let context = canvas.getContext('2d')
+  context.fillStyle = '#fff'
+  context.fillRect(0, 0, 10000, 10000)
+  image.onload = function () {
+    context.drawImage(image, 0, 0)
+  }
+  document.body.appendChild(canvas)
+}
+```
+
+
+
+## 其他问题
+
+**Html2canvas 图片跨域问题**
+
+第一种：后端需要在服务器IIS上的HTTP响应标头设置，最简单粗暴的方法就是全部设置成*，不过这样安全性也低，自己可以根据自己需求设置：
+
+```js
+access-control-allow-credentials:true
+Access-Control-Allow-Headers:*
+access-control-allow-origin:*
+```
+
+第二种：在img标签上设置 `crossorigin="anonymous"` 属性，但是这样还是不行的，还是会报跨域问题，最后在src图片地址后面加上时间戳
+
+```html
+<img :src="staffQrCodeDialogBg1 + '?' + new Date().getTime()" alt="" crossOrigin="anonymous" />
+```
+
+如果还是不行可以将 图片下载下来之后 转化成 DataURL
+
+```js
+let img = new Image();
+img.crossOrigin = "anonymous"
+img.onload = function(){
+  let canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  let ctx = canvas.getContext("2d");
+  ctx.drawImage(img,0,0);
+  let url = canvas.toDataURL("image/png");
+  imgEl.src = url;
+}
+```
+
+**保存的图片比较模糊**
+
+如果保存的图片模糊，大概率是因为在绘制的时候尺寸进行了压缩，可将要保存的元素的 图片（是img元素，不是保存下来的图片）的尺寸设置得大点，这样就没那么容易模糊
 
 
 

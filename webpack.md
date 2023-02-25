@@ -640,6 +640,39 @@ module.exports={
 }
 ```
 
+还可以使用`html-webpack-externals-plugin`插件来引入
+
+```js
+// ...
+const HtmlWebpackExternalsPlugin = require('html-webpack-externals-plugin');
+
+const commonConfig = {
+  // ...
+	plugins: [
+		// ...
+		new HtmlWebpackExternalsPlugin({
+			externals: [
+				{
+					module: 'react', // 模块名称
+					entry: 'https://11.url.cn/now/lib/16.2.0/react.min.js', // 引入的cdn
+					global: 'React', // 创建一个全局对象 React
+				},
+				{
+					module: 'react-dom',
+					entry: 'https://11.url.cn/now/lib/16.2.0/react-dom.min.js',
+					global: 'ReactDOM',
+				},
+			]
+		}),
+	],
+	// ...
+}
+```
+
+
+
+
+
 #### 压缩js，移除console.log
 
 默认在`mode:production`时就会压缩。
@@ -1429,19 +1462,23 @@ module.exports = {
 ```js
 const {resolve} = require("path");
 module.exports = {
-    entry:{
-        main:"./src/js/index.js",
-        test:"./src/js/test.js",
-    },
-    output:{
-        filename:"js/[name].[contenthash].[ext]",
-        path:resolve(__dirname,"dist")
-    },
-    optimization:{
-        splitChunks:{
-            chunks:"all"
-        }
+  entry:{
+    main:"./src/js/index.js",
+    test:"./src/js/test.js",
+  },
+  output:{
+    filename:"js/[name].[contenthash].[ext]",
+    path:resolve(__dirname,"dist")
+  },
+  optimization:{
+    splitChunks:{
+      chunks:"all",
+			cacheGroups:{//自定打包出来的文件名字需要配置这个
+        vendors:false,
+        default:false,
+      }
     }
+  }
 }
 ```
 
