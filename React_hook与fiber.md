@@ -125,7 +125,11 @@ window.addEventListener('message',function(event){
 }, false);
 ```
 
+[浅谈MessageChannel](https://zhuanlan.zhihu.com/p/432726048)
 
+[React Scheduler 为什么使用 MessageChannel 实现](https://juejin.cn/post/6953804914715803678)
+
+[【React Scheduler源码第三篇】React Scheduler原理及手写源码](https://juejin.cn/post/7140642609806082061)
 
 ## 链表
 

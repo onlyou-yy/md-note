@@ -47,6 +47,8 @@ standalone="no" 意味着 SVG 文档会引用一个外部文件 sss- 在这里�
 svg可以直接插入在 HTML 中，也可以当成是普通的图片一样由`<img src="test.svg" />`进行引入，也可以使用`<embed>、<object> 、 <iframe>`进行引入使用如
 
 ```html
+<img src="test.svg" />
+
 <embed src="rect.svg" width="300" height="100" 
 type="image/svg+xml"
 pluginspage="http://www.adobe.com/svg/viewer/install/" />
@@ -103,7 +105,7 @@ codebase="http://www.adobe.com/svg/viewer/install/" />
 ```js
 const SVGString = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-<path id="my_path" d="M 20,20 C 40,40 80,40 100,20" fill="transparent" />
+<path id="my_path" d="M 20,20 C 40,40 80,40 100,20" fill="transparent"></path>
 <text>
   <textPath xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#my_path">
     This text follows a curve.
@@ -118,11 +120,21 @@ a.href = base64Url
 a.click()
 ```
 
-不过需要注意，`btoa`函数是将字符串转换成`ACSII`码，不过是不支持中文字符的，而且也不支持`image`和`img`
+不过需要注意，`btoa`函数是将字符串转换成`ACSII`码，不过是不支持中文字符的
 
-可以使用`XMLSerializer`对象的`serializeToString(node)`方法来构建一个代表 DOM树的 XML 字符串。之后再将这个字符串转换成 base64 字符串，之后使用`Image`对象来加载图像，之后将图像绘制在canvas上再保存为图片
+在有中文的情况下可以使用 `encodeURIComponent`对字符床进行编码，不过需要注意的是dataURL的描述类型也要修改
+
+```js
+const base64Url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(SVGString);
+```
+
+> 还有需要注意的是，我们转化的文件类型是`xml`，所以我们字符串的内容需要按照 `xml`的文件规范，在`xml`文件中标签必须成对出现，也就是不能有单标签和自闭合标签，比如 `<img src="" />`必须写出`<img src=""></img>`
+
+也可以使用`XMLSerializer`对象的`serializeToString(node)`方法来构建一个代表 DOM树的 XML 字符串。之后再将这个字符串转换成 base64 字符串，之后使用`Image`对象来加载图像，之后将图像绘制在canvas上再保存为图片
 
 > 无论是`Image`对象还是`<img>`元素都是无法直接显示转化后的 base64 地址的图片的，也不能直接下载，需要通过canvas进行解析处理
+>
+> **扩展**：`DOMParser`可以将字符串转换成 DOM 
 
 ```js
 /**
@@ -155,6 +167,25 @@ function covertSVG2Image(node, name, width, height, type = 'png'){
 }
 ```
 
+除了转成 DataURL 之外还可以转成 svg 文件之后通过 img 进行渲染下载
+
+```js
+function downloadSVGFile(){
+  let fileContent = `<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">` + SVGString
+  let file = new File([fileContent],"test.svg",{type:"image/svg+xml;charset=utf-8"});
+  let url = URL.createObjectURL(file);
+  let image = new Image()
+  image.src = url
+  //通过 canvas 加载生成图片
+  //。。。。。。
+  //let a = document.createElement('a')
+  //a.download = `test.svg`
+  //a.href = url
+  //a.click()
+  //document.body.appendChild(image)
+}
+```
+
 还有一个问题就是当，svg 中有图片元素时，svg 生成的图片文件并不能显示这些图片，因为图片的链接仅仅是一个文本字符串，所以图片文件是不能根据这个链接来显示图片的。
 
 可以将图片链接转换成 dataURL 之后再存储为图片文件。 
@@ -168,14 +199,14 @@ function covertSVG2Image(node, name, width, height, type = 'png'){
   </style>
   <foreignObject x="20" y="20" width="160" height="160">
     <div xmlns="http://www.w3.org/1999/xhtml">
-      <img class="showImg" src="https://picsum.photos/seed/picsum/200/300" width="100" height="100">
+      <img class="showImg" src="https://picsum.photos/seed/picsum/200/300" width="100" height="100"></img>
       Lorem ipsum dolor sit amet, consectetur adipiscing elit.
       Sed mollis mollis mi ut ultricies. Nullam magna ipsum,
       porta vel dui convallis, rutrum imperdiet eros. Aliquam
       erat volutpat.
     </div>
   </foreignObject>
- <image class="showImage" xlink:href="https://picsum.photos/seed/picsum/200/300" x="0" y="0" height="40" width="40" />
+	<image class="showImage" xlink:href="https://picsum.photos/seed/picsum/200/300" x="0" y="0" height="40" width="40"></image>
 </svg>
 ```
 
@@ -198,8 +229,6 @@ fetch('https://picsum.photos/seed/picsum/200/300?'+ Date.now())
   fileReader.readAsDataURL(data)
 });
 ```
-
-
 
 
 

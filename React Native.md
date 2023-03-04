@@ -312,6 +312,22 @@ https://github.com/qiuxiang/react-native-amap-geolocation/tree/v1.0.0/docs
 
 
 
+**开发时真机调试接收不到消息推送**
+
+先检查一下消息推送证书有没有过期，过期了就去开发者后台重新下载一个并下载安装（只需要下载安装生产版本的就好，沙盒版本的可以用在开发环境，生产版本的可以用在开发环境也可以用在生产环境）。
+
+之后生成新的 .p12 文件，设置验证密码为 1234，然后将 .p12 文件和验证密码发给后端进行配置
+
+如果还是不行就尝试一下，不同数据线链接进行打包，而是使用 archer 打包生产包，然后使用app的下载链接进行下载安装（这种方式打包出来的是使用生产版本的证书，而使用数据线直接打包使用的应该是开发环境的证书）
+
+![img](React Native/wps1.jpg) 
+
+ https://www.jianshu.com/p/062cee6fa136
+
+https://www.jianshu.com/p/fc962db539e6
+
+https://www.jianshu.com/p/2eac49af58bf
+
 
 
 ## 关于安装第三方库

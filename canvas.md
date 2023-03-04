@@ -142,7 +142,13 @@ let timeId = setInterval(()=>{
 + `ctx.drawImage(imgObj,x,y,w,h)`将图片加载在 x，y 处，并设置宽高，会缩放。`ctx.imageSmoothingEnabled = false;`可以使用这个控制是否开启平滑缩放
 + `ctx.drawImage(imgObj,x,y,w,h,clipX,clipY,clipW,clipH)`前4个是定义图像源的切片位置和大小，后4个则是定义切片的目标显示位置和大小。将图片进行切片。
 
+### 图片跨域
+
 **imgObj** 可以是 `Image`对象`new Image()`（但是在获取数据的时候可能会出现跨域的问题，这时候可以为img添加`img.crossOrigin = 'anonymous';`属性解决跨域问题），也可以是`HTMLImageElement`(`<img>`)，`HTMLVideoElement`(`<video>`)，`<canvas>`对象。
+
+[一个关于image访问图片跨域的问题](https://juejin.cn/post/6844903795726483463)
+
+[Image跨域问题](https://www.jianshu.com/p/40567c0500ba)
 
 > `ImageBitmap`是一个高性能的位图，可以低延迟地绘制，它可以从上述的所有源以及其它几种源中生成。
 >
