@@ -1,24 +1,24 @@
 ## http相关
 
-## 1. 前后台交互的基本过程
+### 1. 前后台交互的基本过程
 
 1. 前后应用从浏览器端向服务器发送HTTP请求(请求报文)
 2. 后台服务器接收到请求后, 调度服务器应用处理请求, 向浏览器端返回HTTP响应(响应报文)
 3. 浏览器端接收到响应, 解析显示响应体/调用监视回调
 
-## 2. HTTP请求报文
+### 2. HTTP请求报文
 
 1. 请求行: 请求方式/url
 2. 多个请求头: 一个请求头由 name:value 组成, 如Host/Cookie/Content-Type头
 3. 请求体
 
-## 3. HTTP响应报文
+### 3. HTTP响应报文
 
 1. 响应行: 响应状态码/对应的文本
 2. 多个响应头: 如 Content-Type / Set-Cookie 头
 3. 响应体
 
-## 4. post请求体文本参数格式
+### 4. post请求体文本参数格式
 
 1. Content-Type: application/x-www-form-urlencoded;charset=utf-8
     用于键值对参数，参数的键值用=连接, 参数之间用&连接
@@ -27,7 +27,7 @@
     用于json字符串参数
     例如: {"name": "%E5%B0%8F%E6%98%8E", "age": 12}
 
-## 5. 常见响应状态码
+### 5. 常见响应状态码
 
 ```
 200	OK                     请求成功。一般用于GET与POST请求
@@ -40,14 +40,14 @@
 500 Internal Server Error  服务器内部错误，无法完成请求
 ```
 
-## 6. 不同类型的请求及其作用:
+### 6. 不同类型的请求及其作用:
 
 1. GET: 从服务器端读取数据
 2. POST: 向服务器端添加新数据
 3. PUT: 更新服务器端已经数据
 4. DELETE: 删除服务器端数据
 
-## 7. API的分类
+### 7. API的分类
 
 1. **REST API:    restful**
     发送请求进行CRUD哪个操作由请求方式来决定
@@ -59,7 +59,7 @@
     一般只有GET/POST
     测试: 可以使用json-server快速搭建模拟的rest api 接口
 
-### json-server 模拟 REST 方格的 API
+#### json-server 模拟 REST 方格的 API
 
 1. 安装
 
@@ -109,13 +109,13 @@ axios.delete("http://localhost:4000/posts/2").then(res=>{
 
 
 
-## 8. 理解XHR
+### 8. 理解XHR
 
 - 使用XMLHttpRequest (XHR)对象可以与服务器交互, 也就是发送ajax请求
 - 前端可以获取到数据，而无需让整个的页面刷新。
 - 这使得Web页面可以只更新页面的局部，而不影响用户的操作。
 
-## 9. 区别ajax请求与一般HTTP请求
+### 9. 区别ajax请求与一般HTTP请求
 
 - ajax请求是一种特别的http请求: 只有通过XHR/fetch发送的是ajax请求, 其它都是一般HTTP请求
 - 对服务器端来说, 没有任何区别, 区别在浏览器端
@@ -124,14 +124,14 @@ axios.delete("http://localhost:4000/posts/2").then(res=>{
 	- 一般请求: 浏览器一般会直接显示响应体数据, 也就是我们常说的刷新/跳转页面
 	- ajax请求: 浏览器不会对界面进行任何更新操作, 只是调用监视的回调函数并传入响应相关数据
 
-## 10. 使用XHR封装一个发ajax请求的通用函数
+### 10. 使用XHR封装一个发ajax请求的通用函数
 
 - 函数的返回值为promise, 成功的结果为response, 异常的结果为error
 - 能处理多种类型的请求: GET/POST/PUT/DELETE
 - 函数的参数为一个配置对象: url/method/params/data
 - 响应json数据自动解析为了js
 
-### XHR 的 API
+#### XHR 的 API
 
 + status 响应的状态吗
 + statusText 响应状态文本
@@ -155,7 +155,7 @@ axios.delete("http://localhost:4000/posts/2").then(res=>{
 
 
 
-### 使用 XHR 封装一个简单版本的 axios
+#### 使用 XHR 封装一个简单版本的 axios
 
 函数接收一个配置数据，返回一个promise对象，成功结果为response，失败结果为error，可以处理 GET/POST/PUT/DELETE 请求方式，并且将相应的 json 数据自动解析为 js
 
@@ -215,7 +215,7 @@ function axios({
 
 
 
-## 11. axios的特点
+### 11. axios的特点
 
 - 基于promise的封装XHR的异步ajax请求库
 - 浏览器端/node端都可以使用
@@ -224,7 +224,7 @@ function axios({
 - 请求/响应数据转换
 - 批量发送多个请求
 
-## 12. axios常用语法
+### 12. axios常用语法
 
 ```
 axios(config): 通用/最本质的发任意类型请求的方式
@@ -250,7 +250,7 @@ axios.spread(): 用来指定接收所有成功数据的回调函数的方法
 
  
 
-### config 全配置
+#### config 全配置
 
 ```js
 {
@@ -373,6 +373,7 @@ axios.spread(): 用来指定接收所有成功数据的回调函数的方法
   // 'proxy' 定义代理服务器的主机名称和端口
   // `auth` 表示 HTTP 基础验证应当用于连接代理，并提供凭据
   // 这将会设置一个 `Proxy-Authorization` 头，覆写掉已有的通过使用 `header` 设置的自定义 `Proxy-Authorization` 头。
+ 	// 会将请求发送到代理地址，由代理的服务器发起请求获取到数据之后返回，前提是你得有这个代理服务器。
   proxy: {
     host: '127.0.0.1',
     port: 9000,
@@ -650,3 +651,11 @@ export function request(config){
     return instence1(config)
 }
 ```
+
+
+
+## 参考
+
+[一篇拒绝低级封装axios的文章](https://juejin.cn/post/7173670666326474783#heading-14)
+
+[结合Typescript和Axios源码，设计一套实用的API层架构](https://juejin.cn/post/7131759714458664990#heading-19)

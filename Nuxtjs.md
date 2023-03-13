@@ -424,7 +424,7 @@ export default {
 
 asyncData 方法是nuxt 提供给我们的在组件被初始化前去加载准备数据的方法，但需要**注意**的是由于`asyncData`方法是在组件 **初始化** 前被调用的，所以在方法内是没有办法通过 `this` 来引用组件的实例对象。
 
-asyncData(context,callback) 接收两个参数，第一个是当前主键的执行上下文（包括，请求参数，请求对象，响应对象等），第二个参数相当于是 data 方法和Object.assign 的结合，可以将数据导出到 data 中。但是 asyncData 的返回值应该要是一个 对象，这个对象将会被合并到 data中去
+`asyncData(context,callback)` 接收两个参数，第一个是当前主键的执行上下文（包括，请求参数，请求对象，响应对象等），第二个参数相当于是 data 方法和Object.assign 的结合，可以将数据导出到 data 中。但是 asyncData 的返回值应该要是一个 对象，这个对象将会被合并到 data中去
 
 ```js
 export default {
@@ -442,6 +442,16 @@ export default {
   }//之后就可以在模板中 直接使用 title 和 name
 }
 ```
+
+> **beforeCreate 和 created 会在服务端进行执行，为什么不在这里进行数据请求？**
+>
+> 因为服务端是以同步的方式执行 beforeCreate 和 created 的，而请求是异步的，服务端并不会等结果返回才渲染，而是执行完之后继续下一步，所以在 beforeCreate 和 created 请求得到的时候并不会被渲染到 html 中。
+>
+> 这里还有一个**大坑**，asyncData 只在首屏被执行，其它时候相当于 created 或 mounted 在客户端渲染页面。
+>
+> 也就说，asyncData达到首屏初始化效果的，只能是从浏览器输入url的那个链接，或者重新刷新后的链接。如果是当前页面的跳转，它仅是客户端加载，无法达到渲染的效果。
+>
+> **且asyncData为页面级生命周期，不支持组件级别。**
 
 ### fetch 填充应用的状态树
 
@@ -543,7 +553,7 @@ nuxt 有两种发布模式
    + 这样打包有一个弊端，当你首屏的数据发生更改的时候，他还是显示的是之前的数据，要想改变的话，需要重新打包发布才行。
    + 所以，如果你的首屏是动态的就不建议使用这种打包方式了。
    + 打包之后每个页面都生成了HTML页面，只有首屏的数据是之前渲染好了，但是其它数据还是从后台获取，比如翻页，第二页数据是重新请求后台的，你再次返回第一页也是再次请求的
-2. 一种是通过`nuxt build`命令进行打包生成的是动态页面（这种方式是需要自己启动服务器的），然后将`.nuxt 、 static 、 nuxt.config.js 、 package.json`方法服务器中（最好是放到一个文件夹中），然后运行`npm i`，`npm run start`就可以开启服务了。
+2. 一种是通过`nuxt build`命令进行打包生成的是动态页面（这种方式是需要自己启动服务器的），然后将项目中除了`.nuxt 、node_modules`之外的所有文件都复制到服务器中（最好是放到一个文件夹中），然后运行`npm i`，`npm run start`就可以开启服务了。
 
 https://blog.csdn.net/Tomwildboar/article/details/102745299
 
@@ -564,6 +574,12 @@ https://blog.csdn.net/Tomwildboar/article/details/102745299
   }
 ```
 
+
+
+## 参考
+
 [Vue现有项目改造为Nuxt项目](https://segmentfault.com/a/1190000019909396)
 
 https://juejin.cn/post/6844904067584507911
+
+[Nuxt.js 从入门与分析，实践后的近万字总结](https://juejin.cn/post/7019486902336094238#heading-14)

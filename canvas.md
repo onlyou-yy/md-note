@@ -85,7 +85,7 @@ let timeId = setInterval(()=>{
 + `ctx.lineJoin = "bevel"|"round"|"square"`设置线与线之间连接点的样式，平角，圆角，矩形（默认）；
 + `ctx.setLineDash([线长,间隔....])`设置描边线为虚线，并且设置可以设置单个虚线的长度与间隔，可以设置多个，每两个为一组。
 + `ctx.lineDashOffset = 10`设置虚线便宜量，> 0 时表示的是想左便宜， < 0 时表示的向右偏移
-+ `ctx.isPointInPath(x,y)`判断点是否在路径上
++ `ctx.isPointInPath(x,y)`判断点是否在路径上，也可以用来判断是否命中一个图形，但是不能判断是否命中图片
 + `ctx.isPointInStroke(x,y)`判断点是否在图像的描边上。
 
 ## 绘制文本
@@ -399,6 +399,16 @@ img.onload = function(){
 **保存的图片比较模糊**
 
 如果保存的图片模糊，大概率是因为在绘制的时候尺寸进行了压缩，可将要保存的元素的 图片（是img元素，不是保存下来的图片）的尺寸设置得大点，这样就没那么容易模糊
+
+
+
+## 参考
+
+[canvas 多个图形可视化操作:拖拽、缩放、旋转](https://juejin.cn/post/6894433110491201543)
+
+[制作一个画板来学习canvas](https://juejin.cn/post/6920397865873309704)
+
+[fabricjs](http://fabricjs.com/)
 
 
 

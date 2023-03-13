@@ -1234,6 +1234,9 @@ type PickProp = Pick<Props,'id'|'children'>
 //Record 构建一个对象类型，属性键为Keys，属性类型为Type
 type RecordProp = Record<'a'|'b',string[]>
 let obj:RecordProp = {a:['1'],b:['ff']}
+
+//Omit是TypeScript3.5新增的一个辅助类型，它的作用主要是：以一个类型为基础支持剔除某些属性，然后返回一个新类型。
+type OmitProp = Omit<Props,'children'>
 ```
 
 
