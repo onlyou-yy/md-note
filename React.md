@@ -1868,7 +1868,7 @@ sagaMiddleware.run(rootSaga)
 
 上面的代码是使用了redux-saga的代码，我们dispatch的 action 会先去 reducer 中匹配，然后再去 saga 中匹配，redux-saga的监听函数`takeEvery`就会监听到，等异步任务有结果就执行`put`方法，相当于`dispatch`，再一次触发dispatch。**对于redux-saga的整个流程来说，它是等执行完action和reducer之后，判断reducer中有没有这个action**，如下图：
 
-![image-20220209152617206](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/React/image-20220209152617206.png)
+![image-20220209152617206](React/image-20220209152617206.png)
 
 
 

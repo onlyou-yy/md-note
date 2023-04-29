@@ -211,6 +211,8 @@ function downloadSVGFile(){
 ```
 
 > **style 样式也需要写到 SVG 中**，不然很可能会丢失样式导致显示不对
+>
+> **还有就是 `foreignObject` 下面的命名空间一定要写，就是这个`<div xmlns="http://www.w3.org/1999/xhtml">`**
 
 ```js
 fetch('https://picsum.photos/seed/picsum/200/300?'+ Date.now())
