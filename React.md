@@ -1740,7 +1740,7 @@ export incrementAsync=(number)=>{
 
 redux-thunk 是在actions 中进行异步处理的。作用流程图如下：
 
-![image-20220209153433491](/Users/a/Desktop/ljf/myfile/myGitServer/md-note/React/image-20220209153433491.png)
+![image-20220209153433491](React/image-20220209153433491.png)
 
 其实不使用redux-thunk 同样可以解决异步问题，有两种办法，一种是先创建「请求数据」的 action，然后再创建一个「更新数据」的 action
 
