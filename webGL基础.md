@@ -193,12 +193,26 @@ gl.drawArrays(gl.TRIANGLES, 0, 3);
 
 
 
-## webGL简易流程
 
 
+## GLSL 语法
+
+[GLSL 详解（基础篇）](https://colin1994.github.io/2017/11/11/OpenGLES-Lesson04/)
+
+[GLSL 详解（高级篇）](https://colin1994.github.io/2017/11/12/OpenGLES-Lesson05/#7-_%E9%A2%84%E5%A4%84%E7%90%86)
+
+[GLSL一文搞定入门](https://juejin.cn/post/7214517573584945208#heading-9)
+
+GLSL 文档 https://registry.khronos.org/OpenGL-Refpages/gl4/，https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.1.20.pdf
 
 
 
 ## 文章
 
 [WebGL零基础快速入门](http://www.webgl3d.cn/WebGL/)
+
+[three.js学习笔记](https://blog.csdn.net/weixin_43990650/category_11502477.html)
+
+[Three.js教程](http://www.webgl3d.cn/Three.js/)
+
+[WebGL教程](http://www.webgl3d.cn/WebGL/)
