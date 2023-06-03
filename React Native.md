@@ -183,6 +183,21 @@ sudo xcode-select --switch /Applications/Xcode.app
 
 
 
+其他问题
+
+```shell
+pod search boost
+
+npm config set registry https://registry.npm.taobao.org
+npm config set disturl https://npm.taobao.org/dist
+
+sudo chmod go-w /usr/local/bin #需要授权的路径
+```
+
+
+
+
+
 ### 对于旧项目迁移到新设备
 
 **arm64 问题**
