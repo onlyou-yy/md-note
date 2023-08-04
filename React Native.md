@@ -1886,3 +1886,9 @@ export default SizeFit;
 
 
 
+## 参考
+
+[JSBridge的原理](https://juejin.cn/post/6844903585268891662)
+
+
+

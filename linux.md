@@ -357,6 +357,16 @@ kill -9 28533 #28533是进程编号 ，-9是强制关闭，不写是普通关闭
 
 
 
+# 修改终端下的语言
+
+[Ubuntu修改终端下的语言（中文或英文）](https://blog.csdn.net/BobYuan888/article/details/88662779)
+
+
+
+# linux命令手册
+
+https://www.linuxcool.com/
+
 # 常用的linux命令
 
 ## 关机/重启/注销
@@ -451,6 +461,19 @@ kill -9 28533 #28533是进程编号 ，-9是强制关闭，不写是普通关闭
 | crontab -l                                            | 查看当前⽤户的计划任务                         |
 | cut -d: -f1 /etc/passwd                               | 查看系统所有⽤户                               |
 | cut -d: -f1 /etc/group                                | 查看系统所有组                                 |
+
+## 防火墙设置
+
+| 常用命令                                                     | 作用                 |
+| ------------------------------------------------------------ | -------------------- |
+| firewall-cmd --state  或者  systemctl [status](https://so.csdn.net/so/search?q=status&spm=1001.2101.3001.7020) firewalld | 查看防火墙状态       |
+| systemctl start firewalld  或者：systemctl start firewalld.service | 打开防火墙           |
+| systemctl stop firewalld 或者：systemctl stop firewalld.service | 关闭防火墙           |
+| systemctl enable firewalld.service                           | 开机启动             |
+| systemctl disable firewalld.service                          | 禁止防火墙开机启动   |
+| service iptables restart                                     | 重启防火墙           |
+| firewall-cmd --zone=public --list-ports 或者 firewall-cmd --list-all | 查看防火墙开放的端口 |
+| firewall-cmd --zone=public --add-port=22122/tcp --permanent  | 开放 22122 端口      |      
 
 ## ⽹络和进程管理
 
