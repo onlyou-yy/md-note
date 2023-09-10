@@ -362,6 +362,66 @@ React Native 0.60 及更高版本链接是自动的，但是对于Mac开发IOS�
 
 
 
+## 关于导出的原生方法
+
+有时候 App 需要访问平台 API，但 React Native 可能还没有相应的模块封装；或者你需要复用 Objective-C、Swift 或 C++代码，而不是用 JavaScript 重新实现一遍；又或者你需要实现某些高性能、多线程的代码，譬如图片处理、数据库、或者各种高级扩展等等。
+
+官方文档上也详细的给出了使用文档，不过不需要注意的是`RCT_EXPORT_METHOD`**导出的是实例方法，而不是类方法**，所以在导出的方法中可以访问到实例属性
+
+
+
+## 关于React-Native的基本原理
+
+### react native和原生如何进行通信？
+
+![image.png](React Native/bdb4c32687fe423ca88948cad65decd1~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp)
+
+JS 与 Native 之间的通信是通过 JSBridge 来完成的。
+
+当 JS 调用某个 Native 方法（比如开启蓝牙权限）时，一般会执行以下事项：
+
+1. JS 线程将事件消息序列化成 JSON
+2. JS 线程将序列化后的 JSON 信息传递给 JSBridge
+3. JSBridge 将信息传递给 Native 之前，会先将其反序列化
+4. Native 线程接收到反序列化后的信息，并执行对应的 Native 代码
+
+
+
+### react native 如何将UI渲染为原生UI
+
+![image.png](React Native/602b23dce0cc40cb8bb0f95a5f2454f8~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp)
+
+架构的渲染器是 UI Manager，当我们执行页面渲染时，它是这么运行的：
+
+1. React 在 JS 侧会根据代码创建一个 ReactElementTree
+2. 渲染器会根据 ReactElementTree 在 C++ 层创建一个 ReactShadowTree
+3. 布局引擎（比如 Yoga）会处理这个 ReactShadowTree 并计算出元素的布局位置
+4. 处理完成后，ShadowTree 会被转换成由 Native 组件构成的 HostViewTree（比如 View 组件会被转换成 Native 的 ViewGroup 组件）
+
+架构中通信都是要经过 JSBridge 的，因此旧架构的渲染器也会存在转换慢以及重复数据等问题。同时由于通信非同步，会存在前面提到的渲染阻塞问题。
+
+
+
+### react native 如何查找原生模块
+
+所有 NativeModules 在 App 启动时都需要被初始化：
+
+1. 首先 Native 开发者先定义好接口，然后把 NativeModules 注册进一个 Module 列表中
+2. RN 在启动时，会把所有的 Modules 初始化，并生成一份映射表，这份映射表会被注入到 C++ 层和 JS 层
+3. 这样，在 Native 层、C++ 层和 JS 层都存在同一份映射表，JS 可以通过 JSBridge 调用映射表中对应的 Native 方法
+
+架构存在一个很明显的问题：即使用户可能永远不会使用到某个 NativeModules，这个 Module 还是会在应用已启动时就被初始化。这有可能会影响到应用的启动时间
+
+
+
+### 来源
+
+作者：龙飞_longfe
+链接：https://juejin.cn/post/7212143399037190181
+来源：稀土掘金
+
+
+
 ## 关于样式
 
 在react-native中不支持使用样式类名（也就是className）来定义样式，仅支持通过style来设置样式，并且样式的设置需要使用对象来设置`style={{color:'white',backgroundColor:'blue'}}`，react-native中也不全支持css属性，每个组件也都有自己特定的属性，所以具体样式还是要参考文档。
