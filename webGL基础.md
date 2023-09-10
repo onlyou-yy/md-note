@@ -193,12 +193,46 @@ gl.drawArrays(gl.TRIANGLES, 0, 3);
 
 
 
-## webGL简易流程
 
 
+## GLSL 语法
+
++ `u_resolution` 画布尺寸，即代表画布宽高
++ `gl_FragCoord`是一个 vec4 类型的变量 (x, y, z, 1/w)，其中 x, y 是当前片元的窗口坐标。直译就是片元坐标
++ `gl_Position`是一个 vec3 类型的变量 (x, y, z)，就是我们自己设置在哪个位置进行绘制
++ `gl_FragColor`是一个 vec4 类型的变量 (r,g,b,a)，就是我们要绘制的片源的颜色
++ `uv`是一个 vec2 类型的变量 (x, y)， 这里是指u,v纹理贴图坐标的简称(它和空间模型的X, Y, Z轴是类似的). 它定义了图片上每个点的位置的信息. 这些点与3D模型是相互联系的, 以决定表面纹理贴图的位置. UV就是将图像上每一个点精确对应到模型物体的表面. 在点与点之间的间隙位置由软件进行图像光滑插值处理. 这就是所谓的UV贴图
+
+画布的绘制是以左下角为原点，从左到右，从下往上进行绘制。并且尺寸为1
+
+着色器程序在绘制每个像素点的时候都会调用，所以每次获取到的 gl_FragCoord 的值都是不一样的。
+
+在OpenGL ES1.1中，顶点属性有四个预定义的名字：position（位置）, normal（法线）, color（颜色）, 和 texture coordinates（纹理坐标），这些都是每个像素的信息，比如 position 就是当前遍历到的像素的位置信息。
+
+
+
+[GLSL 详解（基础篇）](https://colin1994.github.io/2017/11/11/OpenGLES-Lesson04/)
+
+[GLSL 详解（高级篇）](https://colin1994.github.io/2017/11/12/OpenGLES-Lesson05/#7-_%E9%A2%84%E5%A4%84%E7%90%86)
+
+[GLSL一文搞定入门](https://juejin.cn/post/7214517573584945208#heading-9)
+
+[Opengl入门基础](https://zhuanlan.zhihu.com/p/482366921)
+
+[卡通渲染（上）：致从没看懂过着色器代码的你](https://zhuanlan.zhihu.com/p/25595069)
+
+GLSL 文档 https://registry.khronos.org/OpenGL-Refpages/gl4/，https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.1.20.pdf
+
+[ModelMatrix、ModelViewMatrix、ProjectionMatrix、NormalMatrix模型矩阵、模型视图矩阵、投影矩阵、正规矩阵详解](https://blog.csdn.net/aoxuestudy/article/details/109923749)
 
 
 
 ## 文章
 
 [WebGL零基础快速入门](http://www.webgl3d.cn/WebGL/)
+
+[three.js学习笔记](https://blog.csdn.net/weixin_43990650/category_11502477.html)
+
+[Three.js教程](http://www.webgl3d.cn/pages/c0b143/)
+
+[WebGL教程](http://www.webgl3d.cn/WebGL/)

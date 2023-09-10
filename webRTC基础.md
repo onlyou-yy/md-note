@@ -47,13 +47,15 @@ webRTC协议由几个核心部件组成，分别为`ICE、STUN、NAT、TURN、SD
 
 交互式连接设施[Interactive Connectivity Establishment (ICE)](http://en.wikipedia.org/wiki/Interactive_Connectivity_Establishment) 是一个允许你的浏览器和对端浏览器建立连接的协议框架。在实际的网络当中，有很多原因能导致简单的从A端到B端直连不能如愿完成。这需要绕过阻止建立连接的防火墙，给你的设备分配一个唯一可见的地址（通常情况下我们的大部分设备没有一个固定的公网地址），如果路由器不允许主机直连，还得通过一台服务器转发数据。ICE通过使用以下几种技术完成上述工作。
 
+媒体协商就是通知对端应该往哪个地址(ip+端口+协议)尝试连接，一般这个ICE可以通 STUN 或者 TURN 服务器中获取到，也可以是本地网络中获取到。
+
 ### STUN
 
 NAT的会话穿越功能[Session Traversal Utilities for NAT (STUN)](http://en.wikipedia.org/wiki/STUN) (缩略语的最后一个字母是NAT的首字母)是一个允许位于NAT后的客户端找出自己的公网地址，判断出路由器阻止直连的限制方法的协议。
 
 客户端通过给公网的STUN服务器发送请求获得自己的公网地址信息，以及是否能够被（穿过路由器）访问。
 
-![An interaction between two users of a WebRTC application involving a STUN server.](https://mdn.mozillademos.org/files/6115/webrtc-stun.png)
+![image-20230603152827572](webRTC基础/image-20230603152827572.png)
 
 ### NAT
 
@@ -78,7 +80,7 @@ NAT的会话穿越功能[Session Traversal Utilities for NAT (STUN)](http://en.w
 
 NAT的中继穿越方式[Traversal Using Relays around NAT (TURN)](http://en.wikipedia.org/wiki/TURN) 通过TURN服务器中继所有数据的方式来绕过“对称型NAT”。你需要在TURN服务器上创建一个连接，然后告诉所有对端设备发包到服务器上，TURN服务器再把包转发给你。很显然这种方式是开销很大的，所以只有在没得选择的情况下采用。
 
-![An interaction between two users of a WebRTC application involving STUN and TURN servers.](https://mdn.mozillademos.org/files/6117/webrtc-turn.png)
+![image-20230603152900353](webRTC基础/image-20230603152900353.png)
 
 ### SDP
 
@@ -99,17 +101,39 @@ NAT的中继穿越方式[Traversal Using Relays around NAT (TURN)](http://en.wik
 ### 方法
 
 + `var rtc = new RTCPeerConnection(porp)`，创建一个 `RTCPeerConnection`实例，这个构造函数继承的 EventTarget 对象。实例中有几个比较常用的属性，如`currentLocalDescription/localDescription`当前本地的SDP，`currentRemoteDescription`当前连接的端点的SDP，`connectionState`当前连接状态等。prop 可以不传，如果你有ice服务的话可以通过`prop.iceServers = [{urls:'xxxx'}]`设置多个ice服务器。
-+ `rtc.createrOffer(sback,fback)`，创建一个offer（offer是一个RTCSessionDescription对象，有两个属性，type和sdp），接收两个参数成功回调和失败回调，需要主要的可以通过回调函数返回，也可以通过promise 的方法返回
+
+  + ```js
+    iceServers:[
+      {
+        urls:'stun:stun.services.mozilla.com',
+        username:"",//用户名
+        credential:"",//turn服务密码，可以使用password或者OAuth
+      }
+    ]
+    ```
+
++ `rtc.createrOffer(sback,fback)`，创建一个offer（offer是一个RTCSessionDescription对象，获取本地的编解码能力，有两个属性，type和sdp），接收两个参数成功回调和失败回调，需要主要的可以通过回调函数返回，也可以通过promise 的方法返回
+
 + `rtc.createAnswer(sback,fback)`，这个方法和`createOffer`是几乎一样的，不过这个方法是根据远端发来的 offer 来生成 answer （answer是一个RTCSessionDescription对象，有两个属性，type和sdp））的，所以在创建之前需要先通过`setRemoteDescription`方法根据offer建立为连接的远程端描述。
+
 + `rtc.setLocalDescription(sdp,sback,fback)`，改变与连接相关的本地描述(设置本地的sdp)，sdp可以是offer/answer中的sdp。同样是异步的函数，可以使用回调和promise.
+
 + `rtc.setRemoteDescription(sdp,sback,fback)`，改变与连接相关的远端描述(设置要连接方的sdp)，sdp一般是offer中的sdp，最好通过`new RTCSessionDescription(offer.sdp)`生成一个新的sdp。同样是异步的函数，可以使用回调和promise.
+
 + `rtc.addIceCandidate(ice)`，添加候选的ice方案
+
 + `rtc.getLocalStreams()`，返回连接的本地媒体流数组。这个数组可能是空数组。
+
 + `rtc.getRemoteStreams()`，返回连接的远端媒体流数组。这个数组可能是空数组。
+
 + `rtc.addTrack(track,streams)`，将一个新的媒体音轨添加到一组音轨中，这些音轨将被传输给另一个对等点，同时返回一个标识 sender。可以通过`let t = await navigator.mediaDevices.getUserMedia({video: true, audio: true})`得到对象后通过`t.getTracks()`获取到轨道。
+
 + `rtc.removeTrack(sender)`，通过 addTrack 返回 sender 来移除 track。
+
 + `rtc.getSenders()`,返回一个对象数组RTCRtpSender，每个对象代表负责传输一个轨道数据的 RTP 发送方。可以用来获取RTP设置以及对RTP进行设置，比如设置传输速率（可以在`chrome://webrtc-internals`查看）
+
 + `rtc.close()`关闭一个RTCPeerConnection实例所调用的方法。
+
 + `var dc = rtc.createDataChannel(label,options)`，创建一个可以发送任意数据的数据通道(data channel)，label 是通道的名字，且需要进行协商，options里面比较重要的属性是 `ordered`数据是否与发送时相同的顺序到达目的地 。常用于后台传输内容, 例如: 图像, 文件传输, 聊天文字, 游戏数据更新包, 等等。返回一个 dataChannel 对象，这个对象可以通过`dc.send(data)`来发送数据。
   + `dc.onopen`处理建立连接
   + `dc.onmessage`接收消息事件。
@@ -137,6 +161,24 @@ NAT的中继穿越方式[Traversal Using Relays around NAT (TURN)](http://en.wik
 ## 兼容性处理
 
 目前 webRTC 的大多数接口都还是实验性阶段，所以需要做还兼通性处理，可以使用 [Adapter.js](https://github.com/webrtcHacks/adapter) 做兼容性 pollyfill。webRTC 的相关方法还是比较难用的，而且流程比较复杂，可以使用 peerjs 来简化操作。 
+
+
+
+## 音视频通话原理
+
++ 如何发现对方
++ 音视频编解码能力沟通
++ 网络传输数据
+
+发现对方需要使用到信令服务器，可以是http、websocket、tcp等只要能进行数据的交换都可以
+
+音视频编解码能力沟通，只有使用两端都支持的编解码才能对音视频数据进行编解码，比如PeerA端支持VP8、H264多种编解码格式，而PeerB支持VP9、H264，那么要保证两遍都能正确编解码数据就只能选择 H264，SDP 就是用来做这个事情的
+
+网络传输数据，在知道自己的SDP之后，我们需要让别人知道我们的SDP，我们也需要知道别人的SDP之后才能进行通信，那么我们可以使用服务进行SDP的交换，一般这个服务器是 STUN + TURN。客户端向 STUN 服务器请求打洞，获取到自己客户端到外网的映射地址，之后就可以进行SDP的交换，这种是端对端的方式。如果端对端的方式不能联通就可以使用 TURN 进行中继转发的方式进行SDP的交换
+
+![image-20230603163116938](webRTC基础/image-20230603163116938.png)
+
+
 
 
 
@@ -228,6 +270,8 @@ let https_server = https.createServer(httpsOption, app).listen(443);
 
 ### 创建信令服务
 
+信令服务其实就是一个普通的用于转发各种数据的服务。
+
 在创建好https服务之后，为了方便交换SDP，我们还需要创建一个websocket服务，这里我们使用`socket.io`实现
 
 ```js
@@ -276,6 +320,8 @@ io.on('connection',(socket)=>{
 在创建好信令服务器之后，为了避免NAT 无法穿透的情况，我们还需要创建一个TURN服务（中继服务），这里我们可以直接使用`coturn`来实现
 
 因为`coturn`目前只有linux版本的所以，我们需要在云主机上直接安装使用，使用的系统是 `centos`.
+
+coturn 是一个穿透和转发服务器 
 
 **安装**
 

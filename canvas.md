@@ -410,6 +410,10 @@ img.onload = function(){
 
 [fabricjs](http://fabricjs.com/)
 
+[canvas绘制图片，图片变模糊](https://blog.csdn.net/harry_yaya/article/details/105964081)
+
+[Canvas 交互](https://www.jianshu.com/p/1fc2282ca15e)
+
 
 
 ## 例子以及应用
