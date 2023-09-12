@@ -365,7 +365,7 @@ ios应用是被安装到不用手机使用的，所以他们的根目录是不�
 // 懒加载 + 缓存
 - (void)data{
   if(_data == nil){
-    NSString *path = [[NSzBundle mainBundle] pathForResource:@"data.plist" ofType:nil];
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"data.plist" ofType:nil];
     NSArray *arr = [NSArray arrayWithContentsOfFile:path];
     _data = arr;
   }

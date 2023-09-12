@@ -397,7 +397,6 @@ MyApp = codePush(CodePushOptions)(MyApp);
 - [disallowRestart](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushdisallowrestart)：暂时禁止由于安装了 CodePush 更新而发生任何编程重启。 此方法是一种高级 API，当应用内的组件 (例如载入过程) 需要确保在其生存期内不会发生最终用户中断时，此方法非常有用。
 - [getUpdateMetadata](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushgetupdatemetadata)：检索已安装更新的元数据， (如 description、必需) 。
   - [LocalPackage](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#localpackage)
-    -
 - [notifyAppReady](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushnotifyappready)：通知 CodePush 运行时已安装的更新被视为成功。 如果要手动检查并安装更新 (未使用 [sync](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushsync) 方法来处理所有) ，则必须 **调用此方法;** 否则，CodePush 会将更新视为失败，并在应用下次重启时回滚到以前的版本。
 - [restartApp](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushrestartapp)：立即重启应用。 如果有挂起的更新，它将立即显示给最终用户。 否则，调用此方法的行为与最终用户终止并重启进程的行为相同。
 - [sync](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushsync)：允许通过一次调用来检查更新、下载和安装更新。 除非需要自定义 UI 或行为，否则我们建议大多数开发人员在将 CodePush 集成到其应用中时使用此方法

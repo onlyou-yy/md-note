@@ -93,7 +93,7 @@ npm start
 
 而谷歌浏览器的`sources`标签上是运行我们上传本地的`source-map`的
 
-![image.png](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/8bccb14bf6a44a5c951bb3f85d713cdf~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp?)
+![image-20230912094049488](代码调试和bug处理/image-20230912094049488.png)
 
 首先开启`source-map`的配置，打包出`source-map`文件
 
@@ -141,15 +141,15 @@ devtool:"source-map"
 http-server --prot 8081
 ```
 
-![image.png](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/cef7493b186c4483b53fc1bf31525f63~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp?)
+![image-20230912094058986](代码调试和bug处理/image-20230912094058986.png)
 
 这是添加前的效果
 
-![image.png](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/3597632f4590430aa7df3981d0cba06b~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp?)
+![image-20230912094106691](代码调试和bug处理/image-20230912094106691.png)
 
 这是添加后的效果
 
-![image.png](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/b35e71b63cfc4255b3e725b338157c19~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp?)
+![image-20230912094118473](代码调试和bug处理/image-20230912094118473.png)
 
 
 

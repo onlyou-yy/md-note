@@ -389,7 +389,7 @@ React Native 0.60 及更高版本链接是自动的，但是对于Mac开发IOS�
 
 ### react native和原生如何进行通信？
 
-![image.png](React Native/bdb4c32687fe423ca88948cad65decd1~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp)
+![image-20230911090104862](React Native/image-20230911090104862-4394068.png)
 
 JS 与 Native 之间的通信是通过 JSBridge 来完成的。
 
@@ -404,7 +404,7 @@ JS 与 Native 之间的通信是通过 JSBridge 来完成的。
 
 ### react native 如何将UI渲染为原生UI
 
-![image.png](React Native/602b23dce0cc40cb8bb0f95a5f2454f8~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp)
+![image-20230911090137590](React Native/image-20230911090137590.png)
 
 架构的渲染器是 UI Manager，当我们执行页面渲染时，它是这么运行的：
 
