@@ -237,6 +237,7 @@ appcenter codepush deployment clear -a <ownerName>/<appName> <deploymentName>
 #### 坑
 
 1. 教程里面在 `info.plist` 中配置 `deploymentKey` 的字段是`CodePushDeploymentKey`不是`CodePushPublicKey`
+1. 如果有重大bug，而又无法通过热更新的方式进行更新，如果是苹果的话可以再[这里](https://developer.apple.com/contact/app-store/?topic=expedite)，申请加急审批，一般一天就能通过
 
 
 
