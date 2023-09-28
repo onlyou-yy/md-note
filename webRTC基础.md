@@ -683,6 +683,8 @@ function createDataChannel(){
 
 [webRTC专题-极客雨露](https://blog.csdn.net/kyl282889543/category_9327113_2.html)
 
+[WebRTC原理与实战开发](./webRTC基础/WebRTC原理与实战开发（web端）.pdf)
+
 [webRTC专题](https://blog.csdn.net/qq_34732729/category_9931095.html)
 
 [WebRTC SDP协议](https://www.cnblogs.com/chyingp/p/sdp-in-webrtc.html)
