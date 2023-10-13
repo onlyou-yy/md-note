@@ -161,6 +161,10 @@ http-server --prot 8081
 
 ## **参考**
 
+[移动端调试库](https://github.com/liriliri/eruda)
+
+[H5 移动端调试全攻略～](https://juejin.cn/post/7004428187790901279#heading-0)
+
 [Whistle，web 抓包与 debug 利器](https://www.cnblogs.com/zhihuilai/p/9992533.html)
 
 [使用Chrome开发者工具overrides实现不同环境本地调试](https://blog.csdn.net/weixin_43834227/article/details/109161756)
