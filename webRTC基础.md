@@ -393,6 +393,19 @@ turnserver -o -a -f
 
 可以在[这里](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/)进行联通性测试（*AddServer* 后点击 *Gather candidates*）
 
+```shell
+# 查看正在运行的服务
+systemctl list-unit-files --type=service
+# 使服务自动启动
+sudo systemctl enable turnserver.service
+# 启动服务
+sudo systemctl start turnserver
+# 停止服务
+sudo systemctl stop turnserver
+```
+
+
+
 
 
 ### 实现端点视频通信
@@ -669,6 +682,8 @@ function createDataChannel(){
 [webRTC专题-晓果博客](https://blog.csdn.net/huangxiaoguo1/category_9705009.html)
 
 [webRTC专题-极客雨露](https://blog.csdn.net/kyl282889543/category_9327113_2.html)
+
+[WebRTC原理与实战开发](./webRTC基础/WebRTC原理与实战开发（web端）.pdf)
 
 [webRTC专题](https://blog.csdn.net/qq_34732729/category_9931095.html)
 

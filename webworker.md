@@ -243,6 +243,36 @@ webWorker 其实有两种，一种是上面说的 webWorker ，它是一种**专
 >
 > 可以使用 Modernizr 库来检测浏览器对 js，css 的支持性
 
+比如在 a.html 中创建了5个 web Worker，在 b.html 中创建了 5个SharedWorker
+
+```html
+<!-- a.html --->
+<script>
+for(let i = 0; i < 5; i++){
+  let worker = new Worder("work.js");
+  worker.onmessage = function (event) {
+    console.log('Received message ' + event.data);
+    doSomething();
+  }
+  worker.postMessage("hello");
+}
+</script>
+
+<!-- b.html --->
+<script>
+for(let i = 0; i < 5; i++){
+  let worker = new SharedWorker("shared.js");
+  worker.port.addEventListener('message', function(e) {
+    console.log('Received message ' + event.data);
+    doSomething();
+  }, false);
+  worker.port.postMessage("hello");
+}
+</script>
+```
+
+这里在浏览器中每个打开了 a.html 页面的标签页都会创建 5个 worker 线程。而在同一个浏览器中无论打开了多少个 b.html 页面的标签页只要`new SharedWorker("shared.js");`中`shared.js`是相同的就只会创建一个worker线程
+
 ## sharedWorker 中的 属性及 API
 
 - `SharedWorker.port`：返回一个[`MessagePort`](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort)用于与共享工作者通信并控制它的对象。

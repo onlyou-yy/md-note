@@ -12,23 +12,21 @@ npm install
 npm run patchpackage
 ```
 
-
-
 ## [appcenter-cli](https://learn.microsoft.com/zh-cn/appcenter/distribution/)
 
-### sdk安装和配置
+### sdk 安装和配置
 
 安装：https://learn.microsoft.com/zh-cn/appcenter/sdk/getting-started/react-native
 
 #### 坑
 
-对于`react-native`版本小于 0.60 并且手动进行sdk配置的时候可能在第 7 部配置的时候需要做一下修改（做好一步一步跟着教程做）
+对于`react-native`版本小于 0.60 并且手动进行 sdk 配置的时候可能在第 7 部配置的时候需要做一下修改（做好一步一步跟着教程做）
 
 ![image-20230815172837310](react-native热更新/image-20230815172837310.png)
 
 如果报错说`<AppCenterCrashes/AppCenterCrashes.h>`等找不到，可以试试下面的操作
 
-首先在`project/ios/`下创建一个目录`Vendor`，然后将解压到SDK的文件目录拖到里面
+首先在`project/ios/`下创建一个目录`Vendor`，然后将解压到 SDK 的文件目录拖到里面
 
 ![image-20230815173505594](react-native热更新/image-20230815173505594.png)
 
@@ -39,8 +37,6 @@ npm run patchpackage
 之后再从`ios/Vendor`目录下将**AppCenter.framework**、 **AppCenterAnalytics.framework**、 **AppCenterCrashes.framework** 和 **AppCenterReactNativeShared.framework** 拖到`Vendor`组里面，弹窗确认这样选
 
 ![image-20230815173906199](react-native热更新/image-20230815173906199.png)
-
-
 
 ### 使用
 
@@ -222,11 +218,9 @@ appcenter codepush deployment history -a <ownerName>/<appName> <deploymentName>
 appcenter codepush deployment clear -a <ownerName>/<appName> <deploymentName>
 ```
 
->如果微软的服务比较慢的话可以尝试自己搭建appcenter服务
+> 如果微软的服务比较慢的话可以尝试自己搭建 appcenter 服务
 >
->+ [【React-native】轻松从零搭建微软Code-Push热更新](https://juejin.cn/post/6995046360080728095)
-
-
+> - [【React-native】轻松从零搭建微软 Code-Push 热更新](https://juejin.cn/post/6995046360080728095)
 
 ## [`react-native-code-push`](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-overview)使用
 
@@ -237,8 +231,10 @@ appcenter codepush deployment clear -a <ownerName>/<appName> <deploymentName>
 #### 坑
 
 1. 教程里面在 `info.plist` 中配置 `deploymentKey` 的字段是`CodePushDeploymentKey`不是`CodePushPublicKey`
-
-
+   <<<<<<< HEAD
+   =======
+1. 如果有重大 bug，而又无法通过热更新的方式进行更新，如果是苹果的话可以再[这里](https://developer.apple.com/contact/app-store/?topic=expedite)，申请加急审批，一般一天就能通过
+   > > > > > > > e4c0d661b2250e17ba015230d8ae780b6aa3609f
 
 ### **进入应用直接更新**
 
@@ -397,7 +393,9 @@ MyApp = codePush(CodePushOptions)(MyApp);
 - [disallowRestart](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushdisallowrestart)：暂时禁止由于安装了 CodePush 更新而发生任何编程重启。 此方法是一种高级 API，当应用内的组件 (例如载入过程) 需要确保在其生存期内不会发生最终用户中断时，此方法非常有用。
 - [getUpdateMetadata](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushgetupdatemetadata)：检索已安装更新的元数据， (如 description、必需) 。
   - [LocalPackage](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#localpackage)
-    -
+    <<<<<<< HEAD -
+    =======
+    > > > > > > > e4c0d661b2250e17ba015230d8ae780b6aa3609f
 - [notifyAppReady](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushnotifyappready)：通知 CodePush 运行时已安装的更新被视为成功。 如果要手动检查并安装更新 (未使用 [sync](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushsync) 方法来处理所有) ，则必须 **调用此方法;** 否则，CodePush 会将更新视为失败，并在应用下次重启时回滚到以前的版本。
 - [restartApp](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushrestartapp)：立即重启应用。 如果有挂起的更新，它将立即显示给最终用户。 否则，调用此方法的行为与最终用户终止并重启进程的行为相同。
 - [sync](https://learn.microsoft.com/zh-cn/appcenter/distribution/codepush/rn-api-ref#codepushsync)：允许通过一次调用来检查更新、下载和安装更新。 除非需要自定义 UI 或行为，否则我们建议大多数开发人员在将 CodePush 集成到其应用中时使用此方法
@@ -420,13 +418,10 @@ codePush.sync(
 ): Promise<Number>;
 ```
 
-
-
 ## 参考
 
-+ [在APPcenter发布APP，并供其他人下载](https://blog.csdn.net/weixin_48576311/article/details/108636912)
-+ [react-native-code-push进阶篇](https://juejin.cn/post/6844903491882729485#heading-3)
-+ [【React-native】轻松从零搭建微软Code-Push热更新](https://juejin.cn/post/6995046360080728095)
-+ [React-Native热更新之微软CodePush](https://juejin.cn/post/7065955188510556167#heading-19)
-+ [react-native 热更新实践](https://juejin.cn/post/7194783242279616569?searchId=202308070925095AD1C03BE0B0C0B5E410#heading-5)
-
+- [在 APPcenter 发布 APP，并供其他人下载](https://blog.csdn.net/weixin_48576311/article/details/108636912)
+- [react-native-code-push 进阶篇](https://juejin.cn/post/6844903491882729485#heading-3)
+- [【React-native】轻松从零搭建微软 Code-Push 热更新](https://juejin.cn/post/6995046360080728095)
+- [React-Native 热更新之微软 CodePush](https://juejin.cn/post/7065955188510556167#heading-19)
+- [react-native 热更新实践](https://juejin.cn/post/7194783242279616569?searchId=202308070925095AD1C03BE0B0C0B5E410#heading-5)
