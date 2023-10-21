@@ -225,6 +225,8 @@ GLSL 文档 https://registry.khronos.org/OpenGL-Refpages/gl4/，https://registry
 
 [ModelMatrix、ModelViewMatrix、ProjectionMatrix、NormalMatrix模型矩阵、模型视图矩阵、投影矩阵、正规矩阵详解](https://blog.csdn.net/aoxuestudy/article/details/109923749)
 
+[learnopengl](https://learnopengl-cn.github.io/)
+
 
 
 ## 文章
