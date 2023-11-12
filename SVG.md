@@ -234,6 +234,51 @@ fetch('https://picsum.photos/seed/picsum/200/300?'+ Date.now())
 
 
 
+## 把CSS样式全部转换成行内样式
+
+```js
+//根据容器ID来渲染行内样式，避免长时间卡顿
+let translateStyle = contentId => {
+  const sheets = document.styleSheets;
+  const sheetsArry = Array.from(sheets);
+  const $content = $('#' + contentId);
+  sheetsArry.forEach(sheetContent => {
+    const { rules, cssRules } = sheetContent;
+    //cssRules兼容火狐
+    const rulesArry = Array.from(rules || cssRules || []);
+    rulesArry.forEach( rule => {
+      const { selectorText, style, styleMap } = rule;
+      //全局样式不处理
+      if (selectorText !== '*') {
+        //兼容某些样式在转换的时候会报错
+        try {
+          const select = $content.find(selectorText);
+          select.each( domIndex => {
+            const dom = select[domIndex];
+            let i = 0;
+            const domStyle = window.getComputedStyle(dom, null)
+            while (style[i]) {
+              //样式表里的className是驼峰式，转换下便对应上了
+              const newName = style[i].replace(/-\w/g, function(x){
+                return x.slice(1).toUpperCase();
+              });
+              $(dom).css(style[i], domStyle[newName]);
+              i++;
+            }
+          })
+        } catch (e) {
+          console.log('转换成行内样式失败');
+        }
+      }
+    })
+  })
+}
+```
+
+
+
+
+
 ## 绘制图形
 
 svg 中的形状标签有 `矩形 <rect>,圆形 <circle>,椭圆 <ellipse>,线 <line>,折线 <polyline>,多边形 <polygon>,路径 <path>`
