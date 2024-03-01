@@ -163,6 +163,8 @@ http-server --prot 8081
 
 [移动端调试库](https://github.com/liriliri/eruda)
 
+[**PageSpy** 是一款用来调试远程 Web 项目的工具。](https://github.com/HuolalaTech/page-spy-web/blob/main/README_ZH.md)
+
 [H5 移动端调试全攻略～](https://juejin.cn/post/7004428187790901279#heading-0)
 
 [Whistle，web 抓包与 debug 利器](https://www.cnblogs.com/zhihuilai/p/9992533.html)

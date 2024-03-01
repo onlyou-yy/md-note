@@ -377,6 +377,12 @@ JS 与 Native 之间的通信是通过 JSBridge 来完成的。
 3. JSBridge 将信息传递给 Native 之前，会先将其反序列化
 4. Native 线程接收到反序列化后的信息，并执行对应的 Native 代码
 
+### WebView和原生通信原理
+
+[JSBridge的原理](https://juejin.cn/post/6844903585268891662)
+
+[JS Bridge 通信原理](https://zhuanlan.zhihu.com/p/343317967)
+
 ### react native 如何将 UI 渲染为原生 UI
 
 ![image-20230911090137590](React Native/image-20230911090137590.png)
@@ -405,6 +411,8 @@ JS 与 Native 之间的通信是通过 JSBridge 来完成的。
 作者：龙飞\_longfe
 链接：https://juejin.cn/post/7212143399037190181
 来源：稀土掘金
+
+
 
 ## 关于样式
 

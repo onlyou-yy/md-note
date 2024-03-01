@@ -362,9 +362,38 @@ function covertSVG2Image(node, name, width, height, type = 'png'){
 
 
 
+## 用Canvas生成浏览器指纹
+
+通过 Canvas 代码生成的唯一像素会因使用的系统和浏览器不同而不同，也就是说只要在同一设备上相同浏览器生成的出来的像素数据是相同的，这个相同的数据可以作为用户的一种标识，即使用户频繁更换账号，依然可以知道同一个人。
+
+```js
+const canvas = document.createElement("canvas");
+function bin2hex(s) {
+  var i,l,n,o = "";
+  s += "";
+
+  for (i = 0, l = s.length; i < l; i++) {
+    n = s.charCodeAt(i).toString(16);
+    o += n.length < 2 ? "0" + n : n;
+  }
+
+  return o;
+}
+const b64 = canvas.toDataURL().replace("data:image/png;base64,", "");
+// window.atob 用于解码使用 base-64 编码的字符串
+const bin = atob(b64);
+const crc = bin2hex(bin.slice(-16, -12));
+```
+
+还有很多中方式可以生成浏览器指纹，具体可以在 https://browserleaks.com/ 查看相关的内容。
+
+[基于 H5 Canvas "指纹识别" 技术 【浏览器指纹 VS Canvas指纹】](https://juejin.cn/post/7032988392480571406)
+
+
+
 ## 其他问题
 
-**Html2canvas 图片跨域问题**
+### **Html2canvas 图片跨域问题**
 
 第一种：后端需要在服务器IIS上的HTTP响应标头设置，最简单粗暴的方法就是全部设置成*，不过这样安全性也低，自己可以根据自己需求设置：
 
@@ -396,9 +425,31 @@ img.onload = function(){
 }
 ```
 
-**保存的图片比较模糊**
+### **保存的图片比较模糊**
 
 如果保存的图片模糊，大概率是因为在绘制的时候尺寸进行了压缩，可将要保存的元素的 图片（是img元素，不是保存下来的图片）的尺寸设置得大点，这样就没那么容易模糊
+
+### 绘制道canvas的图片模糊
+
+图片有个属性`naturalWidth naturalHeight`表示图片的原始尺寸，这是是图片的真实大小，而通过css设置的`width height`是样式尺寸，当样式尺寸和原始尺寸不一样的时候，图片就会被缩放，从而导致绘制到canvas的图片变模糊，还有当页面缩放的时候即使样式尺寸和原始尺寸一致也可能回出现模糊的情况（实际上只有当 devicePixelRatio 不为 1 的时候才容易模糊），要解决这个问题就需要保持原始尺寸和样式尺寸一致
+
+```
+原始尺寸=样式尺寸x缩放倍率(window.devicePixelRatio)
+```
+
+devicePixelRatio 受页面缩放和设备的影响，所以即使页面没有缩放也可能不是 1。
+
+同样的 canvas 也是一个图片，而`canvas.width canvas.heigth`就是他的原始尺寸，因为样式尺寸会随着页面缩放而变化（不会表现在devtool上，），所以在样式尺寸固定的时候，canvas的原始尺就需要乘上一个`devicePixelRatio`，包括之后画的元素的尺寸也是。
+
+https://blog.csdn.net/harry_yaya/article/details/105964081
+
+https://juejin.cn/post/7067415002289799205
+
+### ios上偶尔会出现空白
+
+如果你的页面有多个canvas并且在window，android浏览器上渲染一切正常，但是在ios/macos系统的浏览器上运行有时候会渲染不出来，那很可能会cancas大小超出了浏览器的内存限制
+
+[从一个 bug 中延伸出 canvas 最大内存限制和浏览器渲染原理](https://zhuanlan.zhihu.com/p/540761999)
 
 
 
