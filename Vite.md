@@ -11,6 +11,10 @@ webpack 最让人难以忍受的问题是多如牛毛的配置，以及版匹配
 - 一个开发服务器，它基于 [原生 ES 模块](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules) 提供了 [丰富的内建功能](https://vitejs.cn/guide/features.html)，如速度快到惊人的 [模块热更新（HMR）](https://vitejs.cn/guide/features.html#hot-module-replacement)。
 - 一套构建指令，它使用 [Rollup](https://rollupjs.org/) 打包你的代码，并且它是预配置的，可输出用于生产环境的高度优化过的静态资源。
 
+> Rollup是基于ESM的打包工具，所以输出结果不会像webpack那样注入很多的模块化代码，结果更加扁平易懂，并且可以自动移除未引用的代码。但是价值非ESM的第三方模块比较复杂，而且因为模块最终都被打包到一个函数中，无法实现HMR，在浏览器环境中代码拆分功能依赖AMD库
+>
+> 如果是开发应用程序的话，一般情况下需要大量引入第三方模块，并且为了更好的开发体验会需要用到HMR功能，当应用程序变大的时候也需要进行分包管理，所以Rollup是不那么适合做应用程序的开发的，而比较适合做框架或者类库的开发。
+
 Vite 意在提供开箱即用的配置，同时它的 [插件 API](https://vitejs.cn/guide/api-plugin.html) 和 [JavaScript API](https://vitejs.cn/guide/api-javascript.html) 带来了高度的可扩展性，并有完整的类型支持。
 
 Vite 和 webpack 一样是一个工程化工具，而不是专属 Vue 的 Cli ，所以 Vite 也可以用来创建 react 等项目。
