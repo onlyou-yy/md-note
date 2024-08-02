@@ -316,7 +316,11 @@ let rs =  btoa('xxx')// rs 是一个base64字符串
 let s = atob(rs)// atob 把base64转成字符串 s==='xxx'
 ```
 
-对于 atob 和 btoa 这两个方法来说，其中的 a 代表 ASCII，而 b 代表 Blob，即二进制。因此 atob 表示 ASCII 到二进制，对应的是解码操作。而 btoa 表示二进制到 ASCII，对应的是编码操作
+对于 atob 和 btoa 这两个方法来说，其中的 a 代表 ASCII，而 b 代表 binary，即二进制。因此 atob 表示 ASCII 到二进制，对应的是解码操作。而 btoa 表示二进制到 ASCII，对应的是编码操作
+
+> `String.fromCodePoint(byte)`，获取某个位置的字符串
+>
+> `Uint8Array.from(binString, (m) => m.codePointAt(0))` 将 bianry 字符串转 ArrayBuffer
 
 
 

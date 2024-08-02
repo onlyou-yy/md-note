@@ -699,3 +699,5 @@ function createDataChannel(){
 
 [NAT的四种分类：全锥形NAT,地址受限锥形NAT,端口受限锥形NAT,对称NAT](https://blog.csdn.net/s2603898260/article/details/118755474)
 
+[一文看懂WebRTC建连过程](https://juejin.cn/post/7323087699479838730?searchId=2024072711541803C1653D18321E6549AE)
+

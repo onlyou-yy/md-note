@@ -120,12 +120,17 @@ a.href = base64Url
 a.click()
 ```
 
-不过需要注意，`btoa`函数是将字符串转换成`ACSII`码，不过是不支持中文字符的
+不过需要注意，`btoa`函数是将字符串转换成`ACSII`码，不过是不支持中文字符的（准确来说应该是字符串中不能有超过1字节 = 2**8 = 256 的字符，通过`str.codePointAt(idx)`可以看有没有超）
 
-在有中文的情况下可以使用 `encodeURIComponent`对字符床进行编码，不过需要注意的是dataURL的描述类型也要修改
+在有中文的情况下可以使用 `encodeURIComponent`对字符床进行编码，不过需要注意的是dataURL的描述类型也要修改。还可以使用`new TextEncode().encode(str)`将字符串转换成`ArrayBuffer`之后，再通过`String.fromCodePoint(byte)`和`btoa`来生成Base64字符串
 
 ```js
 const base64Url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(SVGString);
+
+const ab = new TextEncode().encode(SVGString);
+const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
+const base64 = btoa(binString);
+const base64Url = 'data:image/svg+xml;charset=utf-8,' + base64;
 ```
 
 > 还有需要注意的是，我们转化的文件类型是`xml`，所以我们字符串的内容需要按照 `xml`的文件规范，在`xml`文件中标签必须成对出现，也就是不能有单标签和自闭合标签，比如 `<img src="" />`必须写出`<img src=""></img>`
@@ -418,17 +423,40 @@ xmlns="http://www.w3.org/2000/svg">
 
 `d`：绘制命令集
 
-命令有很多，但是一般常用的就 M L H V Z 这几个
+命令有很多，但是一般常用的就 `M L H V C Q Z (m l h v c q z)` 这几个
 
-> M：moveTo  移动起点到某一点的意思
+> `M x y`：moveTo  移动起点到某一点的意思
 >
-> L：lineTo 划线到哪一点的意思
+> 直线命令 `L H V (l h v)` 
 >
-> H：horizontal lineto 水平划线到哪一点
+> `L x y`：lineTo 划线到哪一点的意思
 >
-> V ：vertical lineto 垂直划线到哪一点
+> `H x`：horizontal lineto 水平划线到哪一点
+>
+> `V y` ：vertical lineto 垂直划线到哪一点
+>
+> 曲线命令`C Q (c q)`
+>
+> `C x1 y1, x2 y2, x y`：三次贝塞尔曲线，最后一个坐标 (x,y) 表示的是曲线的终点
+>
+> `S x2 y2, x y`: S 命令可以用来创建与前面一样的贝塞尔曲线，但是，如果 S 命令跟在一个 C 或 S 命令后面，则它的第一个控制点会被假设成前一个命令曲线的第二个控制点的**中心对称点**。如果 S 命令单独使用，前面没有 C 或 S 命令，那当前点将作为第一个控制点。
+>
+> `Q x1 y1, x y`：二次贝塞尔曲线
+>
+> `T x y`: 快捷命令 T 会通过前一个控制点，推断出一个新的控制点。这意味着，在你的第一个控制点后面，可以只定义终点，就创建出一个相当复杂的曲线。需要注意的是，T 命令前面必须是一个 Q 命令，或者是另一个 T 命令，才能达到这种效果。
+>
+> `A rx ry x-axis-rotation large-arc-flag sweep-flag x y`: 
+>
+> + rx 弧的半长轴长度
+> + ry 弧的半短轴长度
+> + x-axis-rotation 是此段弧所在的x轴与水平方向的夹角，即x轴的逆时针旋转角度，负数代表顺时针旋转角度。
+> + large-arc-flag 为1表示大角度弧线，0表示小角度弧线
+> + sweep-flag 为1表示从起点到终点弧线绕中心顺时针方向，0表示逆时针方向。
+> + xy 是终点坐标。
 >
 > Z：闭合路径
+>
+> 大写表示的是绝对定位，小写表示的是相对定位，相对于上次的位置进行偏移。
 
 
 
@@ -471,3 +499,6 @@ stroke-dasharray和stroke-dashoffset相结合可以做出很炫酷的效果
 ## 容器，渐变，动画，滤镜
 
 [容器，渐变，动画，滤镜](https://developer.mozilla.org/zh-CN/docs/Web/SVG/Element/defs)
+
+[SVG教程（中文翻译版）](https://svg.brucewar.cn/)
+
