@@ -674,3 +674,5 @@ worker 数和服务器的 cpu 数相等是最为适宜的
 [nginx安装及其配置详细教程](https://zhuanlan.zhihu.com/p/83890573)
 
 [最全Nginx 配置文件详解及安装](https://zhuanlan.zhihu.com/p/92995126)
+
+[nginx 教程——尚硅谷.pdf](Nginx/nginx教程——尚硅谷.pdf)
