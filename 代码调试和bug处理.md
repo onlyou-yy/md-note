@@ -157,7 +157,11 @@ http-server --prot 8081
 
 除了添加 source-map 之外，还可以使用`whilstle`或者谷歌浏览器的`sources-->override`的代理覆盖功能走我们本地的文件
 
+[`whilstle`的数据替换规则](https://wproxy.org/whistle/webui/rules.html)
 
+[`whilstle`的`resMerge`使用](https://wproxy.org/whistle/rules/resMerge.html)，注意层级也需要匹配
+
+[使用whistle进行接口返回数据的替换](https://juejin.cn/post/7096403040323764237)
 
 ## **参考**
 
