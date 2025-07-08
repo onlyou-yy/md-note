@@ -213,7 +213,7 @@ clang: error: linker command failed with exit code 1 (use -v to see invocation)"
 
 右键点击`xcode -> 显示简介`然后将`使用Rosetta打开`钩上，之后关闭，重启 xcode ，清理掉缓冲就可以了，重新以 debug 模式运行到模拟器就好了，（但是需要注意的是这样改可以以 debug 模式运行到模拟器、真机，release 模式只能运行到真机，但是不能运行到模拟器；也可以用来发布项目）
 
-![image-20220812155247935](/Users/gcb/Desktop/ljf_new/file/md-note/React Native/image-20220812155247935.png)
+![image-20220812155247935](./React Native/image-20220812155247935.png)
 
 https://mirari.cc/2021/07/28/M1%E8%8A%AF%E7%89%87Mac%E6%90%AD%E5%BB%BAios%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E8%B8%A9%E5%9D%91/
 
@@ -237,7 +237,7 @@ react-native bundle --entry-file index.js --platform ios --dev false --bundle-ou
 
 之后打开 Xcode>选择项目目标>在构建阶段中将`main.jsbundle`添加到`Copy Bundle Resource`
 
-![image-20220812162420982](/Users/gcb/Desktop/ljf_new/file/md-note/React Native/image-20220812162420982.png)
+![image-20220812162420982](./React Native/image-20220812162420982.png)
 
 之后在 `AppDelegate.m`上替换
 
@@ -327,6 +327,20 @@ https://www.jianshu.com/p/062cee6fa136
 https://www.jianshu.com/p/fc962db539e6
 
 https://www.jianshu.com/p/2eac49af58bf
+
+
+
+**能打包成功但是无法安装到模拟器,提示安装 `translate`**
+
+```shell
+softwareupdate --install-rosetta
+```
+
+之后输入 `A`
+
+![image-20250708092348309](./React Native/image-20250708092348309-1937834.png)
+
+
 
 ## 关于安装第三方库
 
