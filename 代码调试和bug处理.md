@@ -179,3 +179,5 @@ http-server --prot 8081
 
 [线上崩了？一招教你快速定位问题！](https://juejin.cn/post/7166031357418668040)
 
+[聊一聊如何基于Chrome Devtools 进行远程调试](https://cloud.tencent.com/developer/article/2320028)
+
