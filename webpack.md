@@ -1082,6 +1082,8 @@ module.exports={
 
 #### webpack.DefinePlugin() 	定义环境变量
 
+环境变量`process.env`在node环境中可以访问，但是在浏览器环境中时不可访问，为了能支持在浏览器环境中也能访问到`process.env`环境变量需要使用到`webpack.DefinePlugin`插件为浏览器将环境变量`process.env`中的值创建出来
+
 ```js
 module.exports={
   plugins:[
@@ -1133,6 +1135,17 @@ cross-env TEST="1" node test.js
 ```
 
 在 test.js 中可以使用`process.env.TEST` 访问。
+
+> `cross-env` 本质上是为了消除windows和macos上设置环境变量的差别，如果不用`cross-env`在设置环境变量时
+>
+> ```shell
+> # windows
+> set TEST="1" && node test.js
+> # macos
+> export TEST="1" && node test.js
+> ```
+>
+> 
 
 
 
