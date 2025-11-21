@@ -11,6 +11,61 @@
 - [Rust 语言圣经](https://course.rs/about-book.html)
 - [Rusty Book(锈书)](https://rusty.course.rs/awesome-daily-dev.html)
 
+## Rustup换源
+
+### Rustup 镜像配置
+
+编辑或创建 `~/.cargo/config` 文件（Windows 在 `%USERPROFILE%\.cargo\config`），添加以下内容： **中国科学技术大学 (USTC)源:**
+
+```toml
+[source.crates-io]
+replace-with = 'ustc'
+
+[source.ustc]
+registry = "git://mirrors.ustc.edu.cn/crates.io-index"
+
+[net]
+git-fetch-with-cli = true
+```
+
+**或者使用清华大学源：**
+
+```toml
+[source.crates-io]
+replace-with = 'tuna'
+
+[source.tuna]
+registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
+```
+
+### Rustup 工具链镜像
+
+**mac/linux**
+
+**中国科学技术大学 (USTC)源:**
+
+```bash
+export RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
+export RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
+```
+
+**或者使用清华大学源：**
+
+```bash
+export RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup
+```
+
+**Windows 系统：**
+
+右键 **"此电脑" → 属性 → 高级系统设置 → 环境变量**，在 **"用户变量"** 或 **"系统变量"** 中新建：
+
+- 变量名：`RUSTUP_DIST_SERVER`
+- 变量值：`https://mirrors.ustc.edu.cn/rust-static`
+- 变量名：`RUSTUP_UPDATE_ROOT`
+- 变量值：`https://mirrors.ustc.edu.cn/rust-static/rustup`
+
+
+
 ### 宏
 
 Rust 提供了一个强大的宏系统，可进行元编程,简单来说宏就是提供一种可可以解析代码并注入代码的能力,宏并不产生函数调用，而是展开成源码，并和程序的其余部分一起被编译
