@@ -1,6 +1,7 @@
 ## 资料
 
 + [裸K交易法](https://www.bilibili.com/video/BV1CE411n7xy?spm_id_from=333.1245.0.0)
++ [裸K线交易法——价格行为（Price-Action）全面详解.pdf](./裸K交易法/裸K线交易法——价格行为（Price-Action）全面详解.pdf)
 
 
 
