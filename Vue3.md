@@ -1247,3 +1247,11 @@ export default {
 
 2020年9月发布的正式版vue3，vue3 支持大多数的vue2特性，并且vue3 中设计了一套强大的组合API 代替了 vue2 中的 option API 复用性更强了。并且更好的支持TS 。最主要的是 vue3 中使用 Proxy 配合 Reflect 代替了 vue2 中的 Object.defineProperty() 方法实现数据的响应式原理）。重写了虚拟DOM，速度更快了，并且设计了个新的脚手架 vite 。提供了新的组件 Fragment / Teleport / Suspense。
 
+
+
+## 问题
+
+### 为什么需要虚拟DOM？
+
+[为什么需要虚拟DOM？
+
