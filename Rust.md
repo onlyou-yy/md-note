@@ -22,7 +22,7 @@
 replace-with = 'ustc'
 
 [source.ustc]
-registry = "git://mirrors.ustc.edu.cn/crates.io-index"
+registry = "https://mirrors.ustc.edu.cn/crates.io-index"
 
 [net]
 git-fetch-with-cli = true

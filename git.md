@@ -611,7 +611,7 @@ git push -u origin master
 
 
 
-**git 指定目录 拉取文件**
+[git 指定目录 拉取文件](https://www.jianshu.com/p/b67318c3433d)
 
-https://www.jianshu.com/p/b67318c3433d
+[github flow](https://www.bilibili.com/video/BV1yXAmzAEaX/?spm_id_from=333.1007.tianma.12-1-43.click&vd_source=41ed998ac767425fb616fd9071ce9682)
 
