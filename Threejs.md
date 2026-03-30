@@ -1,3 +1,31 @@
+获取物体大小
+
+```js
+loader.load(path, function(gltf) {
+  // 使用THREE.Box3()来获取整个模型的大小
+  const box = new THREE.Box3().setFromObject(gltf.scene)
+  const center = box.getCenter(new THREE.Vector3())
+  const size = box.getSize(new THREE.Vector3())
+
+  const aspect = targetSize ? new THREE.Vector3().copy(targetSize.divide(size)) : new THREE.Vector3(1, 1, 1)
+
+  // 通过位置需要根据缩放比例进行调整
+  gltf.scene.position.copy(position.sub(center).multiply(aspect))
+  gltf.scene.scale.copy(aspect)
+  resolve(gltf.scene)
+}, undefined, function(error) {
+  reject(error)
+})
+```
+
+```js
+geometry.computeBoundingBox();
+var bb = geometry.boundingBox;
+var object3DWidth  = bb.max.x - bb.min.x;
+var object3DHeight = bb.max.y - bb.min.y;
+var object3DDepth  = bb.max.z - bb.min.z;
+```
+
 ### 坐标差异
 
 ![image-20260318181926199](./Threejs/image-20260318181926199.png)
