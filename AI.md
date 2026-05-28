@@ -256,7 +256,7 @@ from dotenv import load_dotenv
 from google import genai
 from sentence_transformers import CrossEncoder, SentenceTransformer
 
-embedding_model = SentenceTransformer("./embedding_models/text2vec-base-chinese",token="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")
+embedding_model = SentenceTransformer("./embedding_models/text2vec-base-chinese",token="Token")
 chromadb_client = chromadb.EphemeralClient()
 chromadb_collection = chromadb_client.get_or_create_collection(name="article")
 load_dotenv()
